@@ -42,6 +42,14 @@ def test_glosas_a_espanol_returns_text_and_caches_system():
     assert "YO QUERER HORA MÉDICO LUNES" in call["messages"][0]["content"]
 
 
+def test_fingerspell_keeps_only_letters_and_caps_length():
+    from translator.glossary import fingerspell
+
+    assert fingerspell("Ana María") == "DACTILOLOGÍA:A-N-A-M-A-R-Í-A"
+    assert fingerspell("12 !!") == ""
+    assert fingerspell("A" * 100).count("-") == 19  # máx. 20 letras
+
+
 def test_espanol_a_glosas_filters_unknown_and_fingerspells():
     client = fake_client([tool_use({
         "glosas": ["LUNES", "TÚ", "VENIR", "MÉDICO"],

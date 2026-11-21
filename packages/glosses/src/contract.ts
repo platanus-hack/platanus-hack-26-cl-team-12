@@ -52,10 +52,14 @@ export const SOLO_AGENTE: ReadonlySet<MensajePuente["tipo"]> = new Set([
 
 const MAX_TEXTO = 500;
 const MAX_GLOSAS = 30;
+const MAX_GLOSA_CHARS = 60; // "DACTILOLOGÍA:" + 20 letras separadas por guion = 52
 
 const esTexto = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= MAX_TEXTO;
 const esGlosas = (v: unknown): v is string[] =>
-  Array.isArray(v) && v.length > 0 && v.length <= MAX_GLOSAS && v.every((g) => typeof g === "string");
+  Array.isArray(v) &&
+  v.length > 0 &&
+  v.length <= MAX_GLOSAS &&
+  v.every((g) => typeof g === "string" && g.length > 0 && g.length <= MAX_GLOSA_CHARS);
 
 /** Valida forma y tipos de cada campo; devuelve null si el mensaje no cumple el contrato. */
 export function parseMensaje(raw: string): MensajePuente | null {

@@ -96,5 +96,5 @@ class Translator:
         """Toda glosa debe existir en el diccionario (ADR-0004); las palabras sueltas se deletrean."""
         validas = [g for g in glosas if self.glossary.is_known(g)]
         descartadas = [g for g in glosas if not self.glossary.is_known(g)]
-        validas += [fingerspell(p) for p in deletrear]
+        validas += [f for f in (fingerspell(p) for p in deletrear) if f]
         return GlossResult(glosas=validas, subtitulo=subtitulo, descartadas=descartadas)
