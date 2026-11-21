@@ -32,6 +32,8 @@ h1{font-size:15px;margin:0 0 8px}
   <label><input type="checkbox" id="flipxz" checked> Corregir ejes VRM1 (x y z)</label>
   <label><input type="checkbox" id="swap"> Intercambiar manos izquierda/derecha</label>
   <label><input type="checkbox" id="fingers" checked> Mover dedos</label>
+  <label><input type="checkbox" id="ik" checked> Brazos directos (alcanzan la cara)</label>
+  <label><input type="checkbox" id="zinv"> Invertir profundidad (si el brazo va hacia atrás)</label>
   <hr style="border:0;border-top:1px solid #333;margin:10px 0">
   <h1>Grabar seña</h1>
   <div id="guide" style="background:#262b34;border-radius:10px;padding:8px;margin-bottom:8px">
@@ -115,6 +117,18 @@ function rigHand(side,lm,poseRig){ // side: 'Left'|'Right' del usuario
  for(const f of['Thumb','Index','Middle','Ring','Little'])for(const j of['Proximal','Intermediate','Distal'])
   rig(side+f+j,h[side+f+j],1,0.5)}
 
+// ---- brazos "directos": cada hueso apunta hacia donde apunta tu hombro→codo→muñeca (sin los límites de Kalidokit)
+const AX=new THREE.Vector3(1,0,0);
+const V3=p=>new THREE.Vector3(p.x,-p.y,$('zinv').checked?p.z:-p.z); // MediaPipe (y abajo, z hacia cámara) → avatar (y arriba, z al frente)
+function ikArm(W,vis,side,iS,iE,iW){
+ if(Math.min(vis[iS],vis[iE])<0.45||vis[iW]<0.25)return false;
+ const rest=side==='left'?AX:AX.clone().negate(),up=bone(side+'UpperArm'),lo=bone(side+'LowerArm');
+ const dU=V3(W[iE]).sub(V3(W[iS])).normalize(),dL=V3(W[iW]).sub(V3(W[iE])).normalize();
+ up.quaternion.slerp(new THREE.Quaternion().setFromUnitVectors(rest,dU),0.55);
+ const dLoc=dL.applyQuaternion(up.quaternion.clone().invert());
+ lo.quaternion.slerp(new THREE.Quaternion().setFromUnitVectors(rest,dLoc),0.55);
+ return true}
+
 // ---- volver suavemente a reposo cuando se pierde el tracking (evita que el avatar "tiemble" o se quede pegado)
 let missPose=0;const missHand={Left:0,Right:0};
 const REST={LeftUpperArm:[0,0,-1.2],RightUpperArm:[0,0,1.2]};
@@ -195,9 +209,12 @@ function loop(){
   let poseRig=null;
   // filtro anti-ruido: solo aceptar la pose si hombros, codos y muñecas se ven con buena visibilidad
   const L=pr.landmarks[0];
-  const okPose=L&&[11,12,13,14,15,16].reduce((s,i)=>s+(L[i].visibility??0),0)/6>0.65;
-  if(okPose){poseRig=K.Pose.solve(pr.worldLandmarks[0],L,{runtime:'mediapipe',video,enableLegs:false});
-   if(poseRig){rigArms(poseRig);missPose=0}}
+  let okPose=false;
+  if(L){const W=pr.worldLandmarks[0],vis=L.map(p=>p.visibility??0);
+   try{poseRig=K.Pose.solve(W,L,{runtime:'mediapipe',video,enableLegs:false})}catch(e){}
+   if($('ik').checked){okPose=ikArm(W,vis,'left',11,13,15)|ikArm(W,vis,'right',12,14,16)}
+   else if([11,12,13,14,15,16].reduce((s,i)=>s+vis[i],0)/6>0.65&&poseRig){rigArms(poseRig);okPose=true}}
+  if(okPose)missPose=0;
   else if(++missPose>20)toRest(['RightUpperArm','LeftUpperArm','RightLowerArm','LeftLowerArm']);
   let seen={Left:false,Right:false};
   hr.landmarks.forEach((lm,i)=>{
