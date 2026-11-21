@@ -19,6 +19,23 @@ class H(SimpleHTTPRequestHandler):
     def do_GET(self):
         p = urlparse(self.path).path
         if p == "/api/anims": return self._json(sorted(f.stem for f in ANIM.glob("*.json")))
+        if p == "/api/escenario":  # lista cerrada de glosas a grabar (con su definición del diccionario)
+            root = HERE.parents[2]; esc = json.loads((root / "data/vocab/escenario_hora_medica.json").read_text())
+            defs = {}
+            gl = root / "data/vocab/glosario.jsonl"
+            if gl.exists():
+                for line in gl.read_text().splitlines():
+                    d = json.loads(line); defs[d["id"]] = d
+            for e in esc:
+                d = defs.get(e["id"], {}); e["definicion"] = d.get("definicion"); e["clase"] = d.get("clase")
+            return self._json(esc)
+        m = re.fullmatch(r"/img/([a-z0-9_-]+)\.png", p)
+        if m:
+            f = HERE.parents[2] / "data" / "signs" / "img" / f"{m[1]}.png"
+            if f.exists():
+                b = f.read_bytes(); self.send_response(200); self.send_header("Content-Type", "image/png")
+                self.send_header("Content-Length", str(len(b))); self.end_headers(); return self.wfile.write(b)
+            return self._json({"error": "sin foto"}, 404)
         m = re.fullmatch(r"/anim/([A-Z0-9_-]+)\.json", p)
         if m:
             f = ANIM / f"{m[1]}.json"

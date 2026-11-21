@@ -6,7 +6,7 @@ html,body{margin:0;height:100%;background:#14161a;color:#eee;font-family:system-
 #wrap{display:flex;height:100%}
 #stage{flex:1;position:relative;min-width:0}
 canvas#c{width:100%;height:100%;display:block}
-#side{width:300px;padding:12px;background:#1d2026;overflow:auto;font-size:13px}
+#side{width:340px;padding:12px;background:#1d2026;overflow:auto;font-size:13px}
 video{width:100%;border-radius:10px;transform:scaleX(-1);background:#000}
 label{display:block;margin:6px 0;cursor:pointer}
 #st{margin:8px 0;color:#9ad;min-height:36px}
@@ -34,6 +34,21 @@ h1{font-size:15px;margin:0 0 8px}
   <label><input type="checkbox" id="fingers" checked> Mover dedos</label>
   <hr style="border:0;border-top:1px solid #333;margin:10px 0">
   <h1>Grabar seña</h1>
+  <div id="guide" style="background:#262b34;border-radius:10px;padding:8px;margin-bottom:8px">
+   <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+    <button class="btn" id="prevG">◀</button><div id="gTitle" style="flex:1;text-align:center;font-weight:700;font-size:15px">…</div><button class="btn" id="nextG">▶</button>
+   </div>
+   <img id="gImg" style="width:100%;border-radius:8px;display:block;background:#000;min-height:120px" alt="">
+   <div id="gMean" style="margin:6px 0 2px;color:#cde"></div>
+   <div id="gSteps" style="color:#9aa;font-size:12px;line-height:1.5">
+    <b>Cómo hacerla:</b><br>
+    1. Mira la foto: los <b>números</b> son el orden de las posiciones y las <b>flechas</b> el movimiento.<br>
+    2. Practícala 2–3 veces sin grabar, viéndote en la cámara.<br>
+    3. Aprieta <b>Grabar</b>, espera la cuenta y haz la seña completa, sin apuro.<br>
+    4. Revisa en el avatar: si no se parece a la foto, repite.
+   </div>
+   <div id="gChips" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;max-height:110px;overflow:auto"></div>
+  </div>
   <input id="glosa" placeholder="GLOSA (ej: HOLA)" style="width:100%;box-sizing:border-box;padding:7px;border-radius:6px;border:0;margin-bottom:6px;text-transform:uppercase">
   <div style="display:flex;gap:6px;margin-bottom:6px">
    <select id="dur" style="flex:1;padding:6px;border-radius:6px"><option value="2">2 s</option><option value="3" selected>3 s</option><option value="4">4 s</option></select>
@@ -120,9 +135,22 @@ $('playBtn').onclick=()=>clip&&playClip(clip);
 $('discBtn').onclick=()=>{clip=null;mode='live';$('clipBox').style.display='none';st('Descartado')};
 $('saveBtn').onclick=async()=>{if(!clip)return;
  try{const r=await fetch('/api/save?glosa='+encodeURIComponent(clip.glosa),{method:'POST',body:JSON.stringify(clip)});const j=await r.json();
-  if(!j.ok)throw new Error(j.error);st('Guardado ✔ '+clip.glosa+' ('+j.frames+' cuadros)');loadLib()}
+  if(!j.ok)throw new Error(j.error);st('Guardado ✔ '+clip.glosa+' ('+j.frames+' cuadros)');await loadLib();clip=null;$('clipBox').style.display='none';showGuide(gi+1)}
  catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(clip)]));a.download=clip.glosa+'.json';a.click();st('Servidor no disponible: descargué el JSON ('+e.message+')')}};
-async function loadLib(){try{const l=await (await fetch('/api/anims')).json();const el=$('lib');el.innerHTML=l.length?'':'—';
+// ---- guía: lista cerrada con foto del diccionario
+let ESC=[],gi=0,done=new Set();
+const key=e=>e.id.toUpperCase();
+function showGuide(i){if(!ESC.length)return;gi=(i+ESC.length)%ESC.length;const e=ESC[gi];
+ $('gTitle').textContent=`${e.glosa}  (${gi+1}/${ESC.length})${done.has(key(e))?' ✔':''}`;
+ $('gImg').src='/img/'+e.id+'.png';$('gImg').alt=e.glosa;
+ $('gMean').textContent=(e.definicion||e.significa||'').slice(0,160);
+ $('glosa').value=key(e);
+ [...$('gChips').children].forEach((c,k)=>c.style.outline=k===gi?'2px solid #fff':'none')}
+function renderChips(){const el=$('gChips');el.innerHTML='';ESC.forEach((e,k)=>{const b=document.createElement('button');b.className='btn';
+ b.style.cssText='padding:3px 7px;font-size:11px;background:'+(done.has(key(e))?'#2a6f5e':'#3a4150');b.textContent=e.glosa;b.onclick=()=>showGuide(k);el.appendChild(b)});showGuide(gi)}
+$('prevG').onclick=()=>showGuide(gi-1);$('nextG').onclick=()=>showGuide(gi+1);
+fetch('/api/escenario').then(r=>r.json()).then(l=>{ESC=l;renderChips()}).catch(()=>{});
+async function loadLib(){try{const l=await (await fetch('/api/anims')).json();done=new Set(l);if(ESC.length)renderChips();const el=$('lib');el.innerHTML=l.length?'':'—';
  for(const g of l){const b=document.createElement('button');b.className='btn';b.textContent=g;
   b.onclick=async()=>{const c=await (await fetch('/anim/'+g+'.json')).json();$('glosa').value=g;playClip(c);$('clipBox').style.display='flex';st('Reproduciendo '+g)};el.appendChild(b)}}catch(e){}}
 loadLib();
