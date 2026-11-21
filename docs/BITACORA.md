@@ -9,6 +9,11 @@ Las entradas nuevas van **arriba**. Formato:
 ```
 
 ## 2026-11-21 — Martín / Claude (v1-telefonia)
+- Hice: **v1 + v2 funcionando de punta a punta con llamada real (gratis, trial de Twilio)**. El celular del ejecutivo habla → Twilio transcribe (`<Gather speech>` con pistas "RUT, Fonasa…") → Claude simplifica → aparece en el chat del cliente; el cliente escribe → Claude complejiza → Twilio se lo dice (`<Say>`). Código: `services/api/app/twilio_media.py` y `app/llamada.py`.
+- Para el resto: **Rafael**, la PWA se conecta al WebSocket `/twilio/cliente` con los mensajes de `docs/contrato.md` (`ejecutivo_dice`, `cliente_dice`, `estado`); hay un chat de ejemplo en `/twilio/prueba`. **Raimundo**, uso tus prompts de `lab/v2_simplificar/prompts.py` tal cual (cárgalos de ahí o avísame si se mueven).
+- Falta: A2 (botón "Llamar" en la app, hoy se lanza a mano), deploy (A3), seguridad (A4: firma de Twilio, token en `/twilio/cliente`, tope de costo). Una sola llamada a la vez.
+
+## 2026-11-21 — Martín / Claude (v1-telefonia)
 - Probé en el trial de Twilio: ❌ SIP hacia LiveKit (trunk y `<Dial><Sip>`), ❌ Media Streams (`<Connect>` y `<Start><Stream>`: Twilio nunca abre el WebSocket). ✅ `<Say>` y ✅ `<Gather input="speech">`.
 - Hice: **plan C gratis, funcionando con llamada real a un celular**: Twilio transcribe al ejecutivo → `POST /twilio/turno` recibe el texto → respondemos con `<Say>`. Código en `services/api/app/twilio_media.py`, probado con ngrok.
 - Falta: conectar `/twilio/turno` con el traductor (Claude) y la PWA; decir la respuesta del cliente. Es por turnos (tipo walkie-talkie) y con la voz de Twilio, no ElevenLabs. Si se paga el upgrade, se vuelve al plan original con LiveKit (trunk `ST_ND4YzQ9nquNA` ya creado).

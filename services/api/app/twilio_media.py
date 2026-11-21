@@ -27,6 +27,8 @@ SALUDO = (
     "Hola. Le habla Puente, un servicio de interpretación para una persona sorda. "
     "Hable después de este mensaje y espere unos segundos la respuesta."
 )
+# Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol").
+PISTAS = "RUT, Fonasa, Isapre, hora, hora médica, médico, doctor, consulta, agendar, previsión, bono, copago, rut, dígito verificador"
 ESPERA_S = 2  # segundos entre revisiones de la respuesta del cliente
 AVISO_CADA = 10  # cada ~20 s de espera se le avisa al ejecutivo que el cliente sigue escribiendo
 _tareas: set[asyncio.Task] = set()
@@ -52,7 +54,7 @@ def ir_a(base: str, ruta: str) -> str:
 def escuchar(base: str, antes: str = "") -> str:
     """Escucha al ejecutivo; si no habla, vuelve a escuchar."""
     return (
-        f'<Gather input="speech" {IDIOMA} speechTimeout="auto" action={quoteattr(base + "/twilio/turno")} method="POST">'
+        f'<Gather input="speech" {IDIOMA} hints={quoteattr(PISTAS)} speechTimeout="auto" action={quoteattr(base + "/twilio/turno")} method="POST">'
         f"{antes}</Gather>{ir_a(base, '/twilio/escuchar')}"
     )
 
