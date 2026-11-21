@@ -84,3 +84,17 @@ def test_twilio_media_echoes_audio():
         ws.send_json({"event": "media", "media": {"payload": "AAEC"}})
         assert ws.receive_json() == {"event": "media", "streamSid": "MZ1", "media": {"payload": "AAEC"}}
         ws.send_json({"event": "stop"})
+
+
+def test_twilio_gather_uses_absolute_urls(monkeypatch):
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    r = client.post("/twilio/voz?modo=gather")
+    assert 'action="https://abc.ngrok-free.app/twilio/turno"' in r.text
+    assert '<Gather input="speech"' in r.text
+
+
+def test_twilio_turno_receives_transcript(monkeypatch):
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    r = client.post("/twilio/turno", data={"SpeechResult": "quiero una hora <x>", "Confidence": "0.9"})
+    assert r.status_code == 200
+    assert "Entendí: quiero una hora &lt;x&gt;" in r.text  # escapado: el texto del teléfono no puede inyectar TwiML

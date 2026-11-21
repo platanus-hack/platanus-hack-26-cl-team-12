@@ -9,6 +9,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "livekit-api>=0.8",
     "twilio>=9.0",
+    "python-multipart>=0.0.34",
 ]
 
 [dependency-groups]
