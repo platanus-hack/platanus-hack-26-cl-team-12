@@ -7,15 +7,23 @@ import {
   Button, CallStatus, Composer, IncomingCall, Logo, QuickReplies, SignAvatar, Subtitles, VisualAlert,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
-import type { MensajePuente } from "@puente/glosses";
+import { isLiteralGloss, literalText, type MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
 import { DESTINOS, Inicio, type Destino } from "./Inicio";
 
-const AVATAR_MS_POR_SENA = 1300;
-const MOCK_TIMBRE_MS = 3000; // en ?mock=1, la clínica "llama" a los 3 s de abrir la app // igual que el reproductor de fotos de lab/v4_avatar
+const AVATAR_MS_POR_SENA = 1300; // igual que el reproductor de fotos de lab/v4_avatar
+const MOCK_TIMBRE_MS = 3000; // en ?mock=1, la clínica "llama" a los 3 s de abrir la app
 
 const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+
+// Id local de cada línea de subtítulo. No se usa crypto.randomUUID: solo existe con HTTPS y falla al probar
+// desde el celular por http://192.168.x.x:3000.
+let siguienteId = 0;
+const nuevoId = () => `l${++siguienteId}`;
+
+// `TEXTO:10:30` (hora, cifra, RUT o nombre sin seña) se muestra como el dato, no como glosa (docs/contrato.md).
+const paraMostrar = (glosa: string) => (isLiteralGloss(glosa) ? literalText(glosa) : glosa);
 
 export function CallPanel({ mock }: { mock: boolean }) {
   const [call, setCall] = useState<CallHandle | null>(null);
@@ -24,6 +32,8 @@ export function CallPanel({ mock }: { mock: boolean }) {
   const [lines, setLines] = useState<SubtitleLine[]>([]);
   const [alert, setAlert] = useState<{ message: string; tone: AlertTone } | null>(null);
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
+  // Respuestas rápidas que sugiere el agente para la última pregunta del ejecutivo (v2). Sin ellas: Sí/No/Repita.
+  const [opciones, setOpciones] = useState<string[] | undefined>(undefined);
   const [destino, setDestino] = useState<Destino | null>(null);
   const [entrante, setEntrante] = useState<Destino | null>(null);
   const callRef = useRef<CallHandle | null>(null);
@@ -61,7 +71,8 @@ export function CallPanel({ mock }: { mock: boolean }) {
   function onMessage(msg: MensajePuente) {
     switch (msg.tipo) {
       case "ejecutivo_dice":
-        setLines((l) => [...l, { id: crypto.randomUUID(), who: "ejecutivo", time: hora(), text: msg.simple ?? msg.texto, original: msg.texto }]);
+        setLines((l) => [...l, { id: nuevoId(), who: "ejecutivo", time: hora(), text: msg.simple ?? msg.texto, original: msg.texto }]);
+        setOpciones(msg.opciones?.length ? msg.opciones : undefined);
         break;
       case "estado":
         if (msg.valor === "llamada_iniciada") {
@@ -76,7 +87,7 @@ export function CallPanel({ mock }: { mock: boolean }) {
         }
         break;
       case "glosas_para_senar":
-        setSenas({ glosas: msg.glosas, subtitulo: msg.subtitulo, actual: 0 });
+        setSenas({ glosas: msg.glosas.map(paraMostrar), subtitulo: msg.subtitulo, actual: 0 });
         break;
     }
   }
@@ -86,6 +97,7 @@ export function CallPanel({ mock }: { mock: boolean }) {
     setEntrante(null);
     setLines([]);
     setSenas(null);
+    setOpciones(undefined);
     setSeconds(0);
     setAlert(null);
     setState("connecting");
@@ -116,7 +128,8 @@ export function CallPanel({ mock }: { mock: boolean }) {
 
   async function decir(texto: string) {
     if (!callRef.current) return;
-    setLines((l) => [...l, { id: crypto.randomUUID(), who: "cliente", time: hora(), text: texto }]);
+    setLines((l) => [...l, { id: nuevoId(), who: "cliente", time: hora(), text: texto }]);
+    setOpciones(undefined); // ya respondió: vuelven las respuestas por defecto
     try {
       await callRef.current.send({ tipo: "cliente_dice", texto });
     } catch {
@@ -160,7 +173,7 @@ export function CallPanel({ mock }: { mock: boolean }) {
         <>
           {enLlamada && (
             <Composer onSend={decir}>
-              <QuickReplies onPick={decir} />
+              <QuickReplies options={opciones} onPick={decir} />
             </Composer>
           )}
           <Button size="lg" variant="danger" icon="colgar" block onClick={colgar}>

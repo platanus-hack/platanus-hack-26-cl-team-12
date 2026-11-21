@@ -59,7 +59,7 @@ body { margin: 0; font-family: var(--font-sans); font-size: 18px; line-height: 1
 
 /* Subtitles */
 .pu-subs { list-style: none; margin: 0; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--line); }
-.pu-sub { display: flex; flex-direction: column; gap: var(--space-1); max-width: 88%; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-raised); align-self: flex-start; font-size: 22px; line-height: 32px; }
+.pu-sub { white-space: pre-line; display: flex; flex-direction: column; gap: var(--space-1); max-width: 88%; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-raised); align-self: flex-start; font-size: 22px; line-height: 32px; }
 .pu-sub[data-who="cliente"] { align-self: flex-end; background: var(--cliente-soft); }
 .pu-sub .who { font-size: 15px; line-height: 20px; font-weight: 700; letter-spacing: 0.02em; color: var(--muted); }
 .pu-sub[data-who="cliente"] .who { color: var(--cliente); }
