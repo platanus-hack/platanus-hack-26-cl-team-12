@@ -174,3 +174,10 @@ def test_swagger_apagado_en_produccion(monkeypatch):
     assert _app_con_env(monkeypatch, API_DOCS="0").get("/docs").status_code == 404
     # `API_DOCS=` vacío (como viene en .env.example) no apaga Swagger en desarrollo
     assert _app_con_env(monkeypatch, API_DOCS="").get("/docs").status_code == 200
+
+
+def test_logs_no_guardan_lo_que_se_dice(sala_falsa, caplog):
+    """seguridad-datos-cl: la conversación puede traer RUT o datos de salud; no va a los logs."""
+    caplog.set_level("DEBUG")
+    client.post("/twilio/turno", data={"SpeechResult": "mi RUT es 11.111.111-1", "Confidence": "0.9"})
+    assert "11.111.111-1" not in caplog.text
