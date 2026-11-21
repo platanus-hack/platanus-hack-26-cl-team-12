@@ -16,11 +16,10 @@ import os
 
 import anthropic
 from dotenv import load_dotenv
+from guard import parse_cliente_message
 from livekit import agents, rtc
 from livekit.agents import NOT_GIVEN, Agent, AgentSession, StopResponse, llm
 from livekit.plugins import deepgram, elevenlabs, silero
-
-from guard import parse_cliente_message
 from pipeline import turno_cliente, turno_ejecutivo
 from store import abrir_store
 from translator import Translator, load_escenario, load_glossary
@@ -78,6 +77,8 @@ async def entrypoint(ctx: agents.JobContext):
         vad=silero.VAD.load(),
     )
 
+    tareas: set[asyncio.Task] = set()
+
     async def on_cliente(msg: dict, preferencia_voz: str | None):
         nonlocal voz_actual
         voz = elegir_voz(preferencia_voz)
@@ -96,7 +97,10 @@ async def entrypoint(ctx: agents.JobContext):
             log.warning("mensaje descartado de %s", packet.participant.identity if packet.participant else "?")
             return
         # TODO(v1): que /token permita fijar el atributo `voz` ("mujer"/"hombre") según la preferencia del cliente.
-        asyncio.create_task(on_cliente(msg, attrs.get("voz")))
+        # Guardar la referencia: sin ella el GC puede botar el task a mitad de camino (RUF006).
+        tarea = asyncio.create_task(on_cliente(msg, attrs.get("voz")))
+        tareas.add(tarea)
+        tarea.add_done_callback(tareas.discard)
 
     # TODO(v1): escuchar solo al participante SIP del ejecutivo (room_input_options participant_identity).
     await session.start(agent=PuenteTranslator(ctx.room, translator), room=ctx.room)

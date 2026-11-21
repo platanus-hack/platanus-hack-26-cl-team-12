@@ -4,6 +4,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -43,9 +44,11 @@ class Glossary:
         up = g.upper()
         if up in self.entries:
             return up
-        return self._variants().get(up)
+        return self._variants.get(up)
 
+    @cached_property
     def _variants(self) -> dict[str, str]:
+        """Variante → glosa canónica. Se calcula una vez (resolve se llama por cada glosa del LLM)."""
         return {v: g for g, e in self.entries.items() for v in e.get("variants", [])}
 
     def as_prompt(self) -> str:

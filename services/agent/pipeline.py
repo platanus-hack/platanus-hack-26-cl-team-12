@@ -66,17 +66,23 @@ async def turno_ejecutivo(texto: str, translator: Translator, publish: Publish, 
         r = await asyncio.to_thread(translator.espanol_a_glosas, texto)
         metricas["llm_glosas_ms"] = _ms(t)
         metricas["n_glosas"], metricas["n_descartadas"] = len(r.glosas), len(r.descartadas)
+        if r.glosas:  # primero lo que ve el cliente; las métricas después y sin poder botar el turno
+            await publish({"tipo": "glosas_para_senar", "glosas": r.glosas, "subtitulo": recortar(r.subtitulo)})
         faltantes = faltantes_sin_nombres(r.descartadas, texto)
         if faltantes and translator.store is not None:
-            await asyncio.to_thread(translator.store.registrar_faltantes, faltantes)
-        if r.glosas:
-            await publish({"tipo": "glosas_para_senar", "glosas": r.glosas, "subtitulo": recortar(r.subtitulo)})
+            try:
+                await asyncio.to_thread(translator.store.registrar_faltantes, faltantes)
+            except Exception:
+                log.exception("no se pudieron registrar las glosas faltantes")
 
     resultados = await asyncio.gather(v2(), v4(), return_exceptions=True)
     v2_err, v4_err = resultados
     if isinstance(v2_err, Exception):
         log.error("simplificar falló: %r", v2_err)
-        await publish({"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": None})  # al menos el texto
+        try:  # al menos el texto literal; si lo que falló fue publish, esto también puede fallar
+            await publish({"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": None})
+        except Exception:
+            log.exception("no se pudo publicar el respaldo de ejecutivo_dice")
     if isinstance(v4_err, Exception):
         log.warning("glosas fallaron (v4 no bloquea v2): %r", v4_err)
 
@@ -90,15 +96,21 @@ async def turno_cliente(msg: dict, translator: Translator, sala: str = "") -> st
     """Devuelve el texto listo para el TTS (ya normalizado). `msg` viene validado por guard.py."""
     t0 = time.perf_counter()
     hits0 = translator.cache_hits
-    if msg["tipo"] == "cliente_dice":
-        frase = await asyncio.to_thread(translator.complejizar, msg["texto"])
-    else:
-        frase = await asyncio.to_thread(translator.glosas_a_espanol, msg["glosas"])
+    crudo = msg["texto"] if msg["tipo"] == "cliente_dice" else " ".join(msg["glosas"])
+    try:
+        if msg["tipo"] == "cliente_dice":
+            frase = await asyncio.to_thread(translator.complejizar, msg["texto"])
+        else:
+            frase = await asyncio.to_thread(translator.glosas_a_espanol, msg["glosas"])
+    except Exception:
+        # Sin Claude, el ejecutivo igual escucha lo que la persona escribió: nunca se pierde un mensaje.
+        log.exception("complejizar falló; se dice el texto del cliente tal cual")
+        frase = crudo
     llm_ms = _ms(t0)
     voz = normalizar_para_voz(frase, translator.escenario.pronunciacion)
     _registrar(
         translator, sala, "cliente_a_ejecutivo",
-        llm_voz_ms=llm_ms, total_ms=_ms(t0), cache_hit=int(translator.cache_hits > hits0),
+        llm_cliente_ms=llm_ms, total_ms=_ms(t0), cache_hit=int(translator.cache_hits > hits0),
     )
     log.info("turno cliente→ejecutivo %d ms", llm_ms)
     return voz
