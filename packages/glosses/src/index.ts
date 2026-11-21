@@ -44,6 +44,18 @@ export function isKnownGloss(gloss: string): boolean {
 /** Prefijo para el deletreo manual de palabras fuera del vocabulario (ADR-0001). */
 export const FINGERSPELL_PREFIX = "DACTILOLOGÍA:";
 
+/** Prefijo para datos sin seña (horas, cifras, RUT, nombres) que el reproductor muestra como texto grande. */
+export const LITERAL_PREFIX = "TEXTO:";
+
+export function isLiteralGloss(gloss: string): boolean {
+  return gloss.startsWith(LITERAL_PREFIX) && gloss.length > LITERAL_PREFIX.length;
+}
+
+/** Texto a mostrar para una glosa literal (`TEXTO:10:30` → `10:30`). */
+export function literalText(gloss: string): string {
+  return gloss.slice(LITERAL_PREFIX.length);
+}
+
 export function fingerspell(word: string): string {
   return FINGERSPELL_PREFIX + word.toUpperCase().split("").join("-");
 }
