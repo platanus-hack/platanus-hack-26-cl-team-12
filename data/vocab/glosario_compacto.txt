@@ -1,0 +1,1057 @@
+ABANDONAR: Abandonar, dejar, desamparar
+ABANICAR/SE: Abanicar, abanicarse
+ABANICO: Abanico
+ABECEDARIO: Abecedario, alfabeto
+ABEJA: Abeja
+ABOGADO: Abogado, legista, jurista, defensor
+ABORTAR: Abortar
+ABOTONAR: Abotonar
+ABRAZAR: Abrazar, ceñir
+ABREVIAR: Abreviar, acortar
+ABRIGAR/SE: Abrigarse, taparse, cubrir, arropar
+ABRIGO: Abrigo, chaquetón, sobretodo, gabán
+ABRIL: Abril
+ABRIR-CAJÓN: Abrir un cajón
+ABRIR-LATA: Abrir una lata, abrir un tarro, abrir una conserva
+ABRIR-PUERTA: Abrir la puerta
+ABUELO/A: Abuelo, abuela
+ABUNDANTE: Abundante, excesivo, cuantioso
+ABURRIR/SE: Aburrir, cansar, fastidiar
+ABURRIDO/A: Aburrido, fastidiado, cansado, molesto
+ACABAR/SE: Acabarse, consumirse, terminarse, agotarse, finalizarse
+ACALORADO/A: Acalorado
+ACAMPAR: Acampar
+ACARICIAR: Acariciar, rozar, tocar
+ACEITE: Aceite
+ACELGA: Acelga
+ACEPTAR: Aceptar, aprobar, admitir
+ACERO: Acero
+ACOMPAÑAR: Acompañar, juntarse
+ACOSAR: Acosar, asediar, hostigar
+ACOSO-SEXUAL: Acoso sexual
+ACOSTAR/SE: Acostarse, tenderse
+ACOSTUMBRADO/A: Acostumbrado, habituado, familiarizado, usual
+ACTUAR: Actuar, representar
+ACUARIO (1): Acuario, pecera
+ACUARIO (2): Acuario
+ACUERDO: Estar o ponerse de acuerdo, llegar a un acuerdo, convenio, pacto, tratado, alianza, consenso
+ACUSAR: Acusar, delatar, imputar, incriminar, inculpar, culpar
+ADELGAZAR: Adelgazar, enflaquecer, demacrar, desnutrir
+ADIVINAR: Adivinar, acertar, atinar
+ADOLESCENTE: Adolescente, joven, mozo, lolo, muchacho
+ADOPTAR-NIÑO/A: Adoptar un niño
+ADORNO: Adorno, decorado, ornamento
+ADULTO: Adulto, crecido, mayor, maduro
+AEROPUERTO: Aeropuerto, aeródromo
+AFEITADORA-ELÉCTRICA: Afeitadora eléctrica, máquina de afeitar
+AFILADO/A: Afilado, aguzado, cortante, agudo, puntiagudo
+AFILIACIÓN: Afiliación, asociación, agrupación
+ÁFRICA: África
+AGENDA: Agenda, libreta, cuaderno
+AGOSTO: agosto
+AGREGAR: Agregar, añadir, incorporar, sumar
+AGRIO: Agrio, ácido, avinagrado
+AGRUPAR: Agrupar, reunir, juntar, asociar, congregar
+AGUA: Agua, líquido, fluido
+ÁGUILA: Águila
+AGUJA: Aguja
+AHOGAR: Ahogar, asfixiar
+AHORRAR: Ahorrar, guardar, economizar, reservar
+AHUMADA: Ahumada
+AJEDREZ: Ajedrez
+AJÍ: Ají
+AJO: Ajo
+ALAMEDA: Alameda
+ALARMA: Alarma, emergencia, aviso
+ALBÓNDIGA: Albóndiga
+ALCACHOFA: Alcachofa
+ALCANTARILLA: Alcantarilla, desagüe, colector, drenaje, alcantarillado
+ALCOHOL: Alcohol
+ALEGRÍA: Alegría, felicidad, alborozo, júbilo, regocijo
+ALEMANIA: Alemania
+ALFOMBRA: Alfombra, tapiz, tapete
+ALGODÓN: Algodón
+ALGUNO/A: Alguno
+ALMEJA: Almeja
+ALMOHADA: Almohada, cojín, almohadón
+ALMORZAR: Almorzar, comer, alimentar, nutrir
+ALMUERZO: Almuerzo, alimento, comida
+ALPACA: Alpaca
+ALUMINIO: Aluminio
+ALUMNO/A: Alumno, estudiante
+AL-REVÉS: Al revés, lado contrario, reversa
+AMANTE: Amante, querido
+AMAR: Amar, desear, querer
+AMARGADO/A: Amargado, resentido
+AMARGO/A: Amargo
+AMARILLO: Amarillo
+AMASAR: Amasar, sobar
+AMBULANCIA: Ambulancia
+AMENAZAR: Amenazar, desafiar, provocar
+AMÉRICA: América
+AMÉRICA-CENTRAL: América Central, América del Centro, Centroamérica
+AMÉRICA-DEL-NORTE: América del Norte, Norteamérica
+AMÉRICA-DEL-SUR: América del Sur, Sudamérica
+AMIGO/A: Amigo, camarada, compañero
+AMOR: Amor, cariño, pasión, afecto, ternura
+AMPOLLETA: Ampolleta, bombilla
+ANÁLISIS: Análisis
+ANGUSTIADO/A: Angustiado, acongojado, afligido
+ANILLO: Anillo, argolla, aro, sortija
+ANIMAL: Animal, bestia, fiera
+ANOTAR: Anotar, apuntar, registrar, escribir, asentar, consignar
+ANTEAYER: Anteayer
+ANTEOJOS: Anteojos, lentes, gafas
+ANTES: Antes, anteriormente
+ANTIGUO/A: Antiguo, vetusto, prehistórico, viejo
+ANTOFAGASTA: Antofagasta
+ANULAR: Anular, abolir, revocar, cancelar, suprimir
+AÑO: Año
+APAGAR-LUZ: Apagar, oscurecer
+APARTE: Aparte, separadamente
+APELLIDO: Apellido
+APLAUDIR (1): Aplaudir, palmotear, celebrar
+APLAUDIR (2): Señal de aprobación o entusiasmo, utilizada por la Comunidad
+APODO: Apodo
+APOSTAR: Apostar, jugar, arriesgar
+APOYAR: Apoyar, ayudar
+APRENDER: Aprender, estudiar, educarse
+APROBAR: Aprobar, aceptar
+APROVECHAR: Aprovechar, utilizar, explotar
+APURADO/A: Apurado, apresurado
+ARABIA: Arabia
+ARADO: Arado
+ARAÑA: Araña
+ÁRBITRO: Árbitro, juez, mediador
+ÁRBOL: Árbol
+ARCOIRIS: Arcoiris
+ARDILLA: Ardilla
+ARENA: Arena, polvillo, arenisca
+ARGENTINA: Argentina
+ARICA: Arica
+ARIES: Aries
+ARQUERO: Arquero, portero
+ARQUITECTO: Arquitecto
+ARREGLAR: Arreglar, reparar, componer
+ARRENDAR: Arrendar, rentar
+ARREPENTIRSE: Arrepentirse, lamentarse
+ARROZ: Arroz
+ARTE: Arte
+ASADO: Asado, parrillada
+ASCENSOR: Ascensor, elevador, montacargas
+ASCO: Asco, nausea, repugnancia, repulsión
+ASESINAR: Asesinar, matar, liquidar, eliminar
+ASFIXIA: Asfixia, sofocación, agobio
+ASUSTARSE: Asustarse, atemorizarse, amedrentarse
+ATACAR: Atacar, embestir, asaltar, agredir
+ATAQUE: Ataque al corazón, infarto
+ATAÚD: Ataúd, urna, cajón
+ATENDER: Atender, considerar
+ATENTO/A: Atento, interesado, considerado
+ATERRIZAR: Aterrizar, tomar tierra
+ATRAER: Atraer, embelesar, deslumbrar, seducir, cautivar
+ATRAVESAR: Atravesar, cruzar
+AUDAZ: Audaz, osado, atrevido
+AUDÍFONO: Audífono
+AUDIOMETRÍA: Audiometría
+AUSTRALIA: Australia
+AUTOMÓVIL: Automóvil, auto
+AVAL: Aval, garantía, fianza
+A-VECES: A veces, algunas veces, de vez en cuando
+AVERGONZARSE: Avergonzarse, abochornarse, ruborizarse
+AVIÓN: Avión, avioneta
+AVISAR: Avisar, advertir, anunciar
+AYER: Ayer, el día anterior
+AYUDAR: Ayudar, cooperar, asistir
+AZÚCAR: y f. Azúcar
+AZUL: Azul
+BABERO: Babero, servilleta, pechera
+BACINICA: Bacinica, pelela
+BACTERIA: Bacteria
+BAILAR: Bailar, danzar, bailotear
+BAJAR-DE-PESO: Bajar de peso, adelgazar
+BAJAR-ESCALERA: Bajar escalera, descender
+BALA: Bala, proyectil, munición
+BALANCÍN: Balancín
+BALANZA: Balanza, pesa, romana
+BALCÓN: Balcón
+BALDE: Balde, cubo, cubeta, recipiente
+BALLENA: Ballena
+BALÓN-DE-GAS: Balón de gas, bombona
+BANCO (1): Banco, escaño, asiento
+BANCO (2): Banco
+BANDA-DE-MÚSICA: Banda, conjunto
+BANDEJA: Bandeja
+BANDERA: Bandera, pabellón, estandarte, insignia
+BANQUETE: Banquete, festín, comilona, agasajo
+BAÑARSE: Bañarse
+BAÑO: Baño, retrete, W.C, sanitario, servicio higiénico
+BAR: Bar, cervecería, cantina, taberna, tasca
+BARATO/A: Barato, rebajado, saldo, ganga
+BARBA: Barba
+BARCO: Barco, embarcación, nave, barca, pesquero, yate
+BARNIZAR: Barnizar, esmaltar, pintar
+BARQUILLO: Barquillo, cono
+BARRER: Barrer
+BARRIL: Barril, tonel, cuba, barrica
+BARRIO: Barrio, comuna, distrito, sector
+BARRO: Barro, lodo, fango, sedimento
+BASE: Base, plataforma, apoyo, fundamento, soporte
+BÁSQUETBOL: Básquetbol, baloncesto
+BASTÓN: Bastón, báculo, vara
+BASURA: Basura, inmundicia, suciedad
+BATA: Bata, bata de levantarse
+BATALLA: Batalla, contienda, combate
+BATIDORA: Batidora, mezcladora
+BAUTIZAR: Bautizar, consagrar, sacramentar
+BEATLE: Beatle, polera
+BEBER-DE-BOTELLA: Beber, tomar
+BEBIDA: Bebida, gaseosa, refresco
+BEBIDA-ALCOHÓLICA: Bebida alcohólica, trago, licor
+BECA: Beca, ayuda, subvención, subsidio
+BENCINA: Bencina
+BENDICIÓN-CATÓLICA: Bendición, consagración
+BERENJENA: Berenjena
+BESAR: Besar
+BESO: Beso, ósculo
+BIBLIA: Biblia, libro sagrado
+BIBLIOTECA: Biblioteca
+BICHO: Bicho, bicharraco
+BICICLETA: Bicicleta
+BIEN: Bien, apropiado, aceptable, admisible
+BUENO/A (1): Bueno, bondadoso, generoso, sensible
+BIENVENIDA: Bienvenida, saludo
+BIGOTE: Bigote, mostacho
+BIKINI: Bikini, tanga
+BILINGÜE: Bilingüe
+BILLETE: Billete
+BILLETERA: Billetera
+BINGO: Bingo
+BINOCULAR: Binocular, anteojos de larga vista
+BÍO-BÍO: Bío-bío
+BIOGRAFÍA: Biografía, semblanza, historia
+BIOLOGÍA: Biología
+BISABUELO/A: Bisabuelo
+BISNIETO/A: Bisnieto
+BISTEC: Bistec
+BIZCOCHO: Bizcocho, bizcochuelo
+BLANCO/A: Blanco, albo
+BLANDO/A: Blando, tierno, suave
+BLUSA: Blusa
+BOCHORNO: Bochorno, calor, sofoco
+BOCINA: Bocina, claxon
+BOLETA: Boleta, comprobante, recibo
+BOLETERÍA: Boletería, taquilla, ventanilla
+BOLETO: Boleto
+BOLITA: Bolita, canica, bola
+BOLIVIA: Bolivia
+BOLSILLO: Bolsillo
+BOLSO: Bolso, bolsón, maletín
+BOMBERO: Bombero
+BOMBILLA: Bombilla, pajita, pajilla
+BOMBÓN: Bombón
+BONDAD: Bondad, piedad, compasión, ternura
+BONITO/A: Bonito, bello, hermoso, lindo
+BORDAR: Bordar, coser
+BORRACHO/A: Borracho, ebrio, embriagado, curado, bebido
+BORRADOR: Borrador
+BORROSO/A: Borroso, difuso
+BOSTEZAR: Bostezar
+BOTA: Bota
+BOTA-CON-TACO: Bota
+BOTAR: Botar, tirar, echar, arrojar, lanzar
+BOTE: Bote, barca, barcaza
+BOTELLA: Botella, envase
+BOTIQUÍN: Botiquín
+BOTÓN: Botón
+BOXEO: Boxeo, contienda, combate, pugilismo
+BRASERO: Brasero, calentador, lumbre
+BRASIL: Brasil
+BRILLANTE: Brillante, resplandeciente, lustroso
+BRINDAR: Brindar, hacer salud
+BRISA: Brisa
+BROMA: Broma, jugarreta, chiste, burla
+BRONCE: Bronce
+BRONQUITIS: Bronquitis
+BRUJO/A: Brujo, hechicero, mago, encantador
+BRÚJULA: Brújula
+BRUSCO/A: Brusco, violento, rudo, grosero, bruto, tosco
+BUCEAR: Bucear, sumergirse, hundirse
+BUENAS-TARDES: Buenas tardes
+BUENAS-NOCHES: Buenas noches
+BUENO/A (2): Bueno, bondadoso, generoso, aceptable, adecuado
+BUENOS-AIRES: Buenos Aires
+BUENOS-DÍAS: Buenos días, buen día
+BUEY: Buey, vacuno
+BUFANDA: Bufanda, pañuelo
+BÚHO: búho, lechuza
+BURBUJA: Burbuja, pompa
+BURLAR/SE: Burlarse, mofarse, embromar
+BURRO: Burro, borrico, asno
+BUS: Bus, autobús, microbús
+BUSCAR: Buscar, indagar
+BUZO: Buzo
+BUZÓN: Buzón, casilla, casillero
+CABALLO: Caballo, equino
+CABRA: Cabra
+CACA: Caca, deposición, excremento, estiércol, heces
+CAER-LIBRO: Caerse
+CAER-PERSONA: Caerse, precipitarse, desplomarse
+CAFÉ (1): Café, marrón
+CAFÉ (2): Café
+CAJA: Caja, cofre, baúl
+CAJERO/A: Cajero, tesorero
+CALAMA: Calama
+CALCETÍN: Calcetín, calceta, media
+CALCULADORA: Calculadora, computadora
+CALCULAR: Calcular, computar
+CÁLEFON: Cálefon
+CALENDARIO: Calendario, anuario, agenda
+CALIENTE: Caliente, caluroso, ardiente, candente, cálido
+CALLAMPA: Callampa, hongo, seta
+CALLAR/SE: Callar, silenciar, enmudecer
+CALLE: Calle, vía, arteria, calzada, avenida
+CALMADO/A: Calmado, tranquilo, quieto
+CALOR: Calor, calentura
+CALZÓN: Calzón, bragas, bombacha
+CAMA: Cama, lecho, catre, hamaca, litera, diván
+CÁMARA-DE-VIDEO: Cámara de video
+CÁMARA-FOTOGRÁFICA: Cámara fotográfica, máquina fotográfica, máquina fotográfica digital
+CAMARÓN: Camarón
+CAMBIAR: Cambiar, mudar, variar, alterar
+CAMELLO: Camello
+CAMILLA: Camilla
+CAMINAR: Caminar, andar, marchar, transitar
+CAMINO: Camino, vía, ruta, calle
+CAMIÓN: Camión
+CAMISA: Camisa
+CAMPO: Campo, sembrado, prado, granja, pradera, fundo
+CANADÁ: Canadá
+CANARIO: Canario
+CÁNCER: Cáncer
+CANCHA: Cancha, campo, pista
+CANDADO: Candado, cerradura, cerrojo
+CANELA: Canela
+CANSADO/A: Cansado, fatigado, agotado, extenuado
+CANTAR: Cantar, entonar, tararear
+CAÑA-DE-PESCAR: Caña de pescar
+CAPITAL: Capital
+CAPITÁN: Capitán
+CAPRICORNIO: Capricornio
+CARABINERO: Carabinero, policía
+CARACOL: Caracol
+CARBÓN: Carbón, carboncillo, tizón
+CARBONADA: Carbonada
+CARIÑOSO/A: Cariñoso, afectuoso, amoroso, tierno, cordial
+CARNE: Carne
+CARNICERÍA: Carnicería
+CARPETA: Carpeta, archivador
+CARPINTERO: Carpintero, tornero, ebanista
+CARTA: Carta, misiva, epístola, correspondencia
+CARTERA: Cartera, bolso
+CARTÓN: Cartón, cartulina
+CASA: Casa, vivienda, morada, hogar, habitación
+CASARSE: Casarse, desposarse, vincularse, enlazarse
+CASTAÑA: Castaña
+CASTELLANO: Castellano, español
+CASTIGAR: Castigar, condenar, sentenciar, sancionar, disciplinar
+CASTILLO: Castillo, fortaleza
+CASTOR: Castor
+CATÓLICO/A: Católico, cristiano, creyente, apostólico
+CAUQUENES: Cauquenes
+CAZAR: Cazar
+CAZUELA: Cazuela
+CEBOLLA: Cebolla
+CELEBRAR: Celebrar, conmemorar
+CELESTE: Celeste
+CELOS: Celos, desconfianza, recelo, inquietud
+CEMENTERIO: Cementerio, camposanto
+CENICERO: Cenicero
+CENSURA: Censura, reparo, reproche, reprobación
+CENTRO: Centro
+CEPILLARSE-DIENTES: Cepillarse los dientes, lavarse o escobillarse los dientes
+CEPILLARSE-PELO: Cepillarse el pelo
+CERA: Cera, esperma, betún
+CERCA: Cerca, vecino, cercano
+CEREBRO: Cerebro, masa encefálica
+CEREZA: Cereza, guinda
+CERO: Cero, nulo
+CERTIFICADO: Certificado, documento, diploma
+CERVEZA: Cerveza, shop
+CESANTE: Cesante, inactivo, desocupado
+CICLO: Ciclo, periodo, tiempo, lapso, época, fase, etapa, curso
+CIEGO: Ciego, invidente, no vidente
+CIELO: Cielo
+CIENCIA: Ciencias, ciencias naturales, ciencias sociales
+CIERVO: Ciervo
+CIGÜEÑA: Cigüeña
+CINE: Cine, cinematógrafo
+CINTA-ADHESIVA: Cinta adhesiva, scotch, tela plástica, tela adhesiva, cinta de embalaje
+CINTILLO: Cintillo
+CINTURÓN: Cinturón, correa, cinto
+CIRCO: Circo
+CIRUELA: Ciruela
+CIRUJANO: Cirujano
+CIUDAD: Ciudad, urbe
+CLARO/A: Claro, luminoso
+CLASE: Clase, lección, curso, Materia, asignatura, ramo
+CLAVO: Clavo, tachuela
+CLOSET: Closet, ropero, guardarropa
+COBRAR: Cobrar, recaudar, recolectar
+COBRE: Cobre
+COCHE-DE-GUAGUA: Coche, coche de guagua
+COCINA (1): Cocina
+COCINA (2): Cocina
+COCINAR: Cocinar, guisar
+COCODRILO: Cocodrilo, yacaré, caimán
+CODICIOSO/A: Codicioso, ambicioso
+CODORNIZ: Codorniz
+COJÍN: Cojín, almohadón
+COLA: Cola, rabo
+COLA-FRÍA: Cola fría, pegamento
+COLADOR: Colador
+COLCHÓN: Colchón
+COLEGIO: Colegio, escuela, instituto, liceo
+COLGADO/A: Colgado, distraído
+COLLAR: Collar, gargantilla
+COLOMBIA: Colombia
+COLONIA: Colonia, agua de colonia, perfume
+COLOR: Color, colorido, matiz, tinte, tono
+COLUMNA-VERTEBRAL: Columna vertebral, espina dorsal
+COLUMPIO: Columpio
+COMA: Coma
+COMADRE: Comadre
+COMBATIR: Combatir, pelear, lidiar, luchar, batallar
+COMEDOR: Comedor
+COMENTARIO: Comentario, opinión, argumento
+COMER: Comer, tragar, tomar alimento
+CÓMICO/A: Cómico, divertido, gracioso
+COMIDA: Comida, alimento, nutriente
+COMISIÓN (1): Comisión, grupo
+COMISIÓN (2): Comisión, asignación
+CÓMO (1): ¿Cómo?
+CÓMO (2): ¡Cómo!
+COMO (3): Como
+CÓMODA: Cómoda, cajonera
+CÓMO-ESTÁS: ¿Cómo está? ¿Cómo estás?
+COMPADRE: Compadre
+COMPAÑERO/A: Compañero, camarada, colega, Acompañante, compañía
+COMPARAR: Comparar, cotejar, contrastar, confrontar
+COMPARTIR (1): Compartir, repartir, distribuir
+COMPARTIR (2): Compartir, repartir, distribuir
+COMPETENCIA: Competencia, contienda
+COMPRAR: Comprar, adquirir, obtener
+COMPRENDER: Comprender, entender, captar una idea
+COMPROBAR: Comprobar, confirmar, verificar
+COMPROMISO: Compromiso, obligación, deber
+COMPUTADOR: Computador, ordenador
+COMULGAR: Comulgar
+COMUNA: Comuna
+CONCEJAL: Concejal, edil, regidor
+CONCEPCIÓN: Concepción
+CONCHA: Concha, caparazón, caracol, caracola
+CONDIMENTO: Condimento, aliño, especia
+CÓNDOR: Cóndor
+CONEJO: Conejo, liebre
+CONFESAR: Confesar, declarar, revelar, manifestar
+CONFIANZA: Confianza, lealtad, fe
+CONFUNDIDO/A: Confundido
+CONFUSIÓN: Confusión, desorden
+CONGRESO (1): Congreso
+CONGRESO (2): Congreso, parlamento, senaduría
+CONOCER: Conocer, entender, saber, advertir
+CONSOLAR: Consolar
+CONSTRUIR: Construir, edificar, erigir
+CONTABILIDAD: Contabilidad
+CONTADOR/A: Contador
+CONTAGIAR: Contagiar, infectar
+CONTAR: Contar, enumerar
+CONTENTO/A: Contento, alegre, optimista, feliz, dichoso
+CONTROL: Control, vigilancia, dominio
+CONVERSAR: Conversar, charlar, dialogar
+COOPERAR: Cooperar, colaborar
+COPA: Copa
+COPIAPÓ: Copiapó
+COPIAR: Copiar, calcar, duplicar, repetir, imitar
+COPIHUE: Copihue
+COPUCHAR: Copuchar, cahuinear, fisgonear
+COQUETO/A: Coqueto
+COQUIMBO: Coquimbo
+CORAZÓN: Corazón
+CORBATA: Corbata
+CORCHETERA: Corchetera
+CORDERO: Cordero, borrego
+CORONA: Corona
+CORRECTO/A: Correcto, acertado, exacto
+CORREGIR: Corregir
+CORREO: Correo, servicio postal
+CORREO-ELECTRÓNICO: Correo electrónico, e-mail
+CORRER: Correr, acelerar, trotar
+CORTAR-CON-CUCHILLO: Cortar con cuchillo, rebanar, sajar
+CORTAR-CON-TIJERAS: Cortar con tijeras, recortar, trozar, fragmentar
+CORTAÚÑAS: Cortaúñas
+CORTINA: Cortina, cortinaje
+COSER: Coser, hilvanar, remendar, zurcir
+COTONA: Cotona
+COYHAIQUE: Coyhaique
+CRECER-EMPRESA: Crecer una empresa
+CRECER-PERSONA: Crecer, desarrollarse, elevarse, formarse
+CRÉDITO: Crédito, préstamo
+CREER: Creer, pensar, parecerle
+CREMA (1): Crema, cosmético, pomada, unto
+CREMA (2): Crema, nata
+CRITICAR: Criticar, vituperar
+CUADERNO: Cuaderno
+CUADERNO-DE-COMPOSICIÓN: Cuaderno de composición, cuaderno de castellano, cuaderno de líneas
+CUADRO: Cuadro, pintura, óleo, afiche, poster
+CUÁL: Cuál, cuáles
+CUÁNDO: Cuándo, en qué momento
+CUÁNTO/S: Cuánto, cuántos, qué cantidad
+CUBRECAMA: Cubrecama, cobertor, colcha
+CUCHARA: Cuchara
+CUCHARÓN: Cucharón
+CUCHILLO: Cuchillo, navaja
+CUECA: Cueca
+CUENTO: Cuento, historia, historieta, relato, narración
+CUERO: Cuero, piel
+CUIDAR: Cuidar, velar, vigilar, proteger, asistir
+CULEBRA: Culebra, serpiente, víbora, reptil
+CULPA: Culpa
+CULPABLE: Culpable
+CULTURA: Cultura, conocimiento, saber
+CUMPLEAÑOS: Cumpleaños, aniversario, celebración, fiesta
+CUMPLIR: Cumplir, efectuar, desempeñar
+CUNA: Cuna, moisés, camita
+CUÑADO/A: Cuñado o cuñada
+CURA: Cura, sacerdote católico, clérigo
+CURICÓ: Curicó
+CURIOSO/A: Curioso, busquilla, fisgón, copuchento
+DACTILOLÓGICO: Dactilológico
+DADO: Dado, cubo
+DAMAS: Damas
+DAMASCO: Damasco
+DANZA: Danza, baile
+DAR: Dar, entregar, proporcionar, ceder
+DEBAJO: Debajo, abajo, bajo
+DÉBIL: Débil, frágil, enclenque
+DECIDIDO/A: Decidido
+DECIDIR: Decidir, resolver, determinar
+DECIR: Decir, manifestar, declarar, asegurar, mencionar
+DEDAL: Dedal
+DEFECAR: Defecar, obrar, evacuar, mover el vientre
+DEFECTO: Defecto, imperfección, falla
+DEFENDER/SE: Defender, resguardar, preservar, amparar. v. intr. Defenderse, resguardarse, ampararse
+DELANTAL-DE-COCINA: Delantal, pechera
+DELFÍN: Delfín
+DELGADO/A: Delgado, fino, enjuto, flaco
+DELINCUENTE: Delincuente, criminal, forajido, infractor
+DELIRAR: Delirar, disparatar, fantasear, alucinar, desvariar
+DEMOCRACIA: Democracia
+DEMORA: Demora, aplazamiento, retardo
+DENTISTA: y f. Dentista, odontólogo
+DENUNCIAR: Denunciar, notificar, acusar, delatar
+DEPARTAMENTO: Departamento
+DEPENDE: Depende, en caso de
+DEPILARSE: Depilar, afeitar, rasurar
+DEPORTE: Deporte, recreación, pasatiempo, ejercicio físico
+DEPOSITAR: Depositar, ahorrar
+DEPRIMIDO/A: Deprimido, decaído, triste, agobiado
+DERECHO: Derecho, facultad, justicia, prerrogativa
+DERMATÓLOGO/A: Dermatólogo
+DERRETIRSE: Derretirse, deshacerse, licuarse, disolverse
+DESAFIAR: Desafiar, retar, provocar
+DESAPARECER: Desaparecer, esfumarse, disiparse
+DESARROLLO: Desarrollo, progreso, auge, aumento, crecimiento
+DESAYUNO: Desayuno
+DESCANSAR: Descansar, reposar, sosegar, aliviar
+DESCUBRIR: Descubrir, hallar, encontrar
+DESEAR: Desear, anhelar, ambicionar, ansiar, apetecer
+DESESPERADO/A: Desesperado, abatido, agobiado
+DESFILE: Desfile, parada, marcha
+DESIERTO: Desierto, yermo, estéril, árido
+DESINFECTANTE: Desinfectante, antiséptico, esterilizante
+DESMAYARSE: Desmayarse, desfallecer
+DESOBEDECER: Desobedecer, transgredir, infringir, quebrantar, incumplir
+DESODORANTE-AMBIENTAL: Desodorante ambiental, aromatizador
+DESODORANTE-CORPORAL: Desodorante
+DESORDEN: Desorden, desarreglo, caos, desorganización
+DESORDENADO/A: Desordenado, desarreglado, confuso
+DESPEDIDA: Despedida, decir adiós
+DESPEDIR-DEL-TRABAJO: Despedir, echar, destituir, exonerar
+DESPERTADOR: Despertador, reloj
+DESPERTAR/SE: Despertar, desvelar
+DESPUÉS: Después, luego, enseguida, seguidamente
+DESTACADO/A: Destacado, resaltado, notorio
+DESTORNILLADOR: Destornillador
+DETECTIVE: Detective, policía
+DEUDA: Deuda, obligación, compromiso
+DÍA: Día
+DÍA-DE: Expresión que se ocupa para designar algún día especial, por
+DIABETES: Diabetes
+DIABLO: Diablo, Satanás, Lucifer
+DIAGNÓSTICO: Diagnóstico
+DIAMANTE: Diamante, gema, joya
+DIARIO: Diario, periódico, publicación
+DIARREA: Diarrea, colitis
+DIBUJAR: Dibujar, delinear, bosquejar
+DICCIONARIO: Diccionario
+DICIEMBRE: Diciembre
+DICTADOR/A: Dictador, totalitario, tirano
+DICTAR: Dictar
+DIETA: Dieta, régimen, privación
+DIFERENTE: Diferente, distinto, diverso, desigual
+DIFÍCIL: Difícil, arduo, dificultoso, complicado
+DIFUNDIR: Difundir, divulgar, publicar, expandir, extender
+DINERO: Dinero, plata, efectivo
+DINOSAURIO: Dinosaurio
+DIOS: Dios, Creador, Padre, Señor, Todopoderoso, Altísimo
+DIPLOMA: Diploma, certificado, título
+DIPLOMÁTICO/A: Diplomático
+DIPUTADO/A: Diputado, congresista, parlamentario
+DIRECTIVA: Directiva, directorio
+DIRECTOR/A: Director, jefe, presidente
+DISCAPACITADO/A: Discapacitado, minusválido
+DISCULPA (1): Disculpa, excusa
+DISCULPA (2): Disculpa, excusa
+DISCUTIR: Discutir, alegar
+DISFRAZAR: Disfrazar
+DISIMULAR: Disimular, ocultar, fingir, encubrir
+DISTRAÍDO/A: Distraído, desatento
+DIVERTIDO/A: Divertido, alegre, cómico, ameno, entretenido, gracioso, animado
+DIVIDIR: Dividir, fraccionar, seccionar
+DIVORCIO: Divorcio, rruptura
+DOCUMENTO: Documento, escrito, registro, expediente
+DÓLAR: Dólar
+DOLOR: Dolor, padecimiento, malestar
+DOLOR-DE-ESTÓMAGO: Dolor de estómago
+DOMICILIO: Domicilio, dirección
+DOMINGO: Domingo
+DÓNDE: Dónde, adónde
+DORADO: Dorado
+DORMIR: Dormir, adormecerse, dormitar, pernoctar
+DORMITORIO: Dormitorio, alcoba, cuarto
+DOS-PUNTOS: Dos puntos
+DUDA: Duda, vacilación, indecisión, titubeo, incertidumbre
+DUELO: Duelo, pesar, aflicción, tristeza
+DUENDE: Duende, gnomo
+DUEÑO/A: Dueño, amo, propietario, patrón
+DULCE: Dulce
+DURAZNO: Durazno
+DURO/A: Duro, firme, consistente, sólido, pétreo
+EBRIO/A: Ebrio, curado, borracho
+ECHAR-BENCINA: Echar bencina
+ECHAR-DE-MENOS: Echar de menos
+ECOGRAFÍA: Ecografía
+ECONOMÍA: Economía
+ECUADOR (1): Ecuador, línea del Ecuador
+ECUADOR (2): Ecuador
+EDAD: Edad, años, tiempo
+EDIFICIO: Edificio, inmueble, vivienda, torre
+EDUCACIÓN: Educación, enseñanza, instrucción, formación
+EDUCACIÓN-DIFERENCIAL: Educación Diferencial, Educación Especial
+EDUCADO/A: Educado, correcto
+EFECTIVO: Efectivo, dinero
+EGIPTO: Egipto
+EGOÍSTA: Egoísta, individualista, personalista
+EJEMPLO: Ejemplo
+EJERCICIO: Ejercicio, entrenamiento, adiestramiento
+ELÁSTICO: Elástico
+ELECTRICIDAD: Electricidad, corriente eléctrica
+ELEFANTE: Elefante
+ELEGANTE: Elegante, distinguido, refinado, fino
+ELEGIR: Elegir, escoger, optar, preferir
+EMBAJADA: Embajada, consulado
+EMBARAZO: Embarazo, preñez, gestación, maternidad
+EMOCIÓN: Emoción
+EMPANADA: Empanada
+EMPATE: Empate
+EMPEZAR: Empezar, iniciar, comenzar, principiar
+EMPLEADO/A: y f. Empleada, mozo, asesora del hogar
+EMPRESA: Empresa, sociedad, firma, industria
+ENAMORADO/A: Enamorado, conquistado, flechado
+ENAMORADOS: Enamorados, prendados
+ENANO/A: y f. Enano, pequeño, diminuto
+ENCARGAR: Encargar, confiar, delegar
+ENCHUFE: Enchufe
+ENCICLOPEDIA: Enciclopedia, manual
+ENCONTRAR: Encontrar, hallar
+ENCONTRARSE: Encontrarse, juntarse
+ENDEMONIADO/A: Endemoniado, endiablado
+ENEMIGO/A: Enemigo
+ENERO: Enero
+ENFERMEDAD: Enfermedad, padecimiento, malestar, dolencia
+ENFERMERO/A: Enfermero, auxiliar, practicante
+ENFERMO/A: Enfermo, doliente, aquejado, afectado
+ENFRIAR: Enfriar, congelar, helar
+ENGORDAR: Engordar, robustecer, engrosar
+ENOJADO/A: Enojado, molesto, irritado, enfadado
+ENSALADA: Ensalada
+ENSEÑANZA-BÁSICA: Enseñanza Básica, Enseñanza General Básica
+ENSEÑANZA-MEDIA: Enseñanza Media, Enseñanza Secundaria
+ENSEÑAR: Enseñar, instruir, educar
+ENTENDER: Entender, comprender
+ENTIERRO: Entierro, inhumación
+ENTRAR: Entrar, ingresar, pasar
+ENTRETENIDO/A: Entretenido, divertido, gracioso, chistoso
+ENTREVISTA: Entrevista, conversación, diálogo
+ENVIDIA: Envidia, codicia, ambición
+ENVOLVER: Envolver, empaquetar, enfundar
+EQUILIBRIO: Equilibrio
+EQUIVOCADO/A: Equivocado, confundido, errado
+ERIZO-DE-MAR: Erizo
+ERROR: Error, equivocación, falta
+ESCALERA: Escalera, escala
+ESCÁNDALO: Escándalo, bullicio, alboroto
+ESCAPAR: Escapar, huir, escabullirse, fugarse
+ESCARABAJO: Escarabajo, bicho
+ESCENARIO: Escenario, tablas
+ESCOBA: Escoba
+ESCOBILLA-DE-ROPA: Escobilla de ropa, cepillo
+ESCONDER: Esconder, ocultar, encubrir
+ESCORPIÓN: Escorpión, alacrán
+ESCRIBIR: Escribir, anotar, redactar
+ESCRITOR/A: Escritor, autor
+ESCUCHAR: Escuchar, oír, atender
+ESCUDO (1): Escudo, insignia
+ESCUDO (2): Escudo
+ESCUELA: Escuela, colegio, establecimiento educacional
+ESCULTURA: Escultura, talla, estatua, busto
+ESFUERZO: Esfuerzo, energía, arrojo, vigor
+ESGRIMA: Esgrima
+ESMERALDA: Esmeralda, gema
+ESPADA: Espada, florete, espadín, sable
+ESPALDA: Espalda, dorso
+ESPAÑA: España
+ESPAÑOL/A: Español, española
+ESPÁRRAGO: Espárrago
+ESPECIAL: Especial, singular, particular
+ESPEJO: Espejo
+ESPERANZA: Esperanza, ilusión, creencia, confianza
+ESPERAR: Esperar, hacer tiempo
+ESPÍA: Espía, agente, soplón, delator
+ESPIAR: Espiar, curiosear, entrometerse, escudriñar
+ESPINA: Espina, púa, astilla
+ESPÍRITU: Espíritu, alma
+ESPONJA: Esponja
+ESPOSO/A: y f. Esposo, cónyuge, compañero, marido, pareja
+ESPUMA: Espuma, efervescencia, pompas, burbujas
+ESQUELETO: Esqueleto, osamenta
+ESQUIAR: Esquiar
+ESQUINA: Esquina
+ESTACIÓN-DEL-AÑO: Estación del año, época
+ESTACIÓN-DEL-METRO: Estación, terminal
+ESTACIONAMIENTO: Estacionamiento
+ESTADIO: Estadio, recinto, coliseo
+ESTADOS-UNIDOS: Estados Unidos
+ESTAMPILLA: Estampilla, sello
+ESTATUA: Estatua, escultura, busto
+ESTÓMAGO: Estómago
+ESTRELLA: Estrella, lucero, sol, astro
+ESTRUCTURA: Estructura, distribución, organización, ordenación
+ESTRUCTURA-ARQUITECTÓNICA: Estructura
+ESTRUCTURA-GRAMATICAL: Estructura gramatical, sintaxis
+ESTUCHE: Estuche
+ESTUDIAR: Estudiar, aprender, instruirse, cultivarse
+ESTUFA: Estufa, calefactor
+ETCÉTERA: Etcétera, etc
+ETERNO/A: Eterno, imperecedero, perenne
+ÉTICA: Ética, moral
+EUROPA: Europa
+EVALUACIÓN: Evaluación, valoración, calificación, nota
+EVANGÉLICO/A: Evangélico
+EVANGELIO: Evangelio, Nuevo Testamento
+EXCAVADORA: Excavadora
+EXCURSIÓN: Excursión, viaje, caminata, paseo
+EXIGENTE: Exigente, estricto, implacable
+EXISTIR: Existir, vivir
+EXPERIMENTO: Experimento, tentativa, ensayo
+EXPERTO/A: Experto, hábil, experimentado
+EXPLICAR: Explicar, definir, aclarar
+EXQUISITO/A: Exquisito, rico, sabroso
+EXTRANJERO/A: Extranjero, foráneo
+FÁBRICA: Fábrica, industria, factoría
+FÁBULA: Fábula
+FÁCIL: Fácil, simple, sencillo
+FACULTAD: Facultad
+FALDA: Falda, pollera
+FALLECER: Fallecer, morir, expirar
+FALSIFICAR: Falsificar, adulterar
+FALSO/A: Falso, adulterado, ficticio
+FALTAR: Faltar, carecer
+FAMA: Fama, renombre
+FAMILIA-EXTENSA: Familia, parientes
+FAMILIA-NUCLEAR: Familia
+FAMOSO/A: Famoso, célebre, ilustre, popular
+FANÁTICO/A: Fanático, apasionado, hincha
+FANTASÍA: Fantasía, sueño, quimera
+FARELLONES: Farellones
+FARMACIA: Farmacia, botica
+FARO: Faro, foco, luz
+FASCINAR: Fascinar, encantar, embelesar, cautivar
+FAVOR: Favor, ayuda
+FAVORITO/A: Favorito, preferido, predilecto
+FE: Fe, creencia
+FEBRERO: Febrero
+FECUNDAR: Fecundar, fertilizar
+FECHA: Fecha, día, data, momento
+FELICIDAD: Felicidad, gozo, júbilo, dicha
+FELICITAR: Felicitar, congratular, elogiar, aprobar
+FELIZ: Feliz, dichoso, afortunado
+FEMENINO/A: Femenino
+FEO/A: Feo, repulsivo, horrible, grosero, mal educado, mala conducta
+FERIA: Feria, exposición, exhibición, mercado
+FERIADO: Feriado, día festivo
+FERROCARRIL: Ferrocarril, tren, convoy
+FESTIVAL: Festival, concierto, gala, espectáculo
+FIAMBRE: Fiambre, embutido, cecina
+FIDELIDAD: Fidelidad, lealtad, sinceridad, acatamiento
+FIDEOS: Fideos, tallarines, corbatitas, cabellos de ángel, caracoles, espaguetis, etc
+FIEBRE: Fiebre, calentura, hipertermia
+FIEL: Fiel, devoto, leal, sincero
+FIERRO: Fierro, hierro
+FIESTA: Fiesta, festividad, celebración, conmemoración
+FILA: Fila, hilera, columna, cola
+FILIPINAS: Filipinas
+FILMAR: Filmar, grabar, reproducir, captar, tomar
+FILOSOFÍA: Filosofía
+FIN: Fin, término, finalización, desenlace
+FINAL: Final, cierre, término, remate
+FIN-DE-SEMANA: Fin de semana
+FINGIR: Fingir, aparentar, simular, disfrazar
+FINLANDIA: Finlandia
+FINO/A: Fino, delicado, puro, elegante
+FIRMA: Firma, rúbrica, autógrafo
+FÍSICA: Física
+FLACO/A: Flaco, delgado, enjuto, endeble
+FLAN: Flan
+FLAUTA: Flauta
+FLECHA: Flecha, saeta, dardo
+FLOJO/A: Flojo, negligente, perezoso
+FLOR: Flor
+FLORERO: Florero
+FLOTAR: Flotar, nadar
+FOCA: Foca
+FONDA: Fonda, ramadas
+FONOAUDIÓLOGO/A: Fonoaudiólogo
+FORTUNA: Fortuna, riqueza, acervo, patrimonio
+FÓSFORO: Fósforo, cerilla
+FOTOCOPIAR: Fotocopiar, copiar
+FOTOGRAFÍA: Fotografía, foto
+FRACASAR: Fracasar, arruinar
+FRACCIÓN: Fracción, división
+FRAGANCIA: Fragancia, perfume, esencia, aroma
+FRÁGIL: Frágil, quebradizo, rompible
+FRAMBUESA: Frambuesa
+FRANCÉS/SA: Francés, franco, galo
+FRANCIA: Francia
+FRASCO: Frasco, recipiente, envase
+FRASE: Frase, locución
+FRAZADA: Frazada, chal, manta
+FREEZER: Freezer, congelador
+FREÍR: Freír
+FRENAR: Frenar, detener, parar, suspender, atajar
+FRESCO/A: Fresco, desvergonzado
+FRÍO: Frío, helado, gélido
+FRONTERA: Frontera, límite, confín, borde, línea
+FRUTA: Fruta
+FRUTILLA: Frutilla, fresa
+FUCSIA: Fucsia
+FUEGO: Fuego, incendio, pira, fogata
+FUENTE (1): Fuente, pileta, surtidor
+FUENTE (2): Fuente, frutera
+FUERZA: Fuerza, vigor, robustez, energía
+FUGA: Fuga, huida, escape
+FUMAR: Fumar
+FUNDAR: Fundar, crear, formar, instituir, originar, constituir
+FUNERAL: Funeral, exequias, sepelio, entierro
+FURGÓN: Furgón, vehículo, camioneta
+FURIA: Furia, irritación, cólera, rabia
+FÚTBOL: Fútbol
+FUTURO: Futuro, venidero, próximo
+GACELA: Gacela, antílope, venado, ciervo
+GAFAS: Gafas, lentes, anteojos
+GAITA: Gaita
+GALAXIA: Galaxia, vía láctea
+GALLETA: Galleta, masitas
+GALLINA: Gallina
+GALLO: Gallo
+GALOPE: Galope, carrera, corrida
+GALVANO: Galvano
+GANAR: Ganar, vencer, dominar, superar, aventajar, triunfar
+GANAR-DINERO: Ganar dinero, adquirir, embolsar, recibir, ingresar, percibir
+GANCHO: Gancho, garfio, ancla, ganzúa
+GANSO: Ganso, ánsar, oca
+GARABATO: Garabato, grosería, palabrota, insolencia, descortesía, ofensa
+GARANTÍA: Garantía, fianza, aval
+GARBANZO: Garbanzo
+GARGANTA: Garganta, cuello, faringe, laringe
+GARRAFA: Garrafa
+GARRAPATA: Garrapata
+GAS-DE-CAÑERÍA: Gas, gas natural
+GASA: Gasa, compresa
+GASOLINA: Gasolina, bencina
+GASTAR-DINERO: Gastar, dilapidar
+GASTO: Gasto, pago, desembolso, liquidación, inversión, abono
+GASTAR-ROPA: Gastar la ropa, raer, ajar
+GASTAR-ZAPATO: Gastar los zapatos
+GATA: Gata
+GATO/A: y f. Gato, minino
+GAVIOTA: Gaviota
+GELATINA: Gelatina, jalea
+GEMELOS/AS: Gemelos, mellizos
+GÉMINIS: Géminis
+GENERAL: General, común, frecuente, usual
+GÉNERO: Género, tela, textil, paño
+GENEROSO/A: Generoso, dadivoso
+GENÉTICO/A: Genético, hereditario, heredado, innato
+GENIO: Genio, sabio
+GENTE: Gente, personas
+GEOGRAFÍA: Geografía
+GEOMETRÍA: Geometría
+GERENTE: Gerente
+GESTO: Gesto, ademán, mueca, seña
+GIGANTE: Gigante
+GIMNASIA: Gimnasia, ejercicio, práctica, entrenamiento, deporte
+GIMNASIO: Gimnasio, centro deportivo
+GINECÓLOGO/A: Ginecólogo
+GIRASOL: Girasol, maravilla
+GITANO/A: Gitano
+GLADIOLO: Gladiolo
+GLOBO: Globo
+GOBIERNO: Gobierno, presidencia, mando
+GOL: Gol
+GOLF: Golf
+GOLFO: Golfo, bahía
+GOLONDRINA: Golondrina
+GOLOSO/A: Goloso, glotón, comilón, voraz
+GOLPE: Golpe, combo, empellón
+GOLPEAR-PUERTA: Golpear la puerta, tocar la puerta, llamar a la puerta
+GOMA-DE-BORRAR: Goma de borrar
+GOMA-DE-PEGAR: Goma de pegar, cola fría
+GORDO/A: Gordo, obeso, corpulento, rechoncho
+GORILA: Gorila, mono
+GORRO: Gorro, tocado
+GORRO-DE-FIESTA: Gorro de fiesta, Gorro de cumpleaños
+GOTA: Gota
+GOZAR: Gozar, disfrutar
+GRABAR-AUDIO: Grabar casete, grabar audio, registrar sonido
+GRABAR-EN-: Grabar en cd
+GRABAR-EN-SUPERFICIE: Grabar, tallar, esculpir
+GRABAR-VIDEO: Grabar, filmar
+GRACIAS (1): Gracias, agradecimiento, reconocimiento, gratitud
+GRACIAS (2): Gracias, agradecimiento, reconocimiento, gratitud
+GRACIOSO/A: Gracioso, divertido, chistoso, ingenioso, bromista
+GRADO: Grado
+GRADUACIÓN: Graduación
+GRÁFICO: Gráfico
+GRAMÁTICA: Gramática
+GRAMO: Gramo
+GRANIZO: Granizo
+GRANJA: Granja, estancia, quinta, huerta
+GRANJERO/A: y f. Granjero, campesino, agricultor
+GRANO: Grano, semilla
+GRASA: Grasa, sebo, manteca
+GRATIS: Gratis, gratuito, sin cargo
+GRAVE: Grave, delicado, enfermo, doliente, moribundo
+GRECIA: Grecia
+GREDA: Greda, arcilla
+GRIFO: Grifo
+GRILLO: Grillo
+GRIPE: Gripe, resfrío, catarro
+GRIS: Gris, plomo
+GRITAR: Gritar, vociferar
+GRÚA: Grúa, elevador
+GRUESO/A: Grueso, abultado
+GRUPO: Grupo, conjunto, agrupación, conglomerado
+GUAGUA: Guagua, bebe
+GUANACO: Guanaco
+GUANTE: Guante, mitón
+GUARDAR: Guardar, atesorar, almacenar, ahorrar
+GUARDIA: Guardia, vigilante, celador
+GUATEMALA: Guatemala
+GUERRA: Guerra, batalla, lucha, combate
+GUÍA: Guía, orientador
+GUINDA: Guinda
+GUITARRA: Guitarra
+GUSANO: Gusano, oruga, cuncuna
+GUSTAR: Gustar, placer, complacer
+HABA: Haba
+HABILIDAD: Habilidad, capacidad, destreza, pericia
+HABITACIÓN: Habitación, cuarto, aposento, sala
+HÁBITO: Hábito, costumbre, usanza, moda, rutina
+HABLAR: Hablar, parlotear, conversar
+HACE-MUCHO-TIEMPO: Hace mucho tiempo
+HACER: Hacer, crear, efectuar, realizar, materializar
+HACHA: Hacha, azuela
+HALCÓN: Halcón
+HALLULLA: Hallulla
+HAMACA: Hamaca, mecedora
+HAMBRE: Hambre, apetito
+HÁMSTER: Hámster, ratón
+HARINA: Harina
+HASTA: Hasta
+HEBILLA: Hebilla
+HECHIZO: Hechizo, magia, brujería, encanto
+HEDIONDO/A: Hediondo, fétido, apestoso, nauseabundo
+HELADO: Helado
+HÉLICE: Hélice, aspa
+HELICÓPTERO: Helicóptero
+HERENCIA: Herencia, legado, sucesión
+HERIDA: Herida, desgarramiento, lesión, llaga
+HERMANASTRO/A: y f. Hermanastro, medio hermano
+HERMANO/A: y f. Hermano
+HERMOSO/A: Hermoso, bello, lindo, precioso
+HÉROE: Héroe, triunfador, victorioso
+HERRADURA: Herradura
+HERVIDOR: Hervidor, tetera eléctrica
+HERVIR: Hervir, bullir, burbujear
+HIELO: Hielo, agua congelada, escarcha
+HÍGADO: Hígado, pana
+HIGO: Higo
+HIJASTRO/A: y f. Hijastro
+HIJO/A: y f. Hijo
+HILO: Hilo, hebra, filamento
+HIMNO: Himno, canción, alabanza, canto
+HINCARSE: Hincarse, arrodillarse, postrarse
+HINCHA: Hincha, partidario, fanático, seguidor
+HINCHADO/A: Hinchado, abultado, inflado
+HIPNOTIZAR: Hipnotizar, sugestionar
+HIPO: Hipo
+HIPOACÚSICO/A: Hipoacúsico
+HIPÓCRITA: Hipócrita, farsante, simulador
+HIPOPÓTAMO: Hipopótamo
+HISTORIA: Historia, relato, narración
+HOGAR: Hogar, casa, domicilio, morada
+HOJA-DE-ARBOL: Hoja de árbol
+HOJA-DE-PAPEL: Hoja de papel
+HOLA: Hola
+HOLANDA: Holanda
+HOMBRE: Hombre, varón
+HOMENAJE: Homenaje
+HONGO: Hongo, seta, champiñón
+HONOR: Honor, honra, reputación
+HORA: Hora
+HORARIO: Horario, cronograma
+HORMIGA: Hormiga
+HORNO: Horno
+HORNO-DE-MICROONDAS: Horno de microondas
+HORÓSCOPO: Horóscopo, oráculo
+HOSPITAL: Hospital, clínica, sanatorio
+HOTEL: Hotel, hospedería, hostal
+HOY: Hoy
+HUASO/A: y f. Huaso
+HUELGA: Huelga, paro
+HUEMUL: Huemul
+HUÉRFANO/A: Huérfano
+HUESILLO: Huesillo
+HUESO: Hueso
+HUEVO: Huevo
+HUINCHA: Huincha, cinta
+HUIR: Huir, arrancar, escabullirse, escapar, evadirse
+HUMANO/A: Humano
+HÚMEDO: Húmedo, empapado, mojado, rociado
+HUMILDE: Humilde, modesto, sumiso
+HUMILLAR: Humillar, doblegar, oprimir
+HUMO: Humo
+HUNGRÍA: Hungría
+HURACÁN: Huracán, tifón, tornado, torbellino
