@@ -17,6 +17,16 @@ Las entradas nuevas van **arriba**. Formato:
 - Decidí (Rafael): **la demo se enfoca solo en la persona sorda llamando a urgencias de la clínica para pedir una ambulancia**. La llamada entrante queda guardada (`IncomingCall` sigue en `packages/ui`) pero fuera del flujo.
 - Hice: inicio con un solo botón grande "Pedir una ambulancia". Pantalla de llamada que cabe entera sin bajar: arriba quién, estado y Colgar; el avatar siempre visible con lo último que dijeron encima; el chat baja solo; abajo, fijas, las respuestas rápidas y la caja para escribir. Las respuestas rápidas usan `ejecutivo_dice.opciones` cuando vienen (si no, Sí/No/Repita/Más lento). Quité las glosas bajo el avatar. Simulador con guion de urgencia (emergencia, dirección, si respira, ambulancia en 10 min, instrucciones); "Repita, por favor" repite la última frase. Mergeé `dev` (v2 de Raimundo).
 - Falta: mostrar `TEXTO:` en grande cuando llegue el reproductor real (D5). Pedir a B un escenario `urgencia` (vocabulario y frases); hoy el agente está armado para hora médica.
+## 2026-11-21 — Raimundo / Claude (v1/swagger-api)
+- Hice: Swagger de la API solo para desarrollo: http://localhost:8000/docs (ReDoc en `/redoc`). Endpoints con tags, resúmenes, modelos de respuesta (`/glosses`, `/health`), ejemplos y errores 403/422/501/503 documentados.
+- Decidí: `API_ENV=development|production` (defecto development) y `API_DOCS=1|0` para forzar. **El Dockerfile de la API fija `API_ENV=production`**, así el despliegue no expone el mapa de la API aunque nadie lo configure.
+- Verificado: `pytest` api (10), incluidos tests de Swagger encendido y apagado.
+
+## 2026-11-21 — Raimundo / Claude (v2/revision-clean-code)
+- Hice: revisión de alertas (GitHub, `pnpm audit`, `pip-audit`, ruff, pytest) y de clean code de todo el repo. Informe con pendientes **por dueño** en `docs/REVISION-CODIGO.md`. Arreglé lo de v2: límites del contrato en `packages/glosses/data/contrato.json` (fuente única web + agente), `fingerspell`/`isLiteralGloss` TS alineados con Python, recorte de textos al contrato, respaldo cuando falla Claude en el turno del cliente, `.env` local respetado, `.env.example` sin duplicadas.
+- Decidí: no tocar carpetas de otros; los hallazgos quedan en el informe.
+- Verificado: `pytest` agent (45), `pnpm typecheck`, `pnpm build`, ruff limpio en `services/agent`.
+- Falta / bloqueado: con el PR #7 ya mergeado, a **D** le quedan 2 pendientes altos: `play()` del reproductor se puede colgar y falta el listener de `Disconnected`. Ver el informe.
 
 ## 2026-11-21 — Rafael / Claude (v4-avatar) · llamada entrante primero
 - Decidí (Rafael): **la versión 1 es la llamada entrante**. La clínica llama a la persona sorda, ve la pantalla de llamada y contesta deslizando a la izquierda; ahí se abre la app con el texto y el avatar. **La versión 2 es la saliente** (la persona llama a la clínica). Por ahora solo salud (clínica, CESFAM, Fonasa).

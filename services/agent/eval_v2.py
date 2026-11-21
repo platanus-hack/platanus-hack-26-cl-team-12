@@ -94,10 +94,8 @@ def informe(filas: list[dict], resumen: dict, modelo: str) -> str:
 def main() -> None:
     import anthropic
     from dotenv import load_dotenv
-
     from store import abrir_store
     from translator import Translator, load_escenario, load_glossary
-    from translator.translate import MODEL
 
     load_dotenv()
     load_dotenv(REPO_ROOT / ".env")
@@ -110,7 +108,7 @@ def main() -> None:
     store = None if args.sin_cache else abrir_store()
     t = Translator(anthropic.Anthropic(), load_glossary(), load_escenario(), store=store)
     filas, resumen = evaluar(t, json.loads(Path(args.casos).read_text(encoding="utf-8")))
-    Path(args.salida).write_text(informe(filas, resumen, MODEL), encoding="utf-8")
+    Path(args.salida).write_text(informe(filas, resumen, t.model), encoding="utf-8")
     print(f"{resumen} → {args.salida}")
     if store:
         print(f"caché precalentada con {precalentar(t)} frases frecuentes")

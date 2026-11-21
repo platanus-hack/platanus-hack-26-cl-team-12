@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS turnos (
   direccion     TEXT NOT NULL CHECK (direccion IN ('ejecutivo_a_cliente', 'cliente_a_ejecutivo')),
   llm_simple_ms INTEGER,
   llm_glosas_ms INTEGER,
-  llm_voz_ms    INTEGER,
+  llm_cliente_ms    INTEGER,
   total_ms      INTEGER,
   cache_hit     INTEGER,
   n_glosas      INTEGER,

@@ -1,0 +1,19 @@
+{
+  "_comment": "Límites y formatos del contrato de mensajes (docs/contrato.md). Fuente única: la leen packages/glosses/src/contract.ts (web) y services/agent/translator/glossary.py (agente). Cambiar aquí, no en el código.",
+  "max_texto": 500,
+  "max_glosas": 30,
+  "max_glosa_chars": 60,
+  "max_glosas_chars": 400,
+  "max_opciones": 4,
+  "max_opcion_chars": 40,
+  "deletreo": {
+    "prefijo": "DACTILOLOGÍA:",
+    "max_letras": 20,
+    "letras": "A-ZÁÉÍÓÚÜÑ"
+  },
+  "literal": {
+    "prefijo": "TEXTO:",
+    "max_chars": 24,
+    "caracteres": "0-9A-Za-zÁÉÍÓÚÜÑáéíóúüñ$:.,/ -"
+  }
+}

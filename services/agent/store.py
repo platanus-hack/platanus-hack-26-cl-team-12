@@ -27,8 +27,8 @@ from translator.cache_key import normalizar_entrada
 
 SCHEMA = Path(__file__).parent / "db/schema.sql"
 DEFAULT_PATH = Path(__file__).parent / ".data/puente.db"
-CACHE_TTL_S = int(os.getenv("AGENT_CACHE_TTL_S", str(24 * 3600)))
-FALTANTES_TTL_S = int(os.getenv("AGENT_FALTANTES_TTL_S", str(7 * 24 * 3600)))
+CACHE_TTL_DEFECTO_S = 24 * 3600
+FALTANTES_TTL_DEFECTO_S = 7 * 24 * 3600
 _DIGITO = re.compile(r"\d")
 _FORMA_GLOSA = re.compile(r"[A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜ0-9-]{0,29}")
 
@@ -62,6 +62,9 @@ class Store:
         self._db = sqlite3.connect(path, check_same_thread=False, isolation_level=None)
         self._lock = threading.Lock()
         self._db.executescript(SCHEMA.read_text(encoding="utf-8"))
+        # Se leen aquí (no al importar) para respetar el .env que agent.py carga al iniciar.
+        self.cache_ttl_s = int(os.getenv("AGENT_CACHE_TTL_S") or CACHE_TTL_DEFECTO_S)
+        self.faltantes_ttl_s = int(os.getenv("AGENT_FALTANTES_TTL_S") or FALTANTES_TTL_DEFECTO_S)
 
     # ── caché de traducciones ──────────────────────────────────────────────
     def cache_get(self, tarea: str, version: str, entrada: str) -> dict | None:
@@ -71,7 +74,7 @@ class Store:
         with self._lock:
             fila = self._db.execute(
                 "SELECT salida FROM traducciones_cache WHERE clave = ? AND creado_en > ?",
-                (clave, time.time() - CACHE_TTL_S),
+                (clave, time.time() - self.cache_ttl_s),
             ).fetchone()
             if fila:
                 self._db.execute("UPDATE traducciones_cache SET usos = usos + 1 WHERE clave = ?", (clave,))
@@ -88,12 +91,12 @@ class Store:
                 "ON CONFLICT(clave) DO UPDATE SET salida = excluded.salida, creado_en = excluded.creado_en",
                 (clave, tarea, version, json.dumps(salida, ensure_ascii=False), time.time()),
             )
-            self._db.execute("DELETE FROM traducciones_cache WHERE creado_en <= ?", (time.time() - CACHE_TTL_S,))
+            self._db.execute("DELETE FROM traducciones_cache WHERE creado_en <= ?", (time.time() - self.cache_ttl_s,))
 
     # ── métricas por turno (B6) ────────────────────────────────────────────
     def registrar_turno(self, sala: str, direccion: str, **ms) -> None:
         """direccion: 'ejecutivo_a_cliente' | 'cliente_a_ejecutivo'. ms: llm_simple_ms, llm_glosas_ms, total_ms, etc."""
-        cols = ("llm_simple_ms", "llm_glosas_ms", "llm_voz_ms", "total_ms", "cache_hit", "n_glosas", "n_descartadas")
+        cols = ("llm_simple_ms", "llm_glosas_ms", "llm_cliente_ms", "total_ms", "cache_hit", "n_glosas", "n_descartadas")
         valores = [ms.get(c) for c in cols]
         with self._lock:
             self._db.execute(
@@ -122,7 +125,7 @@ class Store:
                 "ON CONFLICT(glosa) DO UPDATE SET veces = veces + 1, ultima_vez = excluded.ultima_vez",
                 [(g, time.time()) for g in validas],
             )
-            self._db.execute("DELETE FROM glosas_faltantes WHERE ultima_vez <= ?", (time.time() - FALTANTES_TTL_S,))
+            self._db.execute("DELETE FROM glosas_faltantes WHERE ultima_vez <= ?", (time.time() - self.faltantes_ttl_s,))
 
     def glosas_faltantes(self, limite: int = 20) -> list[tuple[str, int]]:
         with self._lock:
