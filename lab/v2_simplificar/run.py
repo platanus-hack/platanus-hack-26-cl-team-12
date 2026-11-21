@@ -19,7 +19,7 @@ def correr(sistema: str, texto: str):
         model=MODELO_LLM, max_tokens=300, system=sistema,
         messages=[{"role": "user", "content": texto}],
     )
-    return r.content[0].text.strip(), time.time() - t0
+    return "".join(b.text for b in r.content if b.type == "text").strip(), time.time() - t0
 
 
 for nombre, sistema in (("ejecutivo", SIMPLIFICAR), ("cliente", COMPLEJIZAR), ("cliente_nuevos", COMPLEJIZAR)):

@@ -65,7 +65,7 @@ async def reescribir(sistema: str, texto: str) -> str:
         model=MODELO_LLM, max_tokens=300, system=sistema,
         messages=[{"role": "user", "content": texto}],
     )
-    return r.content[0].text.strip()
+    return "".join(b.text for b in r.content if b.type == "text").strip()
 
 
 async def desde_ejecutivo(m: dict):
