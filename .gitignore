@@ -104,6 +104,9 @@ tmp/
 .tmp/
 
 # ───────── Herramientas de Claude ─────────
+# worktrees de git: nunca se versionan (cualquier herramienta / ruta)
 .claude/worktrees/
+.worktrees/
+worktrees/
 .claude/settings.local.json
 graphify-out/

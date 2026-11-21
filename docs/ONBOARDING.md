@@ -60,7 +60,7 @@ Por qué: Vercel/Render no pueden conectarse a repos de la organización, solo a
 **Reglas:**
 - **Todos** hacen push solo al repo de la **organización** (`origin` normal). No configuren doble push ni creen repos personales.
 - **Raimundo** es el único que despliega: trae lo de la organización (`git pull`) y hace `git push` a ambos (su `origin` tiene doble push configurado). Así los dos repos quedan iguales.
-- Nunca `git push --force` a `main`. Nunca commitear `.env` ni claves.
+- Nunca `git push --force` a `main` ni a `dev`. Nunca commitear `.env` ni claves.
 
 ## 5. Qué hacer para meterte al git con Tomás (pasos para cada compañero)
 1. Instalar `gh` y loguearte con **tu** cuenta de GitHub: `gh auth login` (GitHub.com → HTTPS → Yes → navegador). Verifica con `gh auth status`.
@@ -68,17 +68,19 @@ Por qué: Vercel/Render no pueden conectarse a repos de la organización, solo a
 3. Clonar: `gh repo clone platanus-hack/platanus-hack-26-cl-team-12` y abrir **esa carpeta raíz** en VSCode.
 4. Crear tu `.env` local desde `.env.example` (pídele las claves a Tomás por un canal privado; nunca por el repo).
 5. **Atajo:** `make setup` y luego `make dev` (todos los comandos con `make help`; `make doctor` revisa las herramientas). A mano: `pnpm install` (JS) y `uv sync` dentro de `services/api` y `services/agent` (Python, crea su `.venv`). Levantar: `pnpm --filter @puente/web dev`, `uv --directory services/api run uvicorn app.main:app --reload` y `uv --directory services/agent run python agent.py dev`. Verificar: `pnpm typecheck && pnpm build` y `uv --directory services/<api|agent> run pytest`.
-6. Crear tu rama de vertical (ver abajo), trabajar, hacer commits pequeños y subir con `git push -u origin <rama>`.
-7. Abrir PR a `main` (`gh pr create`) con descripción corta. Avisar al equipo. Tomás o quien revise lo mergea.
+6. Crear desde `dev` una rama corta con el prefijo de tu vertical, `vN/<tema>` (ver abajo y `PLAN-TRABAJO.md` §2), trabajar, hacer commits pequeños y subir con `git push -u origin <rama>`.
+7. Abrir PR a `dev` (`gh pr create --base dev`) con descripción corta. Avisar al equipo. Tomás o quien revise lo mergea.
 8. Anotar en `docs/BITACORA.md` lo que hiciste (ver formato en ese archivo).
 
 ## 6. Ramas y reparto (una vertical por persona)
-| Rama | Qué | Carpeta |
+| Prefijo | Qué | Carpeta |
 |---|---|---|
-| `v1-telefonia` | Twilio + LiveKit SIP + STT/TTS | `services/agent/telefonia`, `services/api` |
-| `v2-llm` | simplificar / complejizar | `services/agent/translator` |
-| `v3-vision` | MediaPipe + clasificador de señas | `packages/signs`, `ml/training` |
-| `v4-avatar` | avatar/clips + frontend | `packages/avatar`, `apps/web` |
+| `v1/…` (telefonia) | Twilio + LiveKit SIP + STT/TTS | `services/agent/telefonia`, `services/api` |
+| `v2/…` (llm) | simplificar / complejizar | `services/agent/translator` |
+| `v3/…` (vision) | MediaPipe + clasificador de señas | `packages/signs`, `ml/training` |
+| `v4/…` (avatar) | avatar/clips + frontend | `packages/avatar`, `apps/web` |
+
+Una rama por PR hacia `dev`: `v1/llamadas-entrantes`, `docs/<tema>`, `chore/<tema>` o `fix/<tema>`. Nunca `worktree-*`: si Claude la creó así, renómbrala antes del push con `git branch -m v1/<tema>`. Las reglas completas están en `PLAN-TRABAJO.md` §2.
 
 Cada quien toca su carpeta para evitar conflictos. Si necesitas tocar un archivo compartido (`main.py`, `package.json`, `docs/contrato.md`), avisa en la bitácora y haz el cambio en un commit aparte y pequeño.
 

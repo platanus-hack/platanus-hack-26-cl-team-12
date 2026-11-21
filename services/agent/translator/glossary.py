@@ -17,6 +17,12 @@ FINGERSPELL_RE = re.compile(
 )
 _LETTER_RE = re.compile(rf"[{_LETTER}]")
 
+# Datos sin seña (horas, cifras, RUT, nombres) que el reproductor muestra como texto. Solo los emite el agente:
+# `is_known` no los acepta, así el cliente no puede colar texto libre al prompt como si fuera una glosa.
+LITERAL_PREFIX = "TEXTO:"
+LITERAL_MAX_CHARS = 24
+LITERAL_RE = re.compile(rf"{re.escape(LITERAL_PREFIX)}[0-9A-Za-zÁÉÍÓÚÜÑáéíóúüñ$:.,/ -]{{1,{LITERAL_MAX_CHARS}}}")
+
 
 @dataclass(frozen=True)
 class Glossary:
@@ -25,6 +31,19 @@ class Glossary:
 
     def is_known(self, gloss: str) -> bool:
         return gloss in self.entries or FINGERSPELL_RE.fullmatch(gloss) is not None
+
+    def resolve(self, gloss: str) -> str | None:
+        """Forma canónica de una glosa que viene del LLM (mayúsculas, variantes); None si no existe."""
+        g = gloss.strip()
+        if self.is_known(g):
+            return g
+        up = g.upper()
+        if up in self.entries:
+            return up
+        return self._variants().get(up)
+
+    def _variants(self) -> dict[str, str]:
+        return {v: g for g, e in self.entries.items() for v in e.get("variants", [])}
 
     def as_prompt(self) -> str:
         """Lista compacta para el prompt de sistema (va con prompt caching)."""
@@ -41,3 +60,13 @@ def fingerspell(word: str) -> str:
     """Deletreo manual de una palabra; "" si no tiene letras deletreables. Solo letras, máx. 20."""
     letters = [c for c in word.upper() if _LETTER_RE.fullmatch(c)][:FINGERSPELL_MAX_LETTERS]
     return FINGERSPELL_PREFIX + "-".join(letters) if letters else ""
+
+
+def literal(dato: str) -> str:
+    """`TEXTO:<dato>` válido, o "" si el dato está vacío o trae caracteres no permitidos."""
+    out = LITERAL_PREFIX + " ".join(dato.split())[:LITERAL_MAX_CHARS]
+    return out if LITERAL_RE.fullmatch(out) else ""
+
+
+def is_literal(gloss: str) -> bool:
+    return LITERAL_RE.fullmatch(gloss) is not None

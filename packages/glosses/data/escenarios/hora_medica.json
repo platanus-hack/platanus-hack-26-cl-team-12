@@ -1,0 +1,64 @@
+{
+  "id": "hora_medica",
+  "descripcion": "una llamada para reservar una hora médica en un centro de salud o clínica de Chile",
+  "stt_keyterms": [
+    "RUT", "Fonasa", "Isapre", "bono", "box", "consulta", "agendar", "agendada",
+    "médico general", "cédula de identidad", "en ayunas", "exámenes", "anticipación"
+  ],
+  "pronunciacion": {
+    "RUT": "rut",
+    "Buk": "Buc",
+    "BUK": "Buc",
+    "FONASA": "Fonasa",
+    "ISAPRE": "Isapre"
+  },
+  "frases_frecuentes": {
+    "_comment": "Lista blanca de la caché (store.py): solo estas frases se guardan, porque no traen datos personales. Se comparan sin mayúsculas ni puntuación.",
+    "ejecutivo": [
+      "¿En qué puedo ayudarle?",
+      "Buenos días, ¿en qué puedo ayudarle?",
+      "Buenas tardes, ¿en qué puedo ayudarle?",
+      "Un momento, por favor.",
+      "¿Me puede repetir, por favor?",
+      "¿Algo más en lo que pueda ayudarle?",
+      "Perfecto, quedó agendada su hora.",
+      "Para agendar necesito su RUT y fecha de nacimiento, por favor.",
+      "¿Tiene Fonasa o Isapre?",
+      "¿Prefiere en la mañana o en la tarde?",
+      "Lamentablemente no contamos con cupos esta semana, ¿le acomodaría la próxima?",
+      "¿Desea que le enviemos la confirmación por correo electrónico o prefiere un mensaje de texto?",
+      "Que tenga un buen día."
+    ],
+    "cliente": [
+      "Sí", "No", "Gracias", "Bueno", "Ok", "No entiendo", "Repetir por favor", "Esperar un poco",
+      "YO QUERER HORA MÉDICO", "Mañana", "Tarde", "Mensaje de texto", "Correo electrónico"
+    ]
+  },
+  "ejemplos": {
+    "simplificar": [
+      {
+        "entrada": "Tenemos disponibilidad el martes 12 a las 10:30 o el jueves 14 a las 16:00 horas.",
+        "simple": "Hay hora el martes 12 a las 10:30.\nO el jueves 14 a las 16:00.\n¿Cuál prefiere?",
+        "opciones": ["Martes 12, 10:30", "Jueves 14, 16:00"]
+      },
+      {
+        "entrada": "Para agendar necesito su RUT y fecha de nacimiento, por favor.",
+        "simple": "Para pedir la hora necesito:\nSu RUT.\nSu fecha de nacimiento.",
+        "opciones": []
+      }
+    ],
+    "complejizar": [
+      { "entrada": "YO QUERER HORA MÉDICO", "salida": "Quiero pedir una hora con el médico." },
+      { "entrada": "martes 10:30 bueno", "salida": "Sí, el martes a las 10:30 está bien." },
+      { "entrada": "jueves no poder trabajar", "salida": "El jueves no puedo, trabajo." },
+      { "entrada": "yo tener Fonasa cuánto pagar", "salida": "Tengo Fonasa, ¿cuánto tengo que pagar?" },
+      { "entrada": "mensaje texto mejor yo no oír", "salida": "Mejor por mensaje de texto, porque no puedo oír." },
+      { "entrada": "yo no entender repetir por favor", "salida": "No entendí, ¿puede repetir, por favor?" },
+      { "entrada": "yo ser sordo escribir app tú esperar un poco", "salida": "Soy sordo y estoy escribiendo en una aplicación, espere un poquito." }
+    ],
+    "glosas": [
+      { "entrada": "Le tengo hora el jueves a las 10:30 con el doctor Pérez", "glosas": ["JUEVES", "TEXTO:10:30", "HORA", "MÉDICO", "TEXTO:Pérez"] },
+      { "entrada": "¿Puede venir mañana en la tarde?", "glosas": ["MAÑANA", "TARDE", "VENIR", "PODER"] }
+    ]
+  }
+}
