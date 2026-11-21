@@ -29,6 +29,17 @@ class H(SimpleHTTPRequestHandler):
             for e in esc:
                 d = defs.get(e["id"], {}); e["definicion"] = d.get("definicion"); e["clase"] = d.get("clase")
             return self._json(esc)
+        m = re.fullmatch(r"/api/wilor/([A-Z0-9_-]+)", p)
+        if m:
+            f = HERE.parents[2] / "data" / "signs" / "wilor" / f"{m[1]}.wilor.json"
+            return self._json(json.loads(f.read_text())) if f.exists() else self._json({"error": "sin datos WiLoR"}, 404)
+        m = re.fullmatch(r"/video/([A-Z0-9_-]+)\.webm", p)
+        if m:
+            f = HERE.parents[2] / "data" / "signs" / "video" / f"{m[1]}.webm"
+            if f.exists():
+                b = f.read_bytes(); self.send_response(200); self.send_header("Content-Type", "video/webm")
+                self.send_header("Content-Length", str(len(b))); self.end_headers(); return self.wfile.write(b)
+            return self._json({"error": "sin video"}, 404)
         m = re.fullmatch(r"/img/([a-z0-9_-]+)\.png", p)
         if m:
             f = HERE.parents[2] / "data" / "signs" / "img" / f"{m[1]}.png"
