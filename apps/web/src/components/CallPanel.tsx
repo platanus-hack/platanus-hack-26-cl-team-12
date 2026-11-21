@@ -50,8 +50,8 @@ export function CallPanel({ mock }: { mock: boolean }) {
         break;
       case "estado":
         if (msg.valor === "llamada_iniciada") {
-          setState("live");
-          setAlert({ message: "Llamada conectada", tone: "success" });
+          setState("live"); // CallStatus ya muestra "En llamada" + duración; no hace falta otro aviso.
+          setAlert(null);
         } else {
           setState("ended");
           setAlert({ message: "La llamada terminó", tone: "quiet" });
@@ -109,8 +109,6 @@ export function CallPanel({ mock }: { mock: boolean }) {
         <Logo size={40} />
         <CallStatus state={state} seconds={seconds} />
       </header>
-
-      {mock && <p className="mock-tag">Modo prueba: la llamada es simulada.</p>}
 
       <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
 
