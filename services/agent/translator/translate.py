@@ -21,6 +21,8 @@ MODEL = os.getenv("TRANSLATOR_MODEL", "claude-haiku-5-5")
 MAX_OPCIONES = 4
 MAX_OPCION_CHARS = 40
 MAX_GLOSAS = 30
+# Texto libre del cliente: solo se cachean respuestas cortas ("Sí", "martes bueno"), nunca frases largas.
+CACHE_MAX_PALABRAS_CLIENTE = int(os.getenv("AGENT_CACHE_MAX_PALABRAS_CLIENTE", "4"))
 
 SIMPLE_TOOL = {
     "name": "emitir_simple",
@@ -113,15 +115,20 @@ class Translator:
             {"type": "text", "text": self._tareas[tarea]},
         ]
 
+    def _max_palabras(self, tarea: str) -> int | None:
+        return CACHE_MAX_PALABRAS_CLIENTE if tarea == "complejizar" else None
+
     def _cache_get(self, tarea: str, texto: str) -> dict | None:
-        hit = self.store.cache_get(tarea, self._version[tarea], texto) if self.store else None
+        if not self.store:
+            return None
+        hit = self.store.cache_get(tarea, self._version[tarea], texto, self._max_palabras(tarea))
         if hit is not None:
             self.cache_hits += 1
         return hit
 
     def _cache_put(self, tarea: str, texto: str, salida: dict) -> None:
         if self.store:
-            self.store.cache_put(tarea, self._version[tarea], texto, salida)
+            self.store.cache_put(tarea, self._version[tarea], texto, salida, self._max_palabras(tarea))
 
     def simplificar(self, texto: str) -> SimpleResult:
         """v2: lo que dice el ejecutivo → español simple + respuestas rápidas."""

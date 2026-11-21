@@ -20,6 +20,20 @@ def test_cache_solo_frases_sin_digitos():
     assert not cacheable("Su RUT es 12.345.678-9") and not cacheable("")
 
 
+def test_cache_no_guarda_nombres_ni_texto_largo_del_cliente_ni_la_entrada():
+    s = store()
+    assert not cacheable("soy María y necesito hora")  # nombre propio a mitad de frase
+    assert cacheable("¿En qué puedo ayudarle?") and cacheable("YO QUERER HORA MÉDICO") and cacheable("Sí. Bueno")
+    s.cache_put("simplificar", "v1", "le habla la secretaria", {"simple": "Habla Camila", "opciones": []})
+    assert s.cache_get("simplificar", "v1", "le habla la secretaria") is None  # la salida traía un nombre
+    s.cache_put("complejizar", "v1", "yo tener dolor cabeza fuerte hace semanas", {"frase": "x"}, max_palabras=4)
+    assert s.cache_get("complejizar", "v1", "yo tener dolor cabeza fuerte hace semanas", max_palabras=4) is None
+    s.cache_put("complejizar", "v1", "sí", {"frase": "Sí."}, max_palabras=4)
+    assert s.cache_get("complejizar", "v1", "Sí", max_palabras=4) == {"frase": "Sí."}
+    cols = [c[1] for c in s._db.execute("PRAGMA table_info(traducciones_cache)")]
+    assert "entrada" not in cols
+
+
 def test_metricas_y_faltantes():
     s = store()
     s.registrar_turno("sala-1", "ejecutivo_a_cliente", llm_simple_ms=800, total_ms=1000, cache_hit=0)

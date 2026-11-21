@@ -1,6 +1,7 @@
 -- Base de datos del agente traductor (services/agent/store.py).
 -- SQL estándar: corre en SQLite (hoy) y en Postgres/Supabase (ADR-0009) cambiando REAL por double precision si se quiere.
--- Privacidad (ADR-0010): sin datos personales. La caché solo guarda frases sin dígitos; las métricas no guardan texto.
+-- Privacidad (ADR-0010): sin datos personales. La caché no guarda la entrada (solo su hash) y descarta frases con
+-- dígitos o nombres propios; las métricas no guardan texto.
 
 -- Traducciones repetidas (frases genéricas del ejecutivo y respuestas rápidas del cliente) sin volver a llamar a Claude.
 -- `version` = hash del modelo + system prompt + diccionario: si cambia algo, la caché vieja deja de usarse sola.
@@ -8,7 +9,6 @@ CREATE TABLE IF NOT EXISTS traducciones_cache (
   clave      TEXT PRIMARY KEY,          -- sha256(tarea, version, entrada normalizada)
   tarea      TEXT NOT NULL,             -- simplificar | complejizar | espanol_a_glosas
   version    TEXT NOT NULL,
-  entrada    TEXT NOT NULL,             -- normalizada, sin dígitos
   salida     TEXT NOT NULL,             -- JSON
   creado_en  REAL NOT NULL,             -- epoch s
   usos       INTEGER NOT NULL DEFAULT 0
