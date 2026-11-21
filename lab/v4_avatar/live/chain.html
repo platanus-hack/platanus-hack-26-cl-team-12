@@ -37,7 +37,7 @@ label{display:block;margin:8px 0}
   </div>
   <div id="pre">
    <span>Velocidad</span><select id="speed"><option value="1.25">1,25×</option><option value="1" selected>1×</option><option value="0.75">0,75×</option><option value="0.5">0,5×</option></select>
-   <span>Transición</span><select id="tr"><option value="0.15">corta</option><option value="0.3" selected>media</option><option value="0.5">larga</option></select>
+   <span>Fluidez</span><select id="tr"><option value="0.15">poca</option><option value="0.3">media</option><option value="0.45" selected>alta</option></select>
   </div>
   <label><input type="checkbox" id="rest"> volver al reposo entre señas</label>
   <div id="msg">Cargando…</div>
@@ -75,40 +75,50 @@ async function loadAvail(){AVAIL=await (await fetch('/api/anims')).json();const 
  for(const a of AVAIL){const b=document.createElement('button');b.textContent=a;b.onclick=()=>{const i=$('seq');i.value=(i.value.trim()+' '+a).trim()};el.appendChild(b)}}
 await loadAvail();
 
-// ---- línea de tiempo: [transición → seña] × n, con mezcla (slerp) entre la última pose de una y la primera de la siguiente
+// ---- línea de tiempo con co-articulación: las señas se SOLAPAN. Mientras una termina, la siguiente ya empieza,
+// y se mezclan las dos poses (ambas en movimiento), así no hay frenazo entre palabras.
+// Duración del solape = según qué tan lejos están la pose final de A y la inicial de B (más distancia → más solape).
 let T=null,t0=0,playing=false;
+const flat=ps=>ps.flatMap(q=>q.toArray());
+const RESTFLAT=flat(REST);
+const restClip=d=>({glosa:'',duration:d,frames:[{t:0,q:RESTFLAT},{t:d,q:RESTFLAT}]});
+const ARMS=BONES.map((b,i)=>/UpperArm|LowerArm|Hand$/.test(b)?i:-1).filter(i=>i>=0);
+function dist(qa,qb){let m=0;for(const k of ARMS){const d=2*Math.acos(Math.min(1,Math.abs(qa[k].dot(qb[k]))));if(d>m)m=d}return m}
+function sample(c,lt){lt=Math.max(0,Math.min(c.duration,lt));const F=c.frames;let i=0;while(i<F.length-2&&F[i+1].t<lt)i++;
+ const a=F[i],b=F[Math.min(i+1,F.length-1)],al=b.t>a.t?Math.min(1,Math.max(0,(lt-a.t)/(b.t-a.t))):0;
+ return BONES.map((_,k)=>new THREE.Quaternion().fromArray(a.q,k*4).slerp(new THREE.Quaternion().fromArray(b.q,k*4),al))}
 async function build(){
- const speed=+$('speed').value,TR=+$('tr').value/speed,toRest=$('rest').checked;
- const names=$('seq').value.trim().split(/\s+/).filter(Boolean),clips=[],miss=[];
- for(const w of names){const n=resolve(w);if(n)clips.push(await clip(n));else miss.push(w)}
+ const speed=+$('speed').value,maxOV=+$('tr').value,toRest=$('rest').checked;
+ const names=$('seq').value.trim().split(/\s+/).filter(Boolean),list=[],miss=[];
+ for(const w of names){const n=resolve(w);if(n)list.push(await clip(n));else miss.push(w)}
  if(miss.length)msg('Sin animación aún: '+miss.join(', ')+' (se omiten)');
- if(!clips.length)return null;
- const segs=[];let t=0,prev=REST.map(q=>q.clone());
- clips.forEach((c,ci)=>{
-  const first=pose(c,0);
-  segs.push({k:'tr',t0:t,t1:t+TR,from:prev,to:first,label:c.glosa});t+=TR;
-  const d=c.duration/speed;segs.push({k:'clip',t0:t,t1:t+d,c,label:c.glosa});t+=d;
-  prev=pose(c,c.frames.length-1);
-  if(toRest&&ci<clips.length-1){segs.push({k:'tr',t0:t,t1:t+TR,from:prev,to:REST,label:''});t+=TR;prev=REST.map(q=>q.clone())}
- });
- segs.push({k:'tr',t0:t,t1:t+0.5,from:prev,to:REST,label:''});t+=0.5;
- return {segs,total:t,speed};
+ if(!list.length)return null;
+ const seq=[restClip(0.3)];list.forEach((c,i)=>{seq.push(c);if(toRest&&i<list.length-1)seq.push(restClip(0.25))});seq.push(restClip(0.6));
+ const items=[];let s=0;
+ seq.forEach((c,i)=>{const d=c.duration/speed;let ov=0;
+  if(i>0){const prev=items[i-1];
+   const dd=dist(sample(prev.c,prev.c.duration),sample(c,0));                    // cuánto cambia la pose entre el final de A y el inicio de B
+   ov=Math.min(maxOV*Math.min(1,0.25+dd/1.2),0.45*prev.d,0.45*d);                // más cambio → más solape (tope: preferencia del usuario)
+   s=prev.e-ov}
+  items.push({c,d,s,e:s+d,ov});if(i===0)s=0});
+ return {items,total:items[items.length-1].e,speed};
 }
-const ease=u=>u*u*(3-2*u),qa=new THREE.Quaternion();
+const ease=u=>u*u*u*(u*(6*u-15)+10);   // quíntica: velocidad y aceleración suaves en los extremos del solape
 function apply(T,t){
- const s=T.segs.find(s=>t>=s.t0&&t<s.t1)||T.segs[T.segs.length-1];
- $('sub').textContent=s.label;
- if(s.k==='tr'){const u=ease(Math.min(1,(t-s.t0)/(s.t1-s.t0)));BONES.forEach((b,k)=>bone(b).quaternion.copy(qa.copy(s.from[k]).slerp(s.to[k],u)))}
- else{const c=s.c,lt=(t-s.t0)*T.speed;let i=0;while(i<c.frames.length-2&&c.frames[i+1].t<lt)i++;
-  const a=c.frames[i],b=c.frames[Math.min(i+1,c.frames.length-1)],al=b.t>a.t?Math.min(1,Math.max(0,(lt-a.t)/(b.t-a.t))):0;
-  BONES.forEach((bn,k)=>{const qa2=new THREE.Quaternion().fromArray(a.q,k*4),qb=new THREE.Quaternion().fromArray(b.q,k*4);bone(bn).quaternion.copy(qa2.slerp(qb,al))})}
-}
+ const act=T.items.filter(it=>t>=it.s&&t<=it.e);
+ const pose=it=>sample(it.c,(t-it.s)*T.speed);
+ let P,label='';
+ if(act.length>=2){const A=act[act.length-2],B=act[act.length-1],w=ease(Math.min(1,Math.max(0,(t-B.s)/Math.max(1e-6,A.e-B.s))));
+  const pa=pose(A),pb=pose(B);P=pa.map((q,k)=>q.slerp(pb[k],w));label=(w>0.5?B:A).c.glosa||(w>0.5?A:B).c.glosa}
+ else if(act.length===1){P=pose(act[0]);label=act[0].c.glosa}
+ else P=REST;
+ $('sub').textContent=label;BONES.forEach((b,k)=>bone(b).quaternion.copy(P[k]))}
 async function start(){T=await build();if(!T)return;t0=performance.now();playing=true;msg('Reproduciendo '+T.total.toFixed(1)+' s')}
 $('play').onclick=start;
 $('stop').onclick=()=>{playing=false;$('sub').textContent='';BONES.forEach((b,k)=>bone(b).quaternion.copy(REST[k]));msg('Detenido')};
 msg(AVAIL.length?'Listo. '+AVAIL.length+' señas con animación.':'Aún no hay animaciones guardadas en data/signs/anim.');
 const clock=new THREE.Clock();
 (function loop(){requestAnimationFrame(loop);
- if(playing&&T){const t=(performance.now()-t0)/1000;if(t>=T.total){if($('loop').checked)t0=performance.now();else{playing=false;$('sub').textContent='';msg('Fin')}}else apply(T,t)}
+ if(playing&&T){const t=(performance.now()-t0)/1000;if(t>=T.total-0.001){if($('loop').checked)t0=performance.now();else{playing=false;$('sub').textContent='';msg('Fin')}}else apply(T,t)}
  vrm.update(clock.getDelta());renderer.render(scene,cam)})();
 </script></body></html>
