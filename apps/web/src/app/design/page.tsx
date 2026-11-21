@@ -14,7 +14,7 @@ const EJEMPLO: SubtitleLine[] = [
 ];
 
 export default function Design() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   function toggle() {
     const next = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
@@ -25,7 +25,7 @@ export default function Design() {
     <main>
       <header className="app">
         <Logo size={44} />
-        <Button variant="secondary" onClick={toggle}>{theme === "dark" ? "Ver tema Día" : "Ver tema Noche"}</Button>
+        <Button variant="secondary" onClick={toggle}>{theme === "dark" ? "Ver tema Pastel" : "Ver tema Noche"}</Button>
       </header>
       <h2>Marca</h2>
       <div className="pu-chips" style={{ alignItems: "center" }}>
@@ -49,7 +49,8 @@ export default function Design() {
         <CallStatus state="ended" />
       </div>
       <VisualAlert tone="incoming" message="Te está llamando Clínica Santa María" action={<Button variant="secondary">Contestar</Button>} />
-      <VisualAlert message="Llamada conectada" />
+      <VisualAlert tone="success" message="Llamada conectada" />
+      <VisualAlert message="Revisa tu conexión" />
       <VisualAlert tone="error" message="Se cortó la llamada. Toca Llamar para intentar de nuevo." />
       <h2>Conversación</h2>
       <Subtitles lines={EJEMPLO} showOriginal otherName="Clínica" />

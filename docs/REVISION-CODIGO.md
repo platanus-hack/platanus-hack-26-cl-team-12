@@ -31,20 +31,22 @@ Marca con ✅ lo que arregles.
 ## 3. Pendiente por dueño
 
 ### D — Rafael (`apps/web`, `packages/ui`, `packages/avatar`)
+> Actualizado tras mergear el PR #7 (pantalla de llamada): lo marcado con ✅ ya quedó resuelto en `dev`.
+
 **Alta (afectan la demo):**
-1. `apps/web/src/app/page.tsx:18-26`: `onMessage` ignora `opciones`, `glosas_para_senar` y no hay `Composer`, así que **el cliente no puede responder** ni ver las señas. Conectar `QuickReplies` (con `opciones` o Sí/No por defecto) y `SignAvatar`.
+1. ✅ (PR #7: `CallPanel` con `Composer`, `QuickReplies` con `opciones` y `SignAvatar`) `apps/web/src/app/page.tsx:18-26`: `onMessage` ignora `opciones`, `glosas_para_senar` y no hay `Composer`, así que **el cliente no puede responder** ni ver las señas. Conectar `QuickReplies` (con `opciones` o Sí/No por defecto) y `SignAvatar`.
 2. `packages/avatar/src/index.ts:30-40`: el reproductor salta en silencio `TEXTO:` y `DACTILOLOGÍA:`, así que las horas y el RUT no se ven. Usar `isLiteralGloss`/`literalText` y mostrar el dato en grande.
 3. `packages/avatar/src/index.ts:35-46`: `play()` se puede colgar para siempre: `stop()` no dispara `ended`, un clip 404 dispara `error` y el autoplay bloqueado en iOS rechaza la promesa. Resolver con `ended`, `error` y abort.
-4. `packages/ui/src/components/SignAvatar.tsx:22-24`: muestra "TEXTO:10:30" tal cual como chip.
-5. `apps/web/src/lib/call.ts:20-42`: no hay limpieza al desmontar ni listener de `Disconnected`; si se cae la conexión, el estado queda en "En llamada" para siempre.
+4. ✅ (PR #7: `CallPanel` convierte `TEXTO:` al dato antes de pasarlo) `packages/ui/src/components/SignAvatar.tsx:22-24`: muestra "TEXTO:10:30" tal cual como chip.
+5. Parcial (PR #7 limpia al desmontar; **falta** el listener de `Disconnected`) `apps/web/src/lib/call.ts:20-42`: si se cae la conexión, el estado queda en "En llamada" para siempre.
 
 **Media:**
-6. `page.tsx:47`: "Llamar" sigue habilitado mientras conecta; un doble toque crea dos salas.
-7. `page.tsx:20`: `crypto.randomUUID()` falla sin HTTPS (al probar en el celular por `http://192.168…`).
+6. ✅ (PR #7: el inicio se oculta mientras conecta) `page.tsx:47`: "Llamar" sigue habilitado mientras conecta; un doble toque crea dos salas.
+7. ✅ (PR #7) `page.tsx:20`: `crypto.randomUUID()` falla sin HTTPS (al probar en el celular por `http://192.168…`).
 8. `call.ts:6`: el fallback `http://localhost:8000` queda horneado en el build estático; si falta `NEXT_PUBLIC_API_URL` en Vercel, la app apunta a localhost.
-9. `packages/ui/src/styles/components.css:57`: falta `white-space: pre-line` en `.pu-sub`. `simple` viene en líneas cortas y se ve todo junto.
+9. ✅ (PR #7) `packages/ui/src/styles/components.css:57`: falta `white-space: pre-line` en `.pu-sub`. `simple` viene en líneas cortas y se ve todo junto.
 10. `Subtitles.tsx:16`: falta auto-scroll a la última línea; en llamadas largas el subtítulo nuevo queda fuera de la vista.
-11. `page.tsx:41`: el tono de la alerta se deduce con `startsWith("No se pudo")`; al colgar no hay aviso.
+11. ✅ (PR #7: alertas `{message, tone}` y aviso al colgar) `page.tsx:41`: el tono de la alerta se deduce con `startsWith("No se pudo")`; al colgar no hay aviso.
 
 **Baja:** el color `#0b1220` se repite en 4 lugares; el manifest no tiene íconos PNG de 192/512 (Android no ofrece instalar); dependencias `@puente/avatar`/`@puente/signs` sin usar en web; varias live regions anuncian a la vez; falta el guard de `isComposing` en el Enter de `Composer`.
 
