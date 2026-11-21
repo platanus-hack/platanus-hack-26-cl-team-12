@@ -3,12 +3,16 @@ Equipo de 4. Lo que importa es una **demo funcionando**, no código perfecto.
 
 ## Lee primero
 - `docs/ONBOARDING.md` (qué hacemos, v1–v4, repos y pushes, cómo unirse), `docs/PRACTICAS-MULTI-CLAUDE.md` y las últimas entradas de `docs/BITACORA.md`.
+- `docs/PLAN-TRABAJO.md` (quién es dueño de qué carpeta y requerimientos por persona).
 - Al terminar un bloque de trabajo, anota en `docs/BITACORA.md`.
 
 ## Estructura
-- `app/backend` FastAPI (telefonía, STT/TTS, LLM). `app/web` Next.js PWA. Es lo que se despliega.
+- Monorepo (ver `docs/adr/`): `apps/` (web PWA Next.js, mobile Capacitor, desktop Tauri), `packages/` (glosses, signs, avatar, ui), `services/` (api FastAPI, agent LiveKit + traductor Claude), `ml/` (entrenamiento). Es lo que se despliega.
 - `data/` investigación, vocabulario, clips y evaluación (no se despliega). `docs/` plan y contrato.
-- `app/` no lee de `data/research` ni `docs`.
+- `apps/`, `packages/` y `services/` no leen de `data/research` ni `docs`.
+- Rutas viejas → nuevas: ver el mapa en `docs/ONBOARDING.md` §3.
+- Atajos: `make help` (`make setup`, `make dev`, `make check`).
+- JS: `pnpm install`, `pnpm typecheck`, `pnpm build`. Python: `uv --directory services/<api|agent> run pytest`.
 
 ## Cómo trabajar
 - Responde en español chileno (tuteo, sin voseo). Respuestas cortas.

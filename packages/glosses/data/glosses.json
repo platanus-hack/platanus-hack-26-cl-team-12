@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "_comment": "TODO(real-data): reemplazar por el vocabulario del escenario de demo, extraído del glosario LSCh (data/vocab) y validado por una persona señante.",
+  "glosses": [
+    { "gloss": "HOLA", "category": "saludo", "es": ["hola"], "classifierLabel": 0, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "GRACIAS", "category": "saludo", "es": ["gracias"], "classifierLabel": 1, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "SÍ", "category": "respuesta", "es": ["sí"], "classifierLabel": 2, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "NO", "category": "respuesta", "es": ["no"], "classifierLabel": 3, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "YO", "category": "pronombre", "es": ["yo"], "classifierLabel": 4, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "TÚ", "category": "pronombre", "es": ["tú", "usted"], "classifierLabel": 5, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "QUERER", "category": "verbo", "es": ["querer", "necesitar"], "classifierLabel": 6, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "HORA", "category": "tiempo", "es": ["hora", "cita"], "classifierLabel": 7, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "MÉDICO", "category": "salud", "es": ["médico", "doctor"], "variants": ["DOCTOR"], "classifierLabel": 8, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "LUNES", "category": "tiempo", "es": ["lunes"], "classifierLabel": 9, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "MAÑANA", "category": "tiempo", "es": ["mañana"], "classifierLabel": 10, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null },
+    { "gloss": "DÓNDE", "category": "pregunta", "es": ["dónde"], "classifierLabel": 11, "clip": null, "animationId": null, "nonManual": "cejas fruncidas (pregunta abierta)", "validatedBy": null }
+  ]
+}

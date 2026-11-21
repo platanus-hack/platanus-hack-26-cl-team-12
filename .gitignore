@@ -1,13 +1,109 @@
+# ───────── Secretos (NUNCA commitear) ─────────
 .env
-.venv/
-__pycache__/
-node_modules/
-.next/
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+service-account*.json
+
+# ───────── Sistema y editores ─────────
 .DS_Store
-# clips/datasets pesados de señas
+Thumbs.db
+.idea/
+*.swp
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ───────── Node / pnpm / Turborepo ─────────
+node_modules/
+.pnpm-store/
+.turbo/
+*.tsbuildinfo
+.eslintcache
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+coverage/
+.nyc_output/
+
+# ───────── Next.js (apps/web) ─────────
+.next/
+out/
+.vercel/
+# lo regenera `next dev` / `next build`; commitearlo referencia .next/types que no existe en un clon limpio
+next-env.d.ts
+
+# ───────── Python (services/api, services/agent, ml) ─────────
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+.coverage
+htmlcov/
+build/
+.ipynb_checkpoints/
+
+# ───────── Móvil: Capacitor (apps/mobile) ─────────
+# android/ e ios/ SÍ se versionan (llevan los permisos de cámara y micrófono); no su salida de build:
+apps/mobile/android/.gradle/
+apps/mobile/android/**/build/
+apps/mobile/android/local.properties
+apps/mobile/android/captures/
+apps/mobile/ios/**/Pods/
+apps/mobile/ios/**/DerivedData/
+*.xcuserstate
+xcuserdata/
+# copias que genera `cap sync` desde apps/web/out
+apps/mobile/android/app/src/main/assets/public/
+apps/mobile/android/app/src/main/assets/capacitor.config.json
+apps/mobile/android/app/src/main/assets/capacitor.plugins.json
+apps/mobile/ios/App/App/public/
+apps/mobile/ios/App/App/capacitor.config.json
+apps/mobile/ios/App/App/config.xml
+
+# ───────── Escritorio: Tauri (apps/desktop) ─────────
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+
+# ───────── Supabase CLI ─────────
+supabase/.branches/
+supabase/.temp/
+
+# ───────── Entrenamiento ML (los modelos van a Supabase Storage, ADR-0009) ─────────
+ml/data/
+ml/**/*.onnx
+ml/**/*.pt
+ml/**/*.pth
+ml/**/*.ckpt
+ml/**/*.npy
+ml/**/*.npz
+ml/**/runs/
+wandb/
+lightning_logs/
+
+# ───────── Datos de señas pesados o con derechos (PDF, clips, datasets) ─────────
 data/signs/*
 !data/signs/.gitkeep
 
 # audios personales de prueba (voz): no subir
 data/eval/audio/*
 !data/eval/audio/.gitkeep
+
+# ───────── Logs y temporales ─────────
+*.log
+tmp/
+.tmp/
+
+# ───────── Herramientas de Claude ─────────
+.claude/worktrees/
+.claude/settings.local.json
+graphify-out/
