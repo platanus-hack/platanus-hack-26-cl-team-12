@@ -35,7 +35,7 @@ import {VRMLoaderPlugin} from '@pixiv/three-vrm';
 import {FilesetResolver,PoseLandmarker,HandLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 import {createRig} from './rig.js';
 const $=id=>document.getElementById(id), st=m=>$('st').textContent=m;
-const NAME=new URLSearchParams(location.search).get('v')||'HOLA';
+const NAME=new URLSearchParams(location.search).get('v')||'HOLA__1';
 
 async function makeAvatar(canvas){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));

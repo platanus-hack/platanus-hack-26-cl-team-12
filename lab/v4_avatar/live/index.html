@@ -218,7 +218,7 @@ $('vidBtn').onclick=async()=>{const g=nm()||'PRUEBA';
  const rec=new MediaRecorder(video.srcObject,{mimeType:mt,videoBitsPerSecond:10e6}),chunks=[];
  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
  rec.onstop=async()=>{const blob=new Blob(chunks,{type:'video/webm'});
-  try{const r=await fetch('/api/video?name='+encodeURIComponent(g),{method:'POST',body:blob});const j=await r.json();st('Video guardado ✔ '+j.path+' ('+Math.round(j.bytes/1024)+' KB)')}
+  try{const r=await fetch('/api/video?name='+encodeURIComponent(g),{method:'POST',body:blob});const j=await r.json();st('Toma '+j.toma+' guardada ✔ ('+Math.round(j.bytes/1024)+' KB). Graba otra para tener varias.')}
   catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=g+'.webm';a.click();st('Servidor no disponible: descargué el video')}};
  rec.start();const t0=performance.now(),iv=setInterval(()=>st('● VIDEO '+((performance.now()-t0)/1000).toFixed(1)+' s'),100);
  setTimeout(()=>{rec.stop();clearInterval(iv)},(+$('dur').value)*1000)};
