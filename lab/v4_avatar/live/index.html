@@ -29,7 +29,7 @@ h1{font-size:15px;margin:0 0 8px}
   <video id="v" autoplay playsinline muted></video>
   <div id="st">Cargando…</div>
   <label><input type="checkbox" id="flipxz" checked> Corregir ejes VRM1 (x y z)</label>
-  <label><input type="checkbox" id="swap"> Intercambiar manos izquierda/derecha</label>
+  <label><input type="checkbox" id="palm"> Girar palmas 180° (si la palma se ve al revés)</label>
   <label><input type="checkbox" id="fingers" checked> Mover dedos</label>
   <label><input type="checkbox" id="ik" checked> Brazos directos (alcanzan la cara)</label>
   <label><input type="checkbox" id="zinv"> Invertir profundidad (si el brazo va hacia atrás)</label>
@@ -107,12 +107,12 @@ function rig(name,r,damp=1,lerp=0.4){
 function rigArms(p){
  rig('RightUpperArm',p.RightUpperArm,1,0.5);rig('RightLowerArm',p.RightLowerArm,1,0.5);
  rig('LeftUpperArm',p.LeftUpperArm,1,0.5);rig('LeftLowerArm',p.LeftLowerArm,1,0.5);}
-function rigHand(side,lm,poseRig){ // side: 'Left'|'Right' del usuario
+function rigHand(side,lm,poseRig,hw){ // side: 'Left'|'Right' del usuario
  // si la mano del usuario va al brazo "opuesto" del avatar, se refleja la mano (imagen en espejo) y se resuelve como la otra mano
  let s2=side,L2=lm;if(SWAP){s2=side==='Left'?'Right':'Left';L2=lm.map(p=>({x:1-p.x,y:p.y,z:p.z}))}
  const h=K.Hand.solve(L2,s2);if(!h)return;
  const w=h[s2+'Wrist'];
- rig(s2+'Hand',{x:w.x,y:w.y,z:poseRig?poseRig[side+'Hand'].z*(SWAP?-1:1):w.z},1,0.5);
+ if(!wristGeo(side,hw))rig(s2+'Hand',{x:w.x,y:w.y,z:poseRig?poseRig[side+'Hand'].z*(SWAP?-1:1):w.z},1,0.5);
  if(!$('fingers').checked)return;
  for(const f of['Thumb','Index','Middle','Ring','Little'])for(const j of['Proximal','Intermediate','Distal'])
   rig(s2+f+j,h[s2+f+j],1,0.5)}
@@ -120,9 +120,12 @@ function rigHand(side,lm,poseRig){ // side: 'Left'|'Right' del usuario
 // ---- brazos "directos": cada hueso apunta hacia donde apunta tu hombro→codo→muñeca (sin los límites de Kalidokit)
 // Geometría medida del avatar en T-pose: dirección de reposo de cada hueso y de qué lado de la PANTALLA queda cada brazo.
 vrm.scene.updateMatrixWorld(true);
+// base ortonormal de la mano: f = dirección de los dedos, a = across-palma (índice−meñique), n = normal de la palma
+function basis(f,a){f=f.clone().normalize();const n=f.clone().cross(a).normalize(),a2=n.clone().cross(f).normalize();return new THREE.Matrix4().makeBasis(a2,n,f)}
 const GEO={};
 for(const s of['left','right']){const wp=n=>bone(s+n).getWorldPosition(new THREE.Vector3());const u=wp('UpperArm'),l=wp('LowerArm'),h=wp('Hand');
- GEO[s]={x:u.x,restU:l.clone().sub(u).normalize(),restL:h.clone().sub(l).normalize()}}
+ const M=wp('MiddleProximal'),I=wp('IndexProximal'),Lp=wp('LittleProximal');
+ GEO[s]={x:u.x,restU:l.clone().sub(u).normalize(),restL:h.clone().sub(l).normalize(),B0:basis(M.sub(h),I.sub(Lp))}}
 // la pantalla va volteada (espejo CSS): lo que está en X mundo más negativo queda a la DERECHA de la pantalla
 const RB=GEO.left.x<GEO.right.x?'left':'right', LB=RB==='left'?'right':'left', SWAP=RB==='left';
 const DOWN=new THREE.Vector3(0,-1,0), RESTQ={};
@@ -140,6 +143,16 @@ function ikArm(W,vis,uside,iS,iE,iW){ // uside: 'right'|'left' del usuario
  const dLoc=dL.applyQuaternion(up.quaternion.clone().invert());
  lo.quaternion.slerp(new THREE.Quaternion().setFromUnitVectors(g.restL,dLoc),0.55);
  return true}
+
+// muñeca: orientación de la mano medida con los puntos 3D de la mano (muñeca→nudillo medio, índice−meñique), sin ángulos de Kalidokit
+function wristGeo(side,hw){if(!hw||hw.length<21)return false;
+ const bn=side==='Right'?RB:LB,g=GEO[bn],up=bone(bn+'UpperArm'),lo=bone(bn+'LowerArm'),hand=bone(bn+'Hand');if(!hand)return false;
+ const f=V3(hw[9]).sub(V3(hw[0])),a=V3(hw[5]).sub(V3(hw[17]));if(f.lengthSq()<1e-8||a.lengthSq()<1e-8)return false;
+ if($('palm').checked){a.negate()}
+ const Rw=basis(f,a).multiply(g.B0.clone().transpose()); // rotación mundo: base de reposo → base objetivo
+ const qW=new THREE.Quaternion().setFromRotationMatrix(Rw);
+ const qParent=up.quaternion.clone().multiply(lo.quaternion);
+ hand.quaternion.slerp(qParent.invert().multiply(qW),0.5);return true}
 
 // ---- volver suavemente a reposo cuando se pierde el tracking (evita que el avatar "tiemble" o se quede pegado)
 let missPose=0;const missHand={Left:0,Right:0};
@@ -232,12 +245,13 @@ function loop(){
   hr.landmarks.forEach((lm,i)=>{
    if((hr.handednesses[i][0].score??0)<0.6)return; // descarta manos muy dudosas
    // descarta manos falsas: la muñeca de la mano debe estar cerca de alguna muñeca de la pose (si la pose se ve)
+   // el lado se decide por la muñeca del cuerpo más cercana (15 = izq. del usuario, 16 = der.), no por la etiqueta de MediaPipe
+   let side;
    if(L&&(L[15].visibility>0.4||L[16].visibility>0.4)){const w0=lm[0],d=p=>Math.hypot(w0.x-p.x,w0.y-p.y);
-    if(Math.min(d(L[15]),d(L[16]))>0.22)return}
-   // etiqueta de MediaPipe asume imagen espejada; con cámara cruda va invertida
-   let label=hr.handednesses[i][0].categoryName;
-   let side=label==='Left'?'Right':'Left'; if($('swap').checked)side=side==='Left'?'Right':'Left';
-   seen[side]=true;missHand[side]=0;rigHand(side,lm,poseRig)});
+    const dl=d(L[15]),dr=d(L[16]);if(Math.min(dl,dr)>0.22)return;side=dl<dr?'Left':'Right'}
+   else{side=hr.handednesses[i][0].categoryName==='Left'?'Right':'Left'} // sin pose: etiqueta (viene invertida con cámara cruda)
+   if(seen[side])return;
+   seen[side]=true;missHand[side]=0;rigHand(side,lm,poseRig,hr.worldLandmarks[i])});
  for(const s of['Left','Right'])if(!seen[s]&&++missHand[s]>8)toRest(handBones(SWAP?(s==='Left'?'Right':'Left'):s),0.15);
  }
  vrm.update(clock.getDelta());renderer.render(scene,cam);
