@@ -53,13 +53,13 @@ Las decisiones técnicas y sus alternativas están en `docs/adr/`.
 ## 4. Repos y cómo se hacen los pushes
 Hay **dos repos con el mismo código**:
 - **Organización (oficial, lo que ve el jurado):** `platanus-hack/platanus-hack-26-cl-team-12`
-- **Personal de Tomás (privado, desde aquí se despliega):** `tomasnusser/puente-hackaton`
+- **Personal de Raimundo (desde aquí se despliega):** `<usuario>/<repo>` (por crear; pasos en el README raíz, sección "Deploying & integrations")
 
 Por qué: Vercel/Render no pueden conectarse a repos de la organización, solo a repos propios.
 
 **Reglas:**
 - **Todos** hacen push solo al repo de la **organización** (`origin` normal). No configuren doble push ni creen repos personales.
-- **Tomás** es el único que despliega: trae lo de la organización (`git pull`) y hace `git push` a ambos (su `origin` tiene doble push configurado). Así los dos repos quedan iguales.
+- **Raimundo** es el único que despliega: trae lo de la organización (`git pull`) y hace `git push` a ambos (su `origin` tiene doble push configurado). Así los dos repos quedan iguales.
 - Nunca `git push --force` a `main`. Nunca commitear `.env` ni claves.
 
 ## 5. Qué hacer para meterte al git con Tomás (pasos para cada compañero)

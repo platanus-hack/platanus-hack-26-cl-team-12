@@ -14,12 +14,14 @@
 
 | | Persona (sugerida) | Rama | Es dueño de | Entrega |
 |---|---|---|---|---|
-| **A** | Tomás (ya hizo la investigación y es quien despliega) | `v1-telefonia` | `services/api/`, `services/agent/telefonia/`, `.github/`, Dockerfiles, deploy, `.env` | Llamada telefónica real de punta a punta y todo desplegado |
+| **A** | Tomás (ya hizo la investigación) | `v1-telefonia` | `services/api/`, `services/agent/telefonia/`, `.github/`, Dockerfiles, deploy, `.env` | Llamada telefónica real de punta a punta y todo desplegado |
 | **B** | Raimundo | `v2-llm` | `services/agent/translator/`, `services/agent/agent.py`, `packages/glosses/data/`, `data/vocab/`, `data/eval/` | Traducción simple/compleja + voz + vocabulario del escenario |
 | **C** | Martín | `v3-vision` | `packages/signs/`, `ml/training/`, `apps/web/src/app/captura/` | Cámara → glosas con vocabulario cerrado |
 | **D** | Rafael | `v4-avatar` | `apps/web/` (shell), `packages/avatar/`, `packages/ui/`, `apps/mobile/`, clips | App usable, reproductor de señas y PWA instalable |
 
 Entrega final (`platanus-hack-project.jsonc`, `project-description.md`, logo, guion de la demo): **A** la arma, **todos** revisan.
+
+**Despliega Raimundo** (desde su repo personal con doble push, ver `ONBOARDING.md` §4). Por eso **A3 (despliegue) y A5 (CI y secretos en los proveedores) los ejecuta él**, aunque el requerimiento siga en la lista de A: A debe tener listo el servicio (A1, A2) y entregarle las credenciales (R0.4); Raimundo las carga en Vercel/Render y nunca en el repo.
 
 ## 3. Requerimientos por persona
 Tamaño: **S** ≤ 1 h · **M** 2–4 h · **L** medio día o más. Hecho = cumple el criterio y tiene `pytest`/`typecheck` en verde.

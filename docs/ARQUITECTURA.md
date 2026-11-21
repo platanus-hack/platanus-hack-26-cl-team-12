@@ -294,7 +294,7 @@ graph LR
 ```
 
 - Vercel y Render **no pueden conectarse al repo de la organización**: se despliega desde un repo personal con doble `push`
-  (ver `docs/ONBOARDING.md` §4). Solo una persona despliega.
+  (ver `docs/ONBOARDING.md` §4). Solo una persona despliega: **Raimundo**, desde su repo personal.
 - La PWA necesita **HTTPS** (la cámara no funciona sin él).
 - El agente es un proceso de larga duración: **no cabe en funciones serverless**.
 - Los secretos van como variables del proveedor; nunca en el repo.
