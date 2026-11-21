@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Raimundo / Claude (v1/swagger-api)
+- Hice: Swagger de la API solo para desarrollo: http://localhost:8000/docs (ReDoc en `/redoc`). Endpoints con tags, resúmenes, modelos de respuesta (`/glosses`, `/health`), ejemplos y errores 403/422/501/503 documentados.
+- Decidí: `API_ENV=development|production` (defecto development) y `API_DOCS=1|0` para forzar. **El Dockerfile de la API fija `API_ENV=production`**, así el despliegue no expone el mapa de la API aunque nadie lo configure.
+- Verificado: `pytest` api (10), incluidos tests de Swagger encendido y apagado.
+
 ## 2026-11-21 — Raimundo / Claude (v2/traduccion-voz-vocab)
 - Hice: v2 en el agente real. **Vocabulario:** `glosses.json` pasa a 81 glosas de hora médica (las 12 originales conservan su `classifierLabel`), generado con `data/vocab/build_glosses.py` + `curacion_hora_medica.json`; campo `lexiconId` = id UMCE de la foto. **Traducción:** prompts del lab en `translator/prompts.py`; `simplificar` devuelve `simple` + `opciones` (respuestas rápidas); `complejizar` para `cliente_dice`; `espanol_a_glosas` con literales `TEXTO:10:30` para horas, cifras y nombres. `pipeline.py` corre v2 y v4 en paralelo (v4 caído no bloquea v2). **Voz:** mujer `Fd38GRHtJllY0CuguAy9` (defecto) y hombre `6WgXEzo1HGn3i7ilT4Fh`; el atributo `voz` del participante la cambia; RUT, horas y montos se normalizan para el TTS. **Escenario como datos:** `packages/glosses/data/escenarios/hora_medica.json` (descripción, ejemplos, keyterms STT, pronunciaciones), se elige con `ESCENARIO`. **BD del agente:** SQLite (`store.py`, `db/schema.sql`, portable a Supabase) con caché de frases genéricas, latencia por turno y glosas faltantes. **Eval:** `data/eval/v2_casos.json` (36 casos) + `eval_v2.py`.
 - Decidí: SQLite local y no Supabase, porque aún no hay proyecto y A es dueño de esa infra. La caché solo guarda frases de una **lista blanca** del escenario (`frases_frecuentes`), nunca texto libre de la llamada, y sin la entrada (solo su hash); glosas faltantes sin nombres y con purga. Contrato aditivo: `ejecutivo_dice.opciones` y glosas `TEXTO:` (**D:** mostrar `TEXTO:` como texto grande y conectar `opciones` a `QuickReplies`; helpers `isLiteralGloss`/`literalText` en `@puente/glosses`).

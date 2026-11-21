@@ -12,7 +12,8 @@ WORKDIR /app
 COPY --from=build /app/services/api/.venv /app/services/api/.venv
 COPY packages/glosses/data /app/packages/glosses/data
 COPY services/api /app/services/api
-ENV PATH="/app/services/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1
+# API_ENV=production apaga Swagger (/docs, /redoc, /openapi.json) en el contenedor desplegado.
+ENV PATH="/app/services/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1 API_ENV=production
 USER puente
 WORKDIR /app/services/api
 EXPOSE 8000

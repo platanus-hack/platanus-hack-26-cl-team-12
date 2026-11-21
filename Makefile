@@ -35,7 +35,7 @@ setup: env install ## Primera vez: crea .env e instala todo
 dev-web: ## PWA en http://localhost:3000
 	pnpm --filter @puente/web dev
 
-dev-api: ## API en http://localhost:8000
+dev-api: ## API en http://localhost:8000 (Swagger en /docs)
 	uv --directory $(API) run uvicorn app.main:app --reload --port 8000
 
 dev-agent: ## Agente traductor (necesita LIVEKIT_* y las claves de IA en .env)
