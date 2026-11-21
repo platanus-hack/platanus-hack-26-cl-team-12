@@ -26,8 +26,11 @@ class H(SimpleHTTPRequestHandler):
             if gl.exists():
                 for line in gl.read_text().splitlines():
                     d = json.loads(line); defs[d["id"]] = d
+            df = root / "data/vocab/descripciones_senas.json"
+            desc = json.loads(df.read_text()) if df.exists() else {}
             for e in esc:
                 d = defs.get(e["id"], {}); e["definicion"] = d.get("definicion"); e["clase"] = d.get("clase")
+                e["descripcion"] = desc.get(e["id"], {}).get("descripcion")
             return self._json(esc)
         m = re.fullmatch(r"/api/wilor/([A-Z0-9_-]+)", p)
         if m:

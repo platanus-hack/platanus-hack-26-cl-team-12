@@ -32,6 +32,7 @@ h1{font-size:15px;margin:0 0 8px}
    </div>
    <img id="gImg" style="width:100%;border-radius:8px;display:block;background:#000;min-height:120px;max-height:34vh;object-fit:contain" alt="">
    <div id="gMean" style="margin:6px 0 2px;color:#cde"></div>
+   <div id="gDesc" style="white-space:pre-line;background:#1b2a26;border-left:3px solid #2a6f5e;border-radius:6px;padding:6px 8px;margin:6px 0;font-size:12.5px;line-height:1.45;display:none"></div>
    <div id="gSteps" style="color:#9aa;font-size:12px;line-height:1.5">
     <b>Cómo hacerla:</b><br>
     1. Mira la foto: los <b>números</b> son el orden de las posiciones y las <b>flechas</b> el movimiento.<br>
@@ -184,6 +185,7 @@ function showGuide(i){if(!ESC.length)return;gi=(i+ESC.length)%ESC.length;const e
  $('gTitle').textContent=`${e.glosa}  (${gi+1}/${ESC.length})${done.has(key(e))?' ✔':''}`;
  $('gImg').src='/img/'+e.id+'.png';$('gImg').alt=e.glosa;
  $('gMean').textContent=(e.definicion||e.significa||'').slice(0,160);
+ $('gDesc').style.display=e.descripcion?'block':'none';$('gDesc').textContent=e.descripcion||'';
  $('glosa').value=key(e);
  [...$('gChips').children].forEach((c,k)=>c.style.outline=k===gi?'2px solid #fff':'none')}
 function renderChips(){const el=$('gChips');el.innerHTML='';ESC.forEach((e,k)=>{const b=document.createElement('button');b.className='btn';
