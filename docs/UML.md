@@ -25,6 +25,27 @@
 
 ---
 
+## Imágenes (PNG)
+
+Los mismos 14 diagramas como imagen, para pitch, diapositivas o draw.io (fondo blanco, escala ×2), en `docs/diagramas/uml/`:
+
+| # | Imagen | # | Imagen |
+|---|---|---|---|
+| 1 | [casos de uso](diagramas/uml/01-casos-de-uso.png) | 8 | [secuencia: cliente firma](diagramas/uml/08-secuencia-cliente-firma.png) |
+| 2 | [componentes](diagramas/uml/02-componentes.png) | 9 | [secuencia: voz a señas](diagramas/uml/09-secuencia-voz-a-senas.png) |
+| 3 | [clases backend](diagramas/uml/03-clases-backend.png) | 10 | [secuencia: llamada telefónica](diagramas/uml/10-secuencia-llamada-telefonica.png) |
+| 4 | [clases cliente](diagramas/uml/04-clases-cliente.png) (muy ancho: recórtalo en slides) | 11 | [estados: llamada](diagramas/uml/11-estados-llamada.png) |
+| 5 | [secuencia: unirse](diagramas/uml/05-secuencia-unirse-a-la-llamada.png) | 12 | [estados: reconocimiento](diagramas/uml/12-estados-reconocimiento-sena.png) |
+| 6 | [secuencia: ejecutivo → cliente](diagramas/uml/06-secuencia-ejecutivo-a-cliente.png) | 13 | [actividad: validación](diagramas/uml/13-actividad-validacion-mensajes.png) |
+| 7 | [secuencia: cliente escribe](diagramas/uml/07-secuencia-cliente-escribe.png) | 14 | [despliegue](diagramas/uml/14-despliegue.png) |
+
+**Si cambias un diagrama, las imágenes no se actualizan solas.** Para regenerar una: copia su bloque `mermaid` al
+[Mermaid Live Editor](https://mermaid.live) y exporta PNG o SVG. Con la CLI: `npm install @mermaid-js/mermaid-cli` en una
+carpeta temporal **fuera del repo** (no ejecutes `npm init` dentro: modificaría el `package.json` de la raíz) y
+`mmdc -i diagrama.mmd -o diagrama.png -s 2 -b white`.
+
+---
+
 ## 1. Casos de uso
 
 ```mermaid
