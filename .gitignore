@@ -4,6 +4,14 @@ __pycache__/
 node_modules/
 .next/
 .DS_Store
+# monorepo (pnpm + Turborepo + Next export)
+out/
+.turbo/
+*.tsbuildinfo
+# modelos y datasets de entrenamiento (van a Supabase Storage, ADR-0009)
+ml/**/*.onnx
+ml/**/*.pt
+ml/data/
 # clips/datasets pesados de señas
 data/signs/*
 !data/signs/.gitkeep

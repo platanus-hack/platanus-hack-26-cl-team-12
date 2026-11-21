@@ -18,8 +18,11 @@ Usar **LiveKit** (LiveKit Cloud en el MVP, self-host posible después) como SFU 
   consumen para los subtítulos y el avatar.
 - Los tokens de acceso a la sala los emite la API (FastAPI) con permisos mínimos por rol.
 
-**Futuro (RF8):** conectar llamadas telefónicas con **LiveKit SIP + Twilio**, para que una persona sorda
-pueda llamar a un número que solo atiende por teléfono.
+**Telefonía (RF8, v1 — es el producto central del equipo):** la persona sorda llama a un servicio que solo
+atiende por teléfono (banco, hora médica, servicios del Estado). **LiveKit SIP + Twilio** conectan la red
+telefónica con la sala: el ejecutivo contesta un teléfono normal y entra a la sala como participante SIP,
+sin instalar nada. La videollamada entre dos personas con la app queda como caso secundario.
+Ver `services/agent/telefonia/README.md`.
 
 ## Consecuencias
 

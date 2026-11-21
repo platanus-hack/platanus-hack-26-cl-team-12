@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://puente.local/schema/gloss.schema.json",
+  "title": "Diccionario de glosas LSCh (ADR-0001)",
+  "type": "object",
+  "required": ["version", "glosses"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "_comment": { "type": "string" },
+    "glosses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gloss", "category", "es", "classifierLabel"],
+        "properties": {
+          "gloss": { "type": "string", "pattern": "^[A-ZÁÉÍÓÚÑÜ0-9-]+$" },
+          "category": { "type": "string" },
+          "es": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "variants": { "type": "array", "items": { "type": "string" } },
+          "classifierLabel": { "type": "integer", "minimum": 0 },
+          "clip": { "type": ["string", "null"] },
+          "animationId": { "type": ["string", "null"] },
+          "nonManual": { "type": ["string", "null"] },
+          "validatedBy": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

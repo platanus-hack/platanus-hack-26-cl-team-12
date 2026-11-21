@@ -18,7 +18,7 @@ converse en tiempo real con una persona que habla **español chileno**:
 | RF5 | Simplificación y traducción de español a glosas LSCh |
 | RF6 | Ejecución de las glosas con un avatar 3D, más subtítulos |
 | RF7 | Disponible en web, Android, iOS y, opcionalmente, escritorio |
-| RF8 | (Futuro) Llamadas a teléfonos convencionales (PSTN) |
+| RF8 | **(v1, producto central)** Llamadas a teléfonos convencionales (PSTN): el ejecutivo no instala nada |
 
 ### No funcionales
 | Categoría | Objetivo MVP (hackathon) | Objetivo futuro |
