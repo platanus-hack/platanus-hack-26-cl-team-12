@@ -4,6 +4,7 @@
 - /token           token de LiveKit con permisos mínimos por rol.
 - /llamadas        crea la llamada telefónica saliente (LiveKit SIP + Twilio) — v1.
 - /glosses         diccionario de glosas (contrato de ADR-0001).
+- /twilio/*        plan B de v1: Twilio Media Streams sin LiveKit (app/twilio_media.py).
 """
 
 import json
@@ -17,6 +18,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from app.twilio_media import router as twilio_router
 
 load_dotenv()
 
@@ -34,6 +37,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(twilio_router)
 
 
 @app.get("/health")

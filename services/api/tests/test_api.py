@@ -69,3 +69,18 @@ def test_llamada_blocks_numbers_outside_allowlist(monkeypatch):
     assert r.status_code == 403
     r = client.post("/llamadas", json={"room": "x", "numero": "+56911111111"})
     assert r.status_code == 501  # permitido, pero la llamada SIP sigue como TODO(v1)
+
+
+def test_twilio_voz_points_stream_to_public_wss(monkeypatch):
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    r = client.post("/twilio/voz")
+    assert r.status_code == 200
+    assert '<Stream url="wss://abc.ngrok-free.app/twilio/media"/>' in r.text
+
+
+def test_twilio_media_echoes_audio():
+    with client.websocket_connect("/twilio/media") as ws:
+        ws.send_json({"event": "start", "start": {"streamSid": "MZ1"}})
+        ws.send_json({"event": "media", "media": {"payload": "AAEC"}})
+        assert ws.receive_json() == {"event": "media", "streamSid": "MZ1", "media": {"payload": "AAEC"}}
+        ws.send_json({"event": "stop"})
