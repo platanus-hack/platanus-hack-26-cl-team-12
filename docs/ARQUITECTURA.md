@@ -298,6 +298,7 @@ graph LR
 - La PWA necesita **HTTPS** (la cámara no funciona sin él).
 - El agente es un proceso de larga duración: **no cabe en funciones serverless**.
 - Los secretos van como variables del proveedor; nunca en el repo.
+- **Paso a paso con comandos:** [`DESPLIEGUE.md`](DESPLIEGUE.md).
 
 ### 3.4 Contenedores
 
