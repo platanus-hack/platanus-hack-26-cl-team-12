@@ -11,6 +11,7 @@ import time
 from collections.abc import Awaitable, Callable
 
 from translator import Translator
+from translator.translate import MAX_TEXTO
 from translator.voz import normalizar_para_voz
 
 log = logging.getLogger("puente.pipeline")
@@ -23,6 +24,11 @@ def faltantes_sin_nombres(descartadas: list[str], texto: str) -> list[str]:
     "doctor Pérez" → PÉREZ). Así la tabla de glosas faltantes no guarda nombres de personas."""
     capitalizadas = {w.lower() for w in re.findall(r"[^\W\d_]+", texto) if w[0].isupper()}
     return [g for g in descartadas if g.lower() not in capitalizadas]
+
+
+def recortar(texto: str, maximo: int = MAX_TEXTO) -> str:
+    """El contrato rechaza textos sobre `max_texto`: se recortan aquí para que el subtítulo nunca se pierda."""
+    return texto if len(texto) <= maximo else texto[: maximo - 1].rstrip() + "…"
 
 
 def _ms(t0: float) -> int:
@@ -50,7 +56,7 @@ async def turno_ejecutivo(texto: str, translator: Translator, publish: Publish, 
         t = time.perf_counter()
         r = await asyncio.to_thread(translator.simplificar, texto)
         metricas["llm_simple_ms"] = _ms(t)
-        msg = {"tipo": "ejecutivo_dice", "texto": texto, "simple": r.simple}
+        msg = {"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": recortar(r.simple)}
         if r.opciones:
             msg["opciones"] = r.opciones
         await publish(msg)
@@ -64,13 +70,13 @@ async def turno_ejecutivo(texto: str, translator: Translator, publish: Publish, 
         if faltantes and translator.store is not None:
             await asyncio.to_thread(translator.store.registrar_faltantes, faltantes)
         if r.glosas:
-            await publish({"tipo": "glosas_para_senar", "glosas": r.glosas, "subtitulo": r.subtitulo})
+            await publish({"tipo": "glosas_para_senar", "glosas": r.glosas, "subtitulo": recortar(r.subtitulo)})
 
     resultados = await asyncio.gather(v2(), v4(), return_exceptions=True)
     v2_err, v4_err = resultados
     if isinstance(v2_err, Exception):
         log.error("simplificar falló: %r", v2_err)
-        await publish({"tipo": "ejecutivo_dice", "texto": texto, "simple": None})  # al menos el texto literal
+        await publish({"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": None})  # al menos el texto
     if isinstance(v4_err, Exception):
         log.warning("glosas fallaron (v4 no bloquea v2): %r", v4_err)
 

@@ -14,14 +14,15 @@ from dataclasses import asdict, dataclass, field
 from . import prompts
 from .cache_key import normalizar_entrada
 from .escenario import Escenario, load_escenario
-from .glossary import LITERAL_MAX_CHARS, LITERAL_PREFIX, Glossary, fingerspell, is_literal, literal
+from .glossary import CONTRATO, LITERAL_MAX_CHARS, LITERAL_PREFIX, Glossary, fingerspell, is_literal, literal
 
 MODEL = os.getenv("TRANSLATOR_MODEL", "claude-haiku-5-5")
 
-# Topes del contrato (packages/glosses/src/contract.ts): si cambian allá, cambian aquí.
-MAX_OPCIONES = 4
-MAX_OPCION_CHARS = 40
-MAX_GLOSAS = 30
+# Topes del contrato (packages/glosses/data/contrato.json, compartido con la web).
+MAX_OPCIONES = CONTRATO["max_opciones"]
+MAX_OPCION_CHARS = CONTRATO["max_opcion_chars"]
+MAX_GLOSAS = CONTRATO["max_glosas"]
+MAX_TEXTO = CONTRATO["max_texto"]
 
 SIMPLE_TOOL = {
     "name": "emitir_simple",

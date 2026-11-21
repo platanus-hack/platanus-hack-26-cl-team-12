@@ -1,6 +1,6 @@
 import asyncio
 
-from pipeline import faltantes_sin_nombres, turno_cliente, turno_ejecutivo
+from pipeline import faltantes_sin_nombres, recortar, turno_cliente, turno_ejecutivo
 from store import Store
 from translator import GlossResult, SimpleResult, load_escenario
 
@@ -89,3 +89,19 @@ def test_turno_cliente_devuelve_texto_para_voz():
 
 def test_faltantes_no_guardan_nombres():
     assert faltantes_sin_nombres(["PÉREZ", "VACUNA", "MARÍA"], "Doctor Pérez, traiga la vacuna. María igual") == ["VACUNA"]
+
+
+def test_textos_largos_se_recortan_al_contrato():
+    from translator.glossary import CONTRATO
+
+    maximo = CONTRATO["max_texto"]
+    assert recortar("hola") == "hola"
+    r = recortar("palabra " * 200)
+    assert len(r) <= maximo and r.endswith("…")
+    enviados = []
+
+    async def pub(m):
+        enviados.append(m)
+
+    correr(turno_ejecutivo("x" * (maximo + 50), FakeTranslator(glosas_falla=True), pub))
+    assert len(enviados[0]["texto"]) <= maximo
