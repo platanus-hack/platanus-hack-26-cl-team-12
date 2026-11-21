@@ -17,6 +17,7 @@ from livekit import agents, rtc
 from livekit.agents import Agent, AgentSession, StopResponse, llm
 from livekit.plugins import deepgram, elevenlabs, silero
 
+from guard import parse_cliente_message
 from translator import Translator, load_glossary
 
 load_dotenv()
@@ -60,22 +61,22 @@ async def entrypoint(ctx: agents.JobContext):
         vad=silero.VAD.load(),
     )
 
-    async def on_cliente(raw: bytes):
-        try:
-            msg = json.loads(raw.decode("utf-8"))
-        except ValueError:
-            return
-        if msg.get("tipo") == "cliente_dice":
+    async def on_cliente(msg: dict):
+        if msg["tipo"] == "cliente_dice":
             frase = msg["texto"]  # TODO(v2): complejizar texto libre del cliente
-        elif msg.get("tipo") == "glosas_cliente":
-            frase = await asyncio.to_thread(translator.glosas_a_espanol, msg["glosas"])
         else:
-            return
+            frase = await asyncio.to_thread(translator.glosas_a_espanol, msg["glosas"])
         session.say(frase, add_to_chat_ctx=False)
 
     @ctx.room.on("data_received")
     def _on_data(packet: rtc.DataPacket):
-        asyncio.create_task(on_cliente(packet.data))
+        # El rol lo fija el servidor en el token; un participante no puede autoasignárselo.
+        role = packet.participant.attributes.get("role") if packet.participant else None
+        msg = parse_cliente_message(packet.data, role, translator.glossary)
+        if msg is None:
+            log.warning("mensaje descartado de %s", packet.participant.identity if packet.participant else "?")
+            return
+        asyncio.create_task(on_cliente(msg))
 
     # TODO(v1): escuchar solo al participante SIP del ejecutivo (room_input_options participant_identity).
     await session.start(agent=PuenteTranslator(ctx.room, translator), room=ctx.room)

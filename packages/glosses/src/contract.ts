@@ -43,20 +43,51 @@ export type MensajePuente =
   | GlosasCliente
   | GlosasParaSenar;
 
+/** Mensajes que solo puede emitir el agente. El cliente debe ignorarlos si vienen de otro participante. */
+export const SOLO_AGENTE: ReadonlySet<MensajePuente["tipo"]> = new Set([
+  "ejecutivo_dice",
+  "estado",
+  "glosas_para_senar",
+]);
+
+const MAX_TEXTO = 500;
+const MAX_GLOSAS = 30;
+
+const esTexto = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= MAX_TEXTO;
+const esGlosas = (v: unknown): v is string[] =>
+  Array.isArray(v) && v.length > 0 && v.length <= MAX_GLOSAS && v.every((g) => typeof g === "string");
+
+/** Valida forma y tipos de cada campo; devuelve null si el mensaje no cumple el contrato. */
 export function parseMensaje(raw: string): MensajePuente | null {
+  let msg: Record<string, unknown>;
   try {
-    const msg = JSON.parse(raw) as { tipo?: unknown };
-    switch (msg.tipo) {
-      case "ejecutivo_dice":
-      case "cliente_dice":
-      case "estado":
-      case "glosas_cliente":
-      case "glosas_para_senar":
-        return msg as MensajePuente;
-      default:
-        return null;
-    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+    msg = parsed as Record<string, unknown>;
   } catch {
     return null;
+  }
+
+  switch (msg.tipo) {
+    case "ejecutivo_dice":
+      if (!esTexto(msg.texto)) return null;
+      if (msg.simple !== undefined && !esTexto(msg.simple)) return null;
+      return { tipo: "ejecutivo_dice", texto: msg.texto, simple: msg.simple as string | undefined };
+    case "cliente_dice":
+      return esTexto(msg.texto) ? { tipo: "cliente_dice", texto: msg.texto } : null;
+    case "estado":
+      return msg.valor === "llamada_iniciada" || msg.valor === "llamada_terminada"
+        ? { tipo: "estado", valor: msg.valor }
+        : null;
+    case "glosas_cliente":
+      return esGlosas(msg.glosas) && typeof msg.confianza === "number"
+        ? { tipo: "glosas_cliente", glosas: msg.glosas, confianza: msg.confianza }
+        : null;
+    case "glosas_para_senar":
+      return esGlosas(msg.glosas) && esTexto(msg.subtitulo)
+        ? { tipo: "glosas_para_senar", glosas: msg.glosas, subtitulo: msg.subtitulo }
+        : null;
+    default:
+      return null;
   }
 }
