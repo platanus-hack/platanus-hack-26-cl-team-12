@@ -39,7 +39,7 @@ para CORS. Se resuelve así: API → PWA → volver a la API a poner el CORS fin
 - [ ] **Antes de exponer algo a Internet: requerimiento A4** del plan. Hoy `/token` no exige sesión ni tiene límite de tasa,
   así que cualquiera podría gastar tu cuota de Claude y ElevenLabs. Mínimo para la demo: una clave de demo en `/token`
   y límite de tasa. **No publiques la URL fuera del equipo hasta cerrarlo.**
-- [ ] Una voz chilena elegida: `ELEVENLABS_VOICE_ID` (ADR-0006). Sin eso el agente usa un valor de relleno.
+- [x] Voces chilenas elegidas: `ELEVENLABS_VOICE_ID` (mujer) y `ELEVENLABS_VOICE_ID_HOMBRE` (ADR-0006). Sin `ELEVENLABS_VOICE_ID` el agente no arranca.
 
 ## 1. Repo personal con doble push
 
@@ -145,8 +145,8 @@ fly secrets set --app puente-agent \
   ANTHROPIC_API_KEY="..." \
   DEEPGRAM_API_KEY="..." \
   ELEVENLABS_API_KEY="..." \
-  ELEVENLABS_VOICE_ID="<voz chilena>" \
-  ESCENARIO_DEMO="reserva de hora médica"
+  ELEVENLABS_VOICE_ID="Fd38GRHtJllY0CuguAy9" ELEVENLABS_VOICE_ID_HOMBRE="6WgXEzo1HGn3i7ilT4Fh" \
+  ESCENARIO=hora_medica AGENT_DB_PATH=/tmp/puente.db
 
 fly deploy . --config services/agent/fly.toml --dockerfile services/agent/Dockerfile
 fly logs --app puente-agent
