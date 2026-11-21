@@ -7,3 +7,7 @@ node_modules/
 # clips/datasets pesados de señas
 data/signs/*
 !data/signs/.gitkeep
+
+# audios personales de prueba (voz): no subir
+data/eval/audio/*
+!data/eval/audio/.gitkeep

@@ -22,7 +22,7 @@ def correr(sistema: str, texto: str):
     return r.content[0].text.strip(), time.time() - t0
 
 
-for nombre, sistema in (("ejecutivo", SIMPLIFICAR), ("cliente", COMPLEJIZAR)):
+for nombre, sistema in (("ejecutivo", SIMPLIFICAR), ("cliente", COMPLEJIZAR), ("cliente_nuevos", COMPLEJIZAR)):
     if lado and lado != nombre:
         continue
     print(f"\n=== {nombre.upper()} → {'SIMPLE' if nombre == 'ejecutivo' else 'NATURAL'} ===")
