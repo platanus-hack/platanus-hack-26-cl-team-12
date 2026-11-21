@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "preview": "next build && python3 -m http.server 3001 --bind 127.0.0.1 --directory out"
   },
   "dependencies": {
     "@puente/avatar": "workspace:*",

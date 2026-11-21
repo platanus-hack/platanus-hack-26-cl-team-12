@@ -2,6 +2,7 @@
 
 // Pantalla de inicio. Enfoque de la demo: pedir una ambulancia a urgencias de la clínica.
 import { Icon, Logo, type IconName } from "@puente/ui";
+import { BotonInstalar } from "./AppInstalable";
 
 export interface Destino {
   id: string;
@@ -40,6 +41,7 @@ export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
       <header className="large-title">
         <Logo variant="mark" size={34} />
         <h1>Puente</h1>
+        <BotonInstalar />
       </header>
       <p className="lede">Llamadas por teléfono, en texto y lengua de señas.</p>
 
