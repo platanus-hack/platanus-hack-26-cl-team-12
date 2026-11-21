@@ -1,7 +1,10 @@
 """Agente traductor de Puente (ADR-0005): participante de la sala de LiveKit.
 
-- Ejecutivo habla (audio SIP/teléfono) → Deepgram STT → Claude simplifica → `ejecutivo_dice` (+ glosas en v4).
-- Cliente escribe o firma (data channel) → Claude complejiza → ElevenLabs TTS → el ejecutivo lo escucha.
+- Ejecutivo habla (audio SIP/teléfono) → Deepgram STT → Claude simplifica (+ glosas) → `ejecutivo_dice` + `glosas_para_senar`.
+- Cliente escribe o firma (data channel) → Claude complejiza → ElevenLabs TTS (voz chilena) → el ejecutivo lo escucha.
+
+La lógica de cada turno está en pipeline.py; aquí solo se conecta LiveKit. Todo lo configurable viene de .env
+(ver .env.example) y del escenario (packages/glosses/data/escenarios/<ESCENARIO>.json).
 
 Escrito contra livekit-agents 1.8.x. Ejecutar:  uv run python agent.py dev
 """
@@ -13,17 +16,21 @@ import os
 
 import anthropic
 from dotenv import load_dotenv
-from livekit import agents, rtc
-from livekit.agents import Agent, AgentSession, StopResponse, llm
-from livekit.plugins import deepgram, elevenlabs, silero
-
 from guard import parse_cliente_message
-from translator import Translator, load_glossary
+from livekit import agents, rtc
+from livekit.agents import NOT_GIVEN, Agent, AgentSession, StopResponse, llm
+from livekit.plugins import deepgram, elevenlabs, silero
+from pipeline import turno_cliente, turno_ejecutivo
+from store import abrir_store
+from translator import Translator, load_escenario, load_glossary
+from translator.voz import elegir_voz
 
 load_dotenv()
 log = logging.getLogger("puente.agent")
 
-ESCENARIO = os.getenv("ESCENARIO_DEMO", "reserva de hora médica")  # TODO: definir escenario final
+
+def _env_bool(nombre: str, defecto: bool) -> bool:
+    return os.getenv(nombre, str(defecto)).strip().lower() in ("1", "true", "sí", "si", "yes")
 
 
 class PuenteTranslator(Agent):
@@ -36,10 +43,7 @@ class PuenteTranslator(Agent):
 
     async def on_user_turn_completed(self, turn_ctx: llm.ChatContext, new_message: llm.ChatMessage) -> None:
         texto = new_message.text_content or ""
-        if texto.strip():
-            simple = await asyncio.to_thread(self.translator.simplificar, texto)
-            await publish(self.room, {"tipo": "ejecutivo_dice", "texto": texto, "simple": simple})
-            # TODO(v4): self.translator.espanol_a_glosas(texto) → {"tipo": "glosas_para_senar", ...}
+        await turno_ejecutivo(texto, self.translator, lambda m: publish(self.room, m), sala=self.room.name)
         raise StopResponse()
 
 
@@ -49,34 +53,54 @@ async def publish(room: rtc.Room, msg: dict) -> None:
 
 async def entrypoint(ctx: agents.JobContext):
     await ctx.connect()
-    translator = Translator(anthropic.Anthropic(), load_glossary(), contexto=ESCENARIO)
+    escenario = load_escenario()
+    translator = Translator(anthropic.Anthropic(), load_glossary(), escenario, store=abrir_store())
+    voz_actual = elegir_voz()
 
+    tts = elevenlabs.TTS(
+        # El plugin lee ELEVEN_API_KEY por su cuenta; nuestra variable (heredada del scaffold) es ELEVENLABS_API_KEY.
+        # Si no está, NOT_GIVEN deja que el plugin use ELEVEN_API_KEY.
+        api_key=os.getenv("ELEVENLABS_API_KEY") or NOT_GIVEN,
+        voice_id=voz_actual,  # ADR-0006
+        model=os.getenv("ELEVENLABS_MODEL", "eleven_flash_v2_5"),
+        language=os.getenv("TTS_LANGUAGE", "es"),
+    )
     session = AgentSession(
-        stt=deepgram.STT(model="nova-3", language=os.getenv("STT_LANGUAGE", "es")),
-        tts=elevenlabs.TTS(
-            voice_id=os.environ.get("ELEVENLABS_VOICE_ID", "TODO-voz-chilena"),  # ADR-0006
-            model=os.getenv("ELEVENLABS_MODEL", "eleven_flash_v2_5"),
-            language="es",
+        stt=deepgram.STT(
+            model=os.getenv("STT_MODEL", "nova-3"),
+            language=os.getenv("STT_LANGUAGE", "es"),
+            # "diez y media" → "10:30": el LLM conserva cifras exactas y el cliente las ve como número.
+            smart_format=_env_bool("STT_SMART_FORMAT", True),
+            keyterm=escenario.stt_keyterms or NOT_GIVEN,  # términos del escenario (RUT, Fonasa, box…)
         ),
+        tts=tts,
         vad=silero.VAD.load(),
     )
 
-    async def on_cliente(msg: dict):
-        if msg["tipo"] == "cliente_dice":
-            frase = msg["texto"]  # TODO(v2): complejizar texto libre del cliente
-        else:
-            frase = await asyncio.to_thread(translator.glosas_a_espanol, msg["glosas"])
+    tareas: set[asyncio.Task] = set()
+
+    async def on_cliente(msg: dict, preferencia_voz: str | None):
+        nonlocal voz_actual
+        voz = elegir_voz(preferencia_voz)
+        if voz != voz_actual:  # el cliente eligió voz de mujer u hombre (atributo `voz` de su participante)
+            tts.update_options(voice_id=voz)
+            voz_actual = voz
+        frase = await turno_cliente(msg, translator, sala=ctx.room.name)
         session.say(frase, add_to_chat_ctx=False)
 
     @ctx.room.on("data_received")
     def _on_data(packet: rtc.DataPacket):
         # El rol lo fija el servidor en el token; un participante no puede autoasignárselo.
-        role = packet.participant.attributes.get("role") if packet.participant else None
-        msg = parse_cliente_message(packet.data, role, translator.glossary)
+        attrs = packet.participant.attributes if packet.participant else {}
+        msg = parse_cliente_message(packet.data, attrs.get("role"), translator.glossary)
         if msg is None:
             log.warning("mensaje descartado de %s", packet.participant.identity if packet.participant else "?")
             return
-        asyncio.create_task(on_cliente(msg))
+        # TODO(v1): que /token permita fijar el atributo `voz` ("mujer"/"hombre") según la preferencia del cliente.
+        # Guardar la referencia: sin ella el GC puede botar el task a mitad de camino (RUF006).
+        tarea = asyncio.create_task(on_cliente(msg, attrs.get("voz")))
+        tareas.add(tarea)
+        tarea.add_done_callback(tareas.discard)
 
     # TODO(v1): escuchar solo al participante SIP del ejecutivo (room_input_options participant_identity).
     await session.start(agent=PuenteTranslator(ctx.room, translator), room=ctx.room)

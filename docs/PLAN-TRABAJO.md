@@ -10,16 +10,34 @@
 4. **Cada pantalla es un componente propio.** `apps/web/src/app/page.tsx` solo lo toca D; los demás entregan componentes en sus carpetas (`CallPanel`, `CameraPanel`, `AvatarPanel`) y rutas aparte (`/captura`).
 5. **Archivos compartidos = commit chico y aparte, con pull justo antes:** `package.json` raíz, `pnpm-lock.yaml` (si hay conflicto: `pnpm install` y se regenera), `.env.example`, `docs/contrato.md`. Cada servicio Python tiene su propio `uv.lock`.
 
-## 2. Reparto (una rama por persona, como en `ONBOARDING.md`)
+## 2. Reparto (una vertical por persona, como en `ONBOARDING.md`)
 
-| | Persona (sugerida) | Rama | Es dueño de | Entrega |
+| | Persona (sugerida) | Prefijo de rama | Es dueño de | Entrega |
 |---|---|---|---|---|
-| **A** | Tomás (ya hizo la investigación y es quien despliega) | `v1-telefonia` | `services/api/`, `services/agent/telefonia/`, `.github/`, Dockerfiles, deploy, `.env` | Llamada telefónica real de punta a punta y todo desplegado |
-| **B** | Raimundo | `v2-llm` | `services/agent/translator/`, `services/agent/agent.py`, `packages/glosses/data/`, `data/vocab/`, `data/eval/` | Traducción simple/compleja + voz + vocabulario del escenario |
-| **C** | Martín | `v3-vision` | `packages/signs/`, `ml/training/`, `apps/web/src/app/captura/` | Cámara → glosas con vocabulario cerrado |
-| **D** | Rafael | `v4-avatar` | `apps/web/` (shell), `packages/avatar/`, `packages/ui/`, `apps/mobile/`, clips | App usable, reproductor de señas y PWA instalable |
+| **A** | Martín (cambió con Tomás) | `v1/…` | `services/api/`, `services/agent/telefonia/`, `.github/`, Dockerfiles, deploy, `.env` | Llamada telefónica real de punta a punta y todo desplegado |
+| **B** | Raimundo | `v2/…` | `services/agent/translator/`, `services/agent/agent.py`, `packages/glosses/data/`, `data/vocab/`, `data/eval/` | Traducción simple/compleja + voz + vocabulario del escenario |
+| **C** | Tomás | `v3/…` | `packages/signs/`, `ml/training/`, `apps/web/src/app/captura/` | Cámara → glosas con vocabulario cerrado |
+| **D** | Rafael | `v4/…` | `apps/web/` (shell), `packages/avatar/`, `packages/ui/`, `apps/mobile/`, clips | App usable, reproductor de señas y PWA instalable |
+
+### Cómo se nombran las ramas
+Una rama **corta por PR**, con el prefijo de tu vertical y un tema en kebab-case (sin tildes): `<prefijo>/<tema>`.
+
+| Prefijo | Para qué | Ejemplo |
+|---|---|---|
+| `v1/` `v2/` `v3/` `v4/` | Trabajo de esa vertical (dueño en la tabla de arriba) | `v1/llamadas-entrantes`, `v4/reproductor-clips` |
+| `docs/` | Solo documentación (ADRs, plan, bitácora, onboarding) | `docs/convencion-ramas` |
+| `chore/` | Repo, CI, config, `.gitignore`, dependencias | `chore/ignorar-worktrees` |
+| `fix/` | Arreglo fuera de una vertical, o urgente | `fix/parse-mensaje-null` |
+
+- **`dev` es la rama de integración**: las ramas salen de `dev` y el PR va a `dev`. `main` solo recibe `dev` cuando está estable (lo hace quien despliega). La rama se borra después de mergearla.
+- **Prohibido** `worktree-*`, nombres personales (`rafa-cosas`) o genéricos (`dev2`, `prueba`).
+- **Con Claude / worktrees:** crea el worktree ya con el nombre correcto y después entra en él:
+  `git worktree add .claude/worktrees/<tema> -b v1/<tema> origin/dev` (Claude entra con `EnterWorktree path=...`).
+  Si la rama ya nació como `worktree-<tema>`, renómbrala **antes del primer push**: `git branch -m v1/<tema>`.
 
 Entrega final (`platanus-hack-project.jsonc`, `project-description.md`, logo, guion de la demo): **A** la arma, **todos** revisan.
+
+**Despliega Raimundo** (desde su repo personal con doble push, ver `ONBOARDING.md` §4). Por eso **A3 (despliegue) y A5 (CI y secretos en los proveedores) los ejecuta él**, aunque el requerimiento siga en la lista de A: A debe tener listo el servicio (A1, A2) y entregarle las credenciales (R0.4); Raimundo las carga en Vercel/Render y nunca en el repo.
 
 ## 3. Requerimientos por persona
 Tamaño: **S** ≤ 1 h · **M** 2–4 h · **L** medio día o más. Hecho = cumple el criterio y tiene `pytest`/`typecheck` en verde.
@@ -29,7 +47,7 @@ Tamaño: **S** ≤ 1 h · **M** 2–4 h · **L** medio día o más. Hecho = cump
 |---|---|---|
 | R0.1 | Elegir **un escenario** (hora médica **o** banco) | Decidido y anotado en `docs/plan.md` |
 | R0.2 | Congelar **~30 glosas** del escenario (con una persona que conozca LSCh si es posible) | `glosses.json` commiteado por B |
-| R0.3 | Repartir carpetas y ramas (§2) y acordar canal privado para claves | Todos con rama creada |
+| R0.3 | Repartir carpetas y prefijos de rama (§2) y acordar canal privado para claves | Todos con su primera rama `vN/<tema>` creada |
 | R0.4 | **A entrega credenciales** de LiveKit y Twilio por canal privado (esto es lo único que bloquea a otros: hacerlo primero) | Cada uno con su `.env` |
 
 ### A — Telefonía y plataforma (v1) · no depende de nadie
@@ -90,7 +108,7 @@ Bloque 2  A4–A5 · B5–B6 · C3–C5 · D4–D6                 → sesiones 
 Sync 2    v2 y v3 integrados                            → B + C + D
 Bloque 3  Congelar funcionalidades, A6, ensayo ×3       → todos; solo bugs y pulido
 ```
-Orden sugerido de merge a `main`: **A → B → D → C** (los que más servicios comparten primero, visión al final porque es lo más riesgoso y no debe bloquear nada).
+Orden sugerido de merge a `dev`: **A → B → D → C** (los que más servicios comparten primero, visión al final porque es lo más riesgoso y no debe bloquear nada).
 
 ## 6. Dependencias reales (solo hay tres)
 | Quién espera | A quién | Qué | Cuándo |

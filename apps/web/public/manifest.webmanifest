@@ -4,8 +4,15 @@
   "description": "Llamadas telefónicas para personas sordas: voz a texto y señas, texto y señas a voz.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b1220",
-  "theme_color": "#0b1220",
+  "background_color": "#f2f3f6",
+  "theme_color": "#f2f3f6",
   "lang": "es-CL",
-  "icons": []
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }
