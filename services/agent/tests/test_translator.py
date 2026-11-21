@@ -52,12 +52,12 @@ def test_fingerspell_keeps_only_letters_and_caps_length():
 
 def test_espanol_a_glosas_filters_unknown_and_fingerspells():
     client = fake_client([tool_use({
-        "glosas": ["LUNES", "TÚ", "VENIR", "MÉDICO"],
+        "glosas": ["LUNES", "TÚ", "INVENTADA", "MÉDICO"],
         "deletrear": ["Ana"],
         "subtitulo": "El lunes ven al médico con Ana",
     })])
     t = Translator(client, load_glossary())
     r = t.espanol_a_glosas("El lunes tiene que venir a ver a la doctora Ana")
     assert r.glosas == ["LUNES", "TÚ", "MÉDICO", "DACTILOLOGÍA:A-N-A"]
-    assert r.descartadas == ["VENIR"]
+    assert r.descartadas == ["INVENTADA"]
     assert client.messages.calls[0]["tool_choice"] == {"type": "tool", "name": "emitir_glosas"}

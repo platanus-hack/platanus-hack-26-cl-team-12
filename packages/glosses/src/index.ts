@@ -15,6 +15,8 @@ export interface GlossEntry {
   animationId: string | null;
   nonManual: string | null;
   validatedBy: string | null;
+  /** id en el glosario LSCh de origen (UMCE); la foto está en data/signs/img/<lexiconId>.png. */
+  lexiconId?: string;
 }
 
 export interface GlossDictionary {

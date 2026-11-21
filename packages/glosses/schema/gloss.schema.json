@@ -21,7 +21,8 @@
           "clip": { "type": ["string", "null"] },
           "animationId": { "type": ["string", "null"] },
           "nonManual": { "type": ["string", "null"] },
-          "validatedBy": { "type": ["string", "null"] }
+          "validatedBy": { "type": ["string", "null"] },
+          "lexiconId": { "type": "string", "description": "id en el glosario LSCh de origen (UMCE); la foto está en data/signs/img/<lexiconId>.png" }
         },
         "additionalProperties": false
       }
