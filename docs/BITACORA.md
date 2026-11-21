@@ -9,6 +9,11 @@ Las entradas nuevas van **arriba**. Formato:
 ```
 
 ## 2026-11-21 — Martín / Claude (v1-telefonia)
+- Hice: cuentas de LiveKit Cloud (proyecto "Platanus") y Twilio (trial, número +1 737). Claves verificadas contra ambas APIs.
+- Decidí: probar v1 gratis. Twilio llama al celular y lo conecta por `<Dial><Sip>` al SIP URI de LiveKit, sin Elastic SIP Trunking.
+- Falta / bloqueado: **TODO(Martín): decidir si vale la pena pagar el upgrade de Twilio (~20 USD)**. El trial bloquea Elastic SIP Trunking (error 20003), pone un aviso de "trial account" al contestar y solo llama a 5 números verificados de Chile. Pagar solo cuando v1 funcione de punta a punta con el desvío gratis.
+
+## 2026-11-21 — Martín / Claude (v1-telefonia)
 - Decidí: Martín y Tomás intercambian roles: **Martín queda en A (telefonía, deploy, v1)** y **Tomás en C (visión, v3)**. Tabla actualizada en `PLAN-TRABAJO.md`.
 - Falta / bloqueado: acordar si el deploy sigue saliendo del repo personal de Tomás o pasa a Martín, y quién es dueño de las cuentas de LiveKit y Twilio.
 ## 2026-11-21 — Tomás / Claude (lab-v1-v2)
