@@ -14,7 +14,7 @@ import os
 import anthropic
 from dotenv import load_dotenv
 from livekit import agents, rtc
-from livekit.agents import Agent, AgentSession, StopResponse, llm
+from livekit.agents import NOT_GIVEN, Agent, AgentSession, StopResponse, llm
 from livekit.plugins import deepgram, elevenlabs, silero
 
 from guard import parse_cliente_message
@@ -54,6 +54,9 @@ async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(
         stt=deepgram.STT(model="nova-3", language=os.getenv("STT_LANGUAGE", "es")),
         tts=elevenlabs.TTS(
+            # El plugin lee ELEVEN_API_KEY por su cuenta; nuestra variable (heredada del scaffold) es ELEVENLABS_API_KEY.
+            # Si no está, NOT_GIVEN deja que el plugin use ELEVEN_API_KEY.
+            api_key=os.getenv("ELEVENLABS_API_KEY") or NOT_GIVEN,
             voice_id=os.environ.get("ELEVENLABS_VOICE_ID", "TODO-voz-chilena"),  # ADR-0006
             model=os.getenv("ELEVENLABS_MODEL", "eleven_flash_v2_5"),
             language="es",

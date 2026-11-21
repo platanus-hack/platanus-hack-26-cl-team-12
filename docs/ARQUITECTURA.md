@@ -348,7 +348,8 @@ No hay CD: el despliegue lo dispara el `push` al repo personal.
 
 ### 3.7 Variables de entorno
 
-Todas están en `.env.example`. Los secretos solo en `.env` (nunca commitear).
+Todas están en [`.env.example`](../.env.example), que es la documentación completa: marca cuáles son obligatorias, opcionales
+(con su valor por defecto) o reservadas (aún sin código), y dónde se carga cada una. Los secretos solo en `.env` (nunca commitear).
 
 | Variable | Usa | Notas |
 |---|---|---|
@@ -356,7 +357,7 @@ Todas están en `.env.example`. Los secretos solo en `.env` (nunca commitear).
 | `TRANSLATOR_MODEL` | agent | Por defecto `claude-haiku-5-5` |
 | `ESCENARIO_DEMO` | agent | Contexto del prompt (banco, hora médica) |
 | `DEEPGRAM_API_KEY`, `STT_LANGUAGE` | agent | STT; `es` por defecto |
-| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL` | agent | TTS; modelo por defecto `eleven_flash_v2_5` |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL` | agent | TTS; modelo por defecto `eleven_flash_v2_5`. El plugin espera `ELEVEN_API_KEY`; el agente le pasa `ELEVENLABS_API_KEY` |
 | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | api, agent | Secretos (salvo la URL) |
 | `LIVEKIT_SIP_TRUNK_ID` | api | Trunk SIP saliente hacia Twilio |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | api | Secretos |
@@ -366,7 +367,7 @@ Todas están en `.env.example`. Los secretos solo en `.env` (nunca commitear).
 | `GLOSSES_PATH` | api, agent | Opcional: otra ruta al `glosses.json` |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | web, api | Públicas |
 | `SUPABASE_SERVICE_ROLE_KEY` | api | **Solo backend** |
-| `NEXT_PUBLIC_API_URL` | web | Se expone al navegador |
+| `NEXT_PUBLIC_API_URL` | web | Se expone al navegador y se hornea en el build. **Next.js no lee el `.env` de la raíz** (verificado): en local va en `apps/web/.env.local`, en producción en Vercel |
 
 ### 3.8 Límites conocidos
 
