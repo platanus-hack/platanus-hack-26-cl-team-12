@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    target-branch: dev
+    commit-message: { prefix: "ci" }
+  - package-ecosystem: npm        # o pip / uv / docker según el repo
+    directory: /
+    schedule: { interval: weekly }
+    target-branch: dev
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "build" }
+    groups:
+      minor-y-patch:
+        update-types: [minor, patch]
