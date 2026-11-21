@@ -44,6 +44,12 @@ class H(SimpleHTTPRequestHandler):
         return super().do_GET()
     def do_POST(self):
         u = urlparse(self.path)
+        if u.path == "/api/video":  # video crudo de la cámara para procesar offline (WiLoR)
+            n = (parse_qs(u.query).get("name", [""])[0]).upper()
+            if not re.fullmatch(r"[A-Z0-9_-]{1,40}", n): return self._json({"error": "nombre inválido"}, 400)
+            vd = HERE.parents[2] / "data" / "signs" / "video"; vd.mkdir(parents=True, exist_ok=True)
+            f = vd / f"{n}.webm"; f.write_bytes(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+            return self._json({"ok": True, "path": str(f.relative_to(HERE.parents[2])), "bytes": f.stat().st_size})
         if u.path != "/api/save": return self._json({"error": "ruta"}, 404)
         g = (parse_qs(u.query).get("glosa", [""])[0]).upper()
         if not re.fullmatch(r"[A-Z0-9_-]{1,40}", g): return self._json({"error": "nombre de glosa inválido"}, 400)

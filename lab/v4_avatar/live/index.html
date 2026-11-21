@@ -55,6 +55,7 @@ h1{font-size:15px;margin:0 0 8px}
    <select id="dur" style="flex:1;padding:6px;border-radius:6px"><option value="2">2 s</option><option value="3" selected>3 s</option><option value="4">4 s</option></select>
    <button id="recBtn" class="btn" style="flex:2;background:#c0392b">● Grabar (cuenta 3)</button>
   </div>
+  <button class="btn" id="vidBtn" style="width:100%;margin-bottom:6px;background:#6a4c93">🎥 Grabar VIDEO crudo (para WiLoR)</button>
   <div id="clipBox" style="display:none;gap:6px;flex-wrap:wrap">
    <button class="btn" id="playBtn">▶ Ver</button><label style="margin:0 6px"><input type="checkbox" id="loopP"> repetir</label>
    <button class="btn" id="saveBtn" style="background:#2a6f5e">💾 Guardar</button><button class="btn" id="discBtn">✕</button>
@@ -209,10 +210,22 @@ function stepMode(now){ // devuelve true si el modo controla los huesos (se salt
   return true}
  return false}
 
+// ---- video crudo de la cámara (se procesa offline con modelos más precisos)
+$('vidBtn').onclick=async()=>{const g=nm()||'PRUEBA';
+ for(let i=3;i>0;i--){st('Video en '+i+'…');await new Promise(r=>setTimeout(r,1000))}
+ const mt=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+ const rec=new MediaRecorder(video.srcObject,{mimeType:mt,videoBitsPerSecond:10e6}),chunks=[];
+ rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+ rec.onstop=async()=>{const blob=new Blob(chunks,{type:'video/webm'});
+  try{const r=await fetch('/api/video?name='+encodeURIComponent(g),{method:'POST',body:blob});const j=await r.json();st('Video guardado ✔ '+j.path+' ('+Math.round(j.bytes/1024)+' KB)')}
+  catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=g+'.webm';a.click();st('Servidor no disponible: descargué el video')}};
+ rec.start();const t0=performance.now(),iv=setInterval(()=>st('● VIDEO '+((performance.now()-t0)/1000).toFixed(1)+' s'),100);
+ setTimeout(()=>{rec.stop();clearInterval(iv)},(+$('dur').value)*1000)};
+
 // ---- cámara + MediaPipe
 const video=$('v');
 st('Pidiendo cámara…');
-video.srcObject=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:'user'},audio:false});
+video.srcObject=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30},facingMode:'user'},audio:false});
 await video.play();
 st('Cargando modelos MediaPipe…');
 const fs=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
