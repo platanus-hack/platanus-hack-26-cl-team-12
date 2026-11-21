@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./data/glosses.json": "./data/glosses.json",
+    "./data/contrato.json": "./data/contrato.json",
     "./schema/gloss.schema.json": "./schema/gloss.schema.json"
   },
   "scripts": {

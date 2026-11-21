@@ -11,9 +11,9 @@ completan; las nuevas se agregan al final con el siguiente label libre. Nunca se
 Uso:  python -I data/vocab/build_glosses.py [VOCABULARIO.json] [CURACION.json] [DESTINO.json]
 """
 
+import argparse
 import json
 import re
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -69,7 +69,8 @@ def construir(vocab: list[dict], cur: dict, actual: dict, patron: re.Pattern) ->
         por_glosa[glosa] = entrada
 
     return {
-        "version": actual["version"] + 1 if len(glosses) != len(actual["glosses"]) else actual["version"],
+        # Cualquier cambio de contenido (glosas nuevas o `es`/`lexiconId` completados) sube la versión.
+        "version": actual["version"] + 1 if glosses != actual["glosses"] else actual["version"],
         "_comment": "Generado por data/vocab/build_glosses.py (vocabulario + curación en data/vocab). "
         "Solo aditivo: no reordenar classifierLabel. TODO(real-data): validar con una persona señante (validatedBy).",
         "glosses": glosses,
@@ -79,12 +80,20 @@ def construir(vocab: list[dict], cur: dict, actual: dict, patron: re.Pattern) ->
 def escribir(destino: Path, d: dict) -> None:
     """Una glosa por línea: los diffs de PR muestran exactamente qué glosa cambió."""
     lineas = ",\n".join("    " + json.dumps(g, ensure_ascii=False) for g in d["glosses"])
-    cabecera = json.dumps({"version": d["version"], "_comment": d["_comment"]}, ensure_ascii=False, indent=2)
-    destino.write_text(cabecera[:-2] + ',\n  "glosses": [\n' + lineas + "\n  ]\n}\n", encoding="utf-8")
+    cabecera = (
+        f'  "version": {json.dumps(d["version"])},\n'
+        f'  "_comment": {json.dumps(d["_comment"], ensure_ascii=False)},\n'
+    )
+    destino.write_text("{\n" + cabecera + '  "glosses": [\n' + lineas + "\n  ]\n}\n", encoding="utf-8")
 
 
-def main(argv: list[str]) -> None:
-    vocab_p, cur_p, destino = (Path(a) for a in argv[1:4]) if len(argv) >= 4 else DEFAULTS
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("vocabulario", nargs="?", type=Path, default=DEFAULTS[0])
+    ap.add_argument("curacion", nargs="?", type=Path, default=DEFAULTS[1])
+    ap.add_argument("destino", nargs="?", type=Path, default=DEFAULTS[2])
+    args = ap.parse_args()
+    vocab_p, cur_p, destino = args.vocabulario, args.curacion, args.destino
     vocab = json.loads(vocab_p.read_text(encoding="utf-8"))
     cur = json.loads(cur_p.read_text(encoding="utf-8"))
     nuevo = construir(vocab, cur, json.loads(destino.read_text(encoding="utf-8")), patron_glosa())
@@ -93,4 +102,4 @@ def main(argv: list[str]) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

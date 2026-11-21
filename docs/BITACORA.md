@@ -13,6 +13,22 @@ Las entradas nuevas van **arriba**. Formato:
 - Decidí: `API_ENV=development|production` (defecto development) y `API_DOCS=1|0` para forzar. **El Dockerfile de la API fija `API_ENV=production`**, así el despliegue no expone el mapa de la API aunque nadie lo configure.
 - Verificado: `pytest` api (10), incluidos tests de Swagger encendido y apagado.
 
+## 2026-11-21 — Raimundo / Claude (v2/revision-clean-code)
+- Hice: revisión de alertas (GitHub, `pnpm audit`, `pip-audit`, ruff, pytest) y de clean code de todo el repo. Informe con pendientes **por dueño** en `docs/REVISION-CODIGO.md`. Arreglé lo de v2: límites del contrato en `packages/glosses/data/contrato.json` (fuente única web + agente), `fingerspell`/`isLiteralGloss` TS alineados con Python, recorte de textos al contrato, respaldo cuando falla Claude en el turno del cliente, `.env` local respetado, `.env.example` sin duplicadas.
+- Decidí: no tocar carpetas de otros; los hallazgos quedan en el informe.
+- Verificado: `pytest` agent (45), `pnpm typecheck`, `pnpm build`, ruff limpio en `services/agent`.
+- Falta / bloqueado: con el PR #7 ya mergeado, a **D** le quedan 2 pendientes altos: `play()` del reproductor se puede colgar y falta el listener de `Disconnected`. Ver el informe.
+
+## 2026-11-21 — Rafael / Claude (v4-avatar) · llamada entrante primero
+- Decidí (Rafael): **la versión 1 es la llamada entrante**. La clínica llama a la persona sorda, ve la pantalla de llamada y contesta deslizando a la izquierda; ahí se abre la app con el texto y el avatar. **La versión 2 es la saliente** (la persona llama a la clínica). Por ahora solo salud (clínica, CESFAM, Fonasa).
+- Hice: `IncomingCall` en `packages/ui` (pantalla completa, borde que destella y pulso en vez de timbre, vibración en Android, deslizar para contestar, Rechazar). En `?mock=1` la clínica "llama" a los 3 s de abrir la app, con un guion de confirmación de hora. Tema pastel por defecto, inicio con destinos de salud, aviso de conexión quitado (redundante con "En llamada" + duración), avatar grande con el subtítulo encima.
+- Falta / bloqueado: en producción el aviso llega como push / `call.incoming` (lo define A en el contrato). Una web no puede reemplazar la pantalla nativa de llamada del celular: para eso hace falta Capacitor + CallKit/ConnectionService.
+
+## 2026-11-21 — Rafael / Claude (v4-avatar)
+- Hice: D2 y D3. Pantalla de llamada (`apps/web/src/components/CallPanel.tsx`): Llamar/Colgar, estado con contador, avisos, subtítulos (simple + original), escribir o tocar respuesta rápida → `cliente_dice`, y el avatar de ejemplo cuando llega `glosas_para_senar`. Modo `?mock=1` (`apps/web/src/lib/mockCall.ts`): llamada simulada de hora médica, el ejecutivo responde cada vez que el cliente dice algo.
+- Decidí: el simulador implementa la misma interfaz que `joinCall`, así la pantalla es igual con o sin backend. El texto del cliente se agrega a los subtítulos al enviarlo (el agente no lo devuelve).
+- Falta: probar contra el agente real (Sync 1). D5 con `ClipSignPlayer` / fotos de `lab/v4_avatar`.
+
 ## 2026-11-21 — Raimundo / Claude (v2/traduccion-voz-vocab)
 - Hice: v2 en el agente real. **Vocabulario:** `glosses.json` pasa a 81 glosas de hora médica (las 12 originales conservan su `classifierLabel`), generado con `data/vocab/build_glosses.py` + `curacion_hora_medica.json`; campo `lexiconId` = id UMCE de la foto. **Traducción:** prompts del lab en `translator/prompts.py`; `simplificar` devuelve `simple` + `opciones` (respuestas rápidas); `complejizar` para `cliente_dice`; `espanol_a_glosas` con literales `TEXTO:10:30` para horas, cifras y nombres. `pipeline.py` corre v2 y v4 en paralelo (v4 caído no bloquea v2). **Voz:** mujer `Fd38GRHtJllY0CuguAy9` (defecto) y hombre `6WgXEzo1HGn3i7ilT4Fh`; el atributo `voz` del participante la cambia; RUT, horas y montos se normalizan para el TTS. **Escenario como datos:** `packages/glosses/data/escenarios/hora_medica.json` (descripción, ejemplos, keyterms STT, pronunciaciones), se elige con `ESCENARIO`. **BD del agente:** SQLite (`store.py`, `db/schema.sql`, portable a Supabase) con caché de frases genéricas, latencia por turno y glosas faltantes. **Eval:** `data/eval/v2_casos.json` (36 casos) + `eval_v2.py`.
 - Decidí: SQLite local y no Supabase, porque aún no hay proyecto y A es dueño de esa infra. La caché solo guarda frases de una **lista blanca** del escenario (`frases_frecuentes`), nunca texto libre de la llamada, y sin la entrada (solo su hash); glosas faltantes sin nombres y con purga. Contrato aditivo: `ejecutivo_dice.opciones` y glosas `TEXTO:` (**D:** mostrar `TEXTO:` como texto grande y conectar `opciones` a `QuickReplies`; helpers `isLiteralGloss`/`literalText` en `@puente/glosses`).
@@ -35,7 +51,7 @@ Las entradas nuevas van **arriba**. Formato:
 ## 2026-11-21 — Rafael / Claude (dev)
 - Hice: sistema de diseño de Puente. Artefacto con la guía completa (https://claude.ai/artifact/7kbPXxp6kcwGSb3hQV3WVh) y su versión en código en `packages/ui`: tokens (Noche por defecto + Día), logo, 9 íconos y 11 componentes (Logo, Icon, Button, CallStatus, VisualAlert, Subtitles, QuickReplies, Composer, GlossChip, SignCamera, SignAvatar). La app ya importa los estilos; el inicio usa los componentes nuevos, `/design` muestra el catálogo y la PWA tiene ícono.
 - Decidí: tipografías Atkinson Hyperlegible (lectura), Bricolage Grotesque (títulos) y JetBrains Mono (glosas). Se mantienen los nombres de variables de `globals.css` (`--bg`, `--fg`, `--muted`, `--accent`, `--cliente`). `Subtitles` y `VisualAlert` siguen aceptando las props de antes.
-- Falta / bloqueado: no corrí `pnpm typecheck` ni `build` (WSL sin node). La figura de cámara y avatar es de ejemplo, `TODO(real-data)`. `dev` sin push (falta `gh`).
+- Falta / bloqueado: la figura de cámara y avatar es de ejemplo, `TODO(real-data)`. (Typecheck y build verificados después; mergeado en PR #2.)
 
 ## 2026-11-21 — Raimundo / Claude (rama worktree-adrs-arquitectura) — ⚠️ requiere acuerdo del equipo antes de merge
 - Hice: 11 ADRs + índice en `docs/adr/` y esqueleto de monorepo en 3 commits separados: (a) ADRs, (b) esqueleto **aditivo** (`apps/ packages/ services/ ml/`, CI, Dockerfiles), (c) **movimiento**: borra `app/` y actualiza CLAUDE.md, ONBOARDING (§3 con mapa de rutas viejas→nuevas, §5, §6), plan.md y contrato.md (solo agrega 2 tipos).
