@@ -94,6 +94,10 @@ lightning_logs/
 data/signs/*
 !data/signs/.gitkeep
 
+# audios personales de prueba (voz): no subir
+data/eval/audio/*
+!data/eval/audio/.gitkeep
+
 # ───────── Logs y temporales ─────────
 *.log
 tmp/
