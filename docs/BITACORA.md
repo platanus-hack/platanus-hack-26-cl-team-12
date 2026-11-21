@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Claude (docs/convencion-ramas)
+- Hice: convención de nombres de rama en `PLAN-TRABAJO.md` §2 (también en ONBOARDING §5–6, PRACTICAS y CLAUDE.md). En PR aparte (`chore/ignorar-worktrees`), `.gitignore` también ignora `.worktrees/` y `worktrees/`.
+- Decidí: una rama corta por PR `<prefijo>/<tema>` con prefijos `v1/`–`v4/`, `docs/`, `chore/` y `fix/`. **`dev` es la rama de integración**: las ramas salen de `dev` y los PRs van a `dev`; `main` solo recibe `dev` estable. Se prohíbe `worktree-*`.
+- Falta: que cada dueño renombre sus ramas abiertas que no siguen la convención (`worktree-adrs-arquitectura`, `worktree-skills-hackaton`, `ui-design-system`, `lab-v1-v2`, `roles-martin-tomas`), o que las borre si ya están mergeadas.
+
 ## 2026-11-21 — Martín / Claude (v1-telefonia)
 - Decidí: Martín y Tomás intercambian roles: **Martín queda en A (telefonía, deploy, v1)** y **Tomás en C (visión, v3)**. Tabla actualizada en `PLAN-TRABAJO.md`.
 - Falta / bloqueado: acordar si el deploy sigue saliendo del repo personal de Tomás o pasa a Martín, y quién es dueño de las cuentas de LiveKit y Twilio.
