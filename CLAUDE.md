@@ -3,6 +3,7 @@ Equipo de 4. Lo que importa es una **demo funcionando**, no código perfecto.
 
 ## Lee primero
 - `docs/ONBOARDING.md` (qué hacemos, v1–v4, repos y pushes, cómo unirse), `docs/PRACTICAS-MULTI-CLAUDE.md` y las últimas entradas de `docs/BITACORA.md`.
+- `docs/PLAN-TRABAJO.md` (quién es dueño de qué carpeta y requerimientos por persona).
 - Al terminar un bloque de trabajo, anota en `docs/BITACORA.md`.
 
 ## Estructura
