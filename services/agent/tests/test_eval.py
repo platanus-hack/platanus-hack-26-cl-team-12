@@ -32,3 +32,13 @@ def test_casos_reales_corren_y_generan_informe():
     assert resumen["casos"] == len(filas) == sum(len(v) for k, v in casos.items() if not k.startswith("_"))
     md = informe(filas, resumen, "fake")
     assert md.startswith("# Evaluación v2/v4") and "## complejizar" in md
+
+
+def test_precalentar_recorre_las_frases_frecuentes():
+    from eval_v2 import precalentar
+    from translator import load_escenario
+
+    t = Eco()
+    t.escenario = load_escenario("hora_medica")
+    f = t.escenario.frases_frecuentes
+    assert precalentar(t) == len(f["ejecutivo"]) + len(f["cliente"])

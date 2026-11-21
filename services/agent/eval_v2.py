@@ -3,8 +3,9 @@
 Uso (desde services/agent, con ANTHROPIC_API_KEY en .env):
     uv run python eval_v2.py [CASOS.json] [--salida INFORME.md] [--sin-cache]
 
-Por defecto usa la base de datos del agente (store.py): así también **precalienta la caché** con las frases
-genéricas de la demo, que después salen sin llamar a Claude. --sin-cache mide latencia real.
+Por defecto usa la base de datos del agente (store.py) y además **precalienta la caché** con las
+`frases_frecuentes` del escenario (las únicas cacheables), que en la demo salen sin llamar a Claude.
+--sin-cache mide latencia real sin tocar la base de datos.
 """
 
 import argparse
@@ -57,6 +58,19 @@ def evaluar(translator, casos: dict) -> tuple[list[dict], dict]:
     return filas, {"casos": len(filas), "pasan": ok, "p50_ms": ms[len(ms) // 2], "max_ms": ms[-1]}
 
 
+def precalentar(translator) -> int:
+    """Traduce una vez cada frase de la lista blanca del escenario para dejarla en la caché."""
+    n = 0
+    for frase in translator.escenario.frases_frecuentes.get("ejecutivo", []):
+        translator.simplificar(frase)
+        translator.espanol_a_glosas(frase)
+        n += 1
+    for frase in translator.escenario.frases_frecuentes.get("cliente", []):
+        translator.complejizar(frase)
+        n += 1
+    return n
+
+
 def informe(filas: list[dict], resumen: dict, modelo: str) -> str:
     def celda(s) -> str:
         return str(s).replace("|", "\\|").replace("\n", "<br>")
@@ -99,6 +113,7 @@ def main() -> None:
     Path(args.salida).write_text(informe(filas, resumen, MODEL), encoding="utf-8")
     print(f"{resumen} → {args.salida}")
     if store:
+        print(f"caché precalentada con {precalentar(t)} frases frecuentes")
         print("glosas faltantes más pedidas:", store.glosas_faltantes(10))
 
 
