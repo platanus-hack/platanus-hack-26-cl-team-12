@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Avatar en vivo (webcam → VRM)</title>
+<style>
+html,body{margin:0;height:100%;background:#14161a;color:#eee;font-family:system-ui,sans-serif}
+#wrap{display:flex;height:100%}
+#left{width:340px;padding:10px;background:#1d2026;overflow:auto;font-size:13px;box-sizing:border-box}
+#stage{flex:1;position:relative;min-width:0}
+canvas#c{width:100%;height:100%;display:block}
+#side{width:320px;padding:12px;background:#1d2026;overflow:auto;font-size:13px;box-sizing:border-box}
+video{width:100%;border-radius:10px;transform:scaleX(-1);background:#000;margin-bottom:8px}
+label{display:block;margin:6px 0;cursor:pointer}
+#st{position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:90%;padding:8px 18px;border-radius:24px;background:#000a;color:#fff;font-size:20px;font-weight:700;text-align:center;pointer-events:none}
+.fps{position:absolute;left:10px;bottom:8px;font-size:12px;color:#8f8;text-shadow:0 0 4px #000}
+h1{font-size:15px;margin:0 0 8px}
+.btn{border:0;border-radius:8px;padding:7px 10px;background:#3a4150;color:#fff;cursor:pointer;font-size:13px}
+.btn:hover{filter:brightness(1.2)}
+@media(max-width:900px){#wrap{flex-direction:column;overflow:auto}#left,#side{width:auto}#stage{min-height:60vh}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/kalidokit@1.1.5/dist/kalidokit.umd.js"></script>
+<script type="importmap">{"imports":{
+ "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+ "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+ "@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.0.0/lib/three-vrm.module.js"}}</script>
+</head><body>
+<div id="wrap">
+ <div id="left">
+  <video id="v" autoplay playsinline muted></video>
+  <div id="guide" style="background:#262b34;border-radius:10px;padding:8px;margin-bottom:8px">
+   <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+    <button class="btn" id="prevG">◀</button><div id="gTitle" style="flex:1;text-align:center;font-weight:700;font-size:15px">…</div><button class="btn" id="nextG">▶</button>
+   </div>
+   <img id="gImg" style="width:100%;border-radius:8px;display:block;background:#000;min-height:120px;max-height:34vh;object-fit:contain" alt="">
+   <div id="gMean" style="margin:6px 0 2px;color:#cde"></div>
+   <div id="gLinks" style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0"><a id="lSts" target="_blank" class="btn" style="text-decoration:none;background:#2d5a8a">▶ Ver en video (Spread the Sign · LSCh)</a><a id="lYt" target="_blank" class="btn" style="text-decoration:none;background:#7a2d2d">YouTube</a></div>
+   <div id="gDesc" style="white-space:pre-line;background:#1b2a26;border-left:3px solid #2a6f5e;border-radius:6px;padding:6px 8px;margin:6px 0;font-size:12.5px;line-height:1.45;display:none"></div>
+   <div id="gSteps" style="color:#9aa;font-size:12px;line-height:1.5">
+    <b>Cómo hacerla:</b><br>
+    1. Mira la foto: los <b>números</b> son el orden de las posiciones y las <b>flechas</b> el movimiento.<br>
+    2. Practícala 2–3 veces sin grabar, viéndote en la cámara.<br>
+    3. Aprieta <b>Grabar</b>, espera la cuenta y haz la seña completa, sin apuro.<br>
+    4. Revisa en el avatar: si no se parece a la foto, repite.
+   </div>
+   <div id="gChips" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;max-height:110px;overflow:auto"></div>
+  </div>
+ </div>
+ <div id="stage"><canvas id="c"></canvas><div class="fps" id="fps"></div><div id="st">Cargando…</div></div>
+ <div id="side">
+  <h1>Grabar seña</h1>
+  <input id="glosa" placeholder="GLOSA (ej: HOLA)" style="width:100%;box-sizing:border-box;padding:7px;border-radius:6px;border:0;margin-bottom:6px;text-transform:uppercase">
+  <div style="display:flex;gap:6px;margin-bottom:6px">
+   <select id="dur" style="flex:1;padding:6px;border-radius:6px"><option value="1">1 s</option><option value="1.5">1,5 s</option><option value="2">2 s</option><option value="3" selected>3 s</option><option value="4">4 s</option></select>
+   <button id="recBtn" class="btn" style="flex:2;background:#c0392b">● Grabar seña (cuenta 3)</button>
+  </div>
+  <button class="btn" id="vidBtn" style="width:100%;margin-bottom:6px;background:#6a4c93">🎥 Grabar VIDEO crudo (para WiLoR)</button>
+  <div id="clipBox" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+   <button class="btn" id="playBtn">▶ Ver</button><label style="margin:0 6px"><input type="checkbox" id="loopP"> repetir</label>
+   <button class="btn" id="saveBtn" style="background:#2a6f5e">💾 Guardar</button><button class="btn" id="discBtn">✕</button>
+  </div>
+  <h1 style="margin-top:12px">Biblioteca</h1>
+  <div id="lib" style="display:flex;gap:6px;flex-wrap:wrap;color:#999">—</div>
+  <details style="margin-top:12px"><summary style="cursor:pointer;color:#9ad">Ajustes del avatar</summary>
+  <label><input type="checkbox" id="flipxz" checked> Corregir ejes VRM1 (x y z)</label>
+  <label><input type="checkbox" id="palm"> Girar palmas 180°</label>
+  <label><input type="checkbox" id="fingers" checked> Mover dedos</label>
+  <label><input type="checkbox" id="ik" checked> Brazos directos</label>
+  <label><input type="checkbox" id="zinv"> Invertir profundidad</label>
+  </details>
+ </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {VRMLoaderPlugin} from '@pixiv/three-vrm';
+import {FilesetResolver,PoseLandmarker,HandLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+const $=id=>document.getElementById(id), st=m=>$('st').textContent=m;
+const K=window.Kalidokit;
+
+// ---- escena
+const canvas=$('c'), renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffffff,0x667788,1.6));
+const dl=new THREE.DirectionalLight(0xffffff,1.4);dl.position.set(1,2,2);scene.add(dl);
+const cam=new THREE.PerspectiveCamera(28,1,0.1,20);cam.position.set(0,1.25,1.9);cam.lookAt(0,1.18,0);
+function resize(){const r=canvas.parentElement.getBoundingClientRect();renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+canvas.style.transform='scaleX(-1)'; // siempre espejo: tu mano derecha se ve a la derecha de la pantalla
+
+// ---- avatar VRM
+let vrm;
+const loader=new GLTFLoader();loader.register(p=>new VRMLoaderPlugin(p));
+st('Cargando avatar…');
+const gltf=await loader.loadAsync('models/avatar.vrm');
+vrm=gltf.userData.vrm;scene.add(vrm.scene);
+const bone=n=>vrm.humanoid.getNormalizedBoneNode(n);
+// brazos abajo en reposo (VRM viene en T-pose)
+// (reposo de brazos: se aplica más abajo con la geometría medida)
+
+// ---- rig: Kalidokit → huesos VRM1
+const FINGER_MAP={ThumbProximal:'thumbMetacarpal',ThumbIntermediate:'thumbProximal',ThumbDistal:'thumbDistal'};
+function vrmName(k){ // 'RightIndexProximal' → 'rightIndexProximal'; pulgar usa nombres VRM1
+ const m=k.match(/^(Left|Right)(Thumb\w+)$/);
+ if(m)return m[1].toLowerCase()+FINGER_MAP[m[2]].replace(/^./,c=>c.toUpperCase());
+ return k[0].toLowerCase()+k.slice(1);}
+function rig(name,r,damp=1,lerp=0.4){
+ const n=bone(vrmName(name));if(!n||!r)return;
+ const f=$('flipxz').checked?-1:1;
+ const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(r.x*damp*f,r.y*damp,r.z*damp*f));
+ n.quaternion.slerp(q,lerp)}
+function rigArms(p){
+ rig('RightUpperArm',p.RightUpperArm,1,0.5);rig('RightLowerArm',p.RightLowerArm,1,0.5);
+ rig('LeftUpperArm',p.LeftUpperArm,1,0.5);rig('LeftLowerArm',p.LeftLowerArm,1,0.5);}
+function rigHand(side,lm,poseRig,hw){ // side: 'Left'|'Right' del usuario
+ // si la mano del usuario va al brazo "opuesto" del avatar, se refleja la mano (imagen en espejo) y se resuelve como la otra mano
+ let s2=side,L2=lm;if(SWAP){s2=side==='Left'?'Right':'Left';L2=lm.map(p=>({x:1-p.x,y:p.y,z:p.z}))}
+ const h=K.Hand.solve(L2,s2);if(!h)return;
+ const w=h[s2+'Wrist'];
+ if(!wristGeo(side,hw))rig(s2+'Hand',{x:w.x,y:w.y,z:poseRig?poseRig[side+'Hand'].z*(SWAP?-1:1):w.z},1,0.5);
+ if(!$('fingers').checked)return;
+ for(const f of['Thumb','Index','Middle','Ring','Little'])for(const j of['Proximal','Intermediate','Distal'])
+  rig(s2+f+j,h[s2+f+j],1,0.5)}
+
+// ---- brazos "directos": cada hueso apunta hacia donde apunta tu hombro→codo→muñeca (sin los límites de Kalidokit)
+// Geometría medida del avatar en T-pose: dirección de reposo de cada hueso y de qué lado de la PANTALLA queda cada brazo.
+vrm.scene.updateMatrixWorld(true);
+// base ortonormal de la mano: f = dirección de los dedos, a = across-palma (índice−meñique), n = normal de la palma
+function basis(f,a){f=f.clone().normalize();const n=f.clone().cross(a).normalize(),a2=n.clone().cross(f).normalize();return new THREE.Matrix4().makeBasis(a2,n,f)}
+const GEO={};
+for(const s of['left','right']){const wp=n=>bone(s+n).getWorldPosition(new THREE.Vector3());const u=wp('UpperArm'),l=wp('LowerArm'),h=wp('Hand');
+ const M=wp('MiddleProximal'),I=wp('IndexProximal'),Lp=wp('LittleProximal');
+ GEO[s]={x:u.x,restU:l.clone().sub(u).normalize(),restL:h.clone().sub(l).normalize(),B0:basis(M.sub(h),I.sub(Lp))}}
+// la pantalla va volteada (espejo CSS): lo que está en X mundo más negativo queda a la DERECHA de la pantalla
+const RB=GEO.left.x<GEO.right.x?'left':'right', LB=RB==='left'?'right':'left', SWAP=RB==='left';
+const DOWN=new THREE.Vector3(0,-1,0), RESTQ={};
+for(const s of['left','right'])RESTQ[s+'UpperArm']=new THREE.Quaternion().setFromUnitVectors(GEO[s].restU,DOWN);
+for(const k in RESTQ)bone(k).quaternion.copy(RESTQ[k]);
+console.log('avatar: brazo derecho de pantalla =',RB,'| swap manos =',SWAP);
+let SX=1; // signo del eje x de MediaPipe, autocalibrado: hombro derecho del usuario debe dar +1
+// MediaPipe (x lateral, y abajo, z hacia la cámara más negativo) → mundo: derecha del usuario = derecha de pantalla (X mundo negativo por el espejo)
+const V3=p=>new THREE.Vector3(-p.x*SX,-p.y,$('zinv').checked?p.z:-p.z);
+function ikArm(W,vis,uside,iS,iE,iW){ // uside: 'right'|'left' del usuario
+ if(Math.min(vis[iS],vis[iE])<0.45||vis[iW]<0.25)return false;
+ const bn=uside==='right'?RB:LB,g=GEO[bn],up=bone(bn+'UpperArm'),lo=bone(bn+'LowerArm');
+ const dU=V3(W[iE]).sub(V3(W[iS])).normalize(),dL=V3(W[iW]).sub(V3(W[iE])).normalize();
+ up.quaternion.slerp(new THREE.Quaternion().setFromUnitVectors(g.restU,dU),0.55);
+ const dLoc=dL.applyQuaternion(up.quaternion.clone().invert());
+ lo.quaternion.slerp(new THREE.Quaternion().setFromUnitVectors(g.restL,dLoc),0.55);
+ return true}
+
+// muñeca: orientación de la mano medida con los puntos 3D de la mano (muñeca→nudillo medio, índice−meñique), sin ángulos de Kalidokit
+function wristGeo(side,hw){if(!hw||hw.length<21)return false;
+ const bn=side==='Right'?RB:LB,g=GEO[bn],up=bone(bn+'UpperArm'),lo=bone(bn+'LowerArm'),hand=bone(bn+'Hand');if(!hand)return false;
+ const f=V3(hw[9]).sub(V3(hw[0])),a=V3(hw[5]).sub(V3(hw[17]));if(f.lengthSq()<1e-8||a.lengthSq()<1e-8)return false;
+ if($('palm').checked){a.negate()}
+ const Rw=basis(f,a).multiply(g.B0.clone().transpose()); // rotación mundo: base de reposo → base objetivo
+ const qW=new THREE.Quaternion().setFromRotationMatrix(Rw);
+ const qParent=up.quaternion.clone().multiply(lo.quaternion);
+ hand.quaternion.slerp(qParent.invert().multiply(qW),0.5);return true}
+
+// ---- volver suavemente a reposo cuando se pierde el tracking (evita que el avatar "tiemble" o se quede pegado)
+let missPose=0;const missHand={Left:0,Right:0};
+function toRest(names,l=0.08,raw=false){for(const nm of names){const n=bone(raw?nm:vrmName(nm));if(!n)continue;
+ n.quaternion.slerp(RESTQ[nm]||new THREE.Quaternion(),l)}}
+function handBones(s){const a=[s+'Hand'];for(const f of['Thumb','Index','Middle','Ring','Little'])for(const j of['Proximal','Intermediate','Distal'])a.push(s+f+j);return a}
+
+// ---- grabación y reproducción de animaciones por glosa
+const REC_BONES=[];for(const s of['left','right']){REC_BONES.push(s+'UpperArm',s+'LowerArm',s+'Hand');
+ for(const f of['Thumb','Index','Middle','Ring','Little'])for(const j of(f==='Thumb'?['Metacarpal','Proximal','Distal']:['Proximal','Intermediate','Distal']))REC_BONES.push(s+f+j)}
+let mode='live',clip=null,recT0=0,lastS=0,frames=[],playT0=0,recDur=3,countT0=0;
+const r4=v=>Math.round(v*10000)/10000, qa=new THREE.Quaternion(), qb=new THREE.Quaternion();
+const nm=()=>($('glosa').value||'').trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
+$('recBtn').onclick=()=>{if(!nm()){st('Escribe el nombre de la glosa primero');$('glosa').focus();return}
+ if(mode!=='live'){mode='live';return}recDur=+$('dur').value;countT0=performance.now();mode='count';$('clipBox').style.display='none'};
+function playClip(c){clip=c;mode='play';playT0=performance.now()}
+$('playBtn').onclick=()=>clip&&playClip(clip);
+$('discBtn').onclick=()=>{clip=null;mode='live';$('clipBox').style.display='none';st('Descartado')};
+$('saveBtn').onclick=async()=>{if(!clip)return;
+ try{const r=await fetch('/api/save?glosa='+encodeURIComponent(clip.glosa),{method:'POST',body:JSON.stringify(clip)});const j=await r.json();
+  if(!j.ok)throw new Error(j.error);st('Guardado ✔ '+clip.glosa+' ('+j.frames+' cuadros)');await loadLib();clip=null;$('clipBox').style.display='none';showGuide(gi+1)}
+ catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(clip)]));a.download=clip.glosa+'.json';a.click();st('Servidor no disponible: descargué el JSON ('+e.message+')')}};
+// ---- guía: lista cerrada con foto del diccionario
+let ESC=[],gi=0,done=new Set();
+const key=e=>e.id.toUpperCase();
+function showGuide(i){if(!ESC.length)return;gi=(i+ESC.length)%ESC.length;const e=ESC[gi];
+ $('gTitle').textContent=`${e.glosa}  (${gi+1}/${ESC.length})${done.has(key(e))?' ✔':''}`;
+ $('gImg').src='/img/'+e.id+'.png';$('gImg').alt=e.glosa;
+ $('gMean').textContent=(e.definicion||e.significa||'').slice(0,160);
+ $('gDesc').style.display=e.descripcion?'block':'none';$('gDesc').textContent=e.descripcion||'';
+ $('glosa').value=key(e);
+ const q=encodeURIComponent(e.glosa.toLowerCase().replace(/-/g,' ').replace(/\/.*$/,''));
+ $('lSts').href='https://spreadthesign.com/es.cl/search/?q='+q;
+ $('lYt').href='https://www.youtube.com/results?search_query='+encodeURIComponent('lengua de señas chilena '+decodeURIComponent(q));
+ [...$('gChips').children].forEach((c,k)=>c.style.outline=k===gi?'2px solid #fff':'none')}
+function renderChips(){const el=$('gChips');el.innerHTML='';ESC.forEach((e,k)=>{const b=document.createElement('button');b.className='btn';
+ b.style.cssText='padding:3px 7px;font-size:11px;background:'+(done.has(key(e))?'#2a6f5e':'#3a4150');b.textContent=e.glosa;b.onclick=()=>showGuide(k);el.appendChild(b)});showGuide(gi)}
+$('prevG').onclick=()=>showGuide(gi-1);$('nextG').onclick=()=>showGuide(gi+1);
+fetch('/api/escenario').then(r=>r.json()).then(l=>{ESC=l;renderChips()}).catch(()=>{});
+async function loadLib(){try{const l=await (await fetch('/api/anims')).json();done=new Set(l);if(ESC.length)renderChips();const el=$('lib');el.innerHTML=l.length?'':'—';
+ for(const g of l){const b=document.createElement('button');b.className='btn';b.textContent=g;
+  b.onclick=async()=>{const c=await (await fetch('/anim/'+g+'.json')).json();$('glosa').value=g;playClip(c);$('clipBox').style.display='flex';st('Reproduciendo '+g)};el.appendChild(b)}}catch(e){}}
+loadLib();
+function sampleRec(now){if(now-lastS<33)return;lastS=now;
+ const q=[];for(const b of REC_BONES){const n=bone(b);q.push(...n.quaternion.toArray().map(r4))}
+ frames.push({t:r4((now-recT0)/1000),q})}
+function stepMode(now){ // devuelve true si el modo controla los huesos (se salta el tracking)
+ if(mode==='count'){const left=3-(now-countT0)/1000;
+  if(left<=0){mode='rec';recT0=now;lastS=0;frames=[]}else{st('Prepárate… '+Math.ceil(left));return false}}
+ if(mode==='rec'){const t=(now-recT0)/1000;st('● GRABANDO '+t.toFixed(1)+' / '+recDur+' s');sampleRec(now);
+  if(t>=recDur){clip={glosa:nm(),fps:30,duration:r4(t),bones:REC_BONES,frames};mode='play';playT0=now;$('clipBox').style.display='flex';st('Listo: revisa y guarda')}
+  return false}
+ if(mode==='play'&&clip){let t=(now-playT0)/1000;
+  if(t>clip.duration){if($('loopP').checked){playT0=now;t=0}else{mode='live';return false}}
+  const F=clip.frames;let i=0;while(i<F.length-2&&F[i+1].t<t)i++;const a=F[i],b=F[Math.min(i+1,F.length-1)];
+  const al=b.t>a.t?Math.min(1,Math.max(0,(t-a.t)/(b.t-a.t))):0;
+  clip.bones.forEach((bn,k)=>{const n=bone(bn);if(!n)return;qa.fromArray(a.q,k*4);qb.fromArray(b.q,k*4);n.quaternion.copy(qa.slerp(qb,al))});
+  return true}
+ return false}
+
+// ---- video crudo de la cámara (se procesa offline con modelos más precisos)
+$('vidBtn').onclick=async()=>{const g=nm()||'PRUEBA';
+ for(let i=3;i>0;i--){st('Video en '+i+'…');await new Promise(r=>setTimeout(r,1000))}
+ const mt=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+ const rec=new MediaRecorder(video.srcObject,{mimeType:mt,videoBitsPerSecond:10e6}),chunks=[];
+ rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+ rec.onstop=async()=>{const blob=new Blob(chunks,{type:'video/webm'});
+  try{const r=await fetch('/api/video?name='+encodeURIComponent(g),{method:'POST',body:blob});const j=await r.json();st('Toma '+j.toma+' guardada ✔ ('+Math.round(j.bytes/1024)+' KB). Graba otra para tener varias.')}
+  catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=g+'.webm';a.click();st('Servidor no disponible: descargué el video')}};
+ rec.start();const t0=performance.now(),iv=setInterval(()=>st('● VIDEO '+((performance.now()-t0)/1000).toFixed(1)+' s'),100);
+ setTimeout(()=>{rec.stop();clearInterval(iv)},(+$('dur').value)*1000)};
+
+// ---- cámara + MediaPipe
+const video=$('v');
+st('Pidiendo cámara…');
+video.srcObject=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30},facingMode:'user'},audio:false});
+await video.play();
+st('Cargando modelos MediaPipe…');
+const fs=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+const mk=async(Cls,url,opts)=>{try{return await Cls.createFromOptions(fs,{baseOptions:{modelAssetPath:url,delegate:'GPU'},runningMode:'VIDEO',...opts})}
+ catch(e){return await Cls.createFromOptions(fs,{baseOptions:{modelAssetPath:url,delegate:'CPU'},runningMode:'VIDEO',...opts})}};
+const G='https://storage.googleapis.com/mediapipe-models/';
+const pose=await mk(PoseLandmarker,G+'pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',{numPoses:1,minPoseDetectionConfidence:0.5,minPosePresenceConfidence:0.5,minTrackingConfidence:0.5});
+const hands=await mk(HandLandmarker,G+'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',{numHands:2,minHandDetectionConfidence:0.5,minHandPresenceConfidence:0.5,minTrackingConfidence:0.5});
+st('Listo: levanta las manos 👋');
+
+let last=-1,nFr=0,t0=performance.now(),clock=new THREE.Clock();
+function loop(){
+ requestAnimationFrame(loop);
+ const now=performance.now();
+ const playing=stepMode(now);
+ if(!playing&&video.readyState>=2&&video.currentTime!==last){last=video.currentTime;
+  const pr=pose.detectForVideo(video,now), hr=hands.detectForVideo(video,now);
+  let poseRig=null;
+  // filtro anti-ruido: solo aceptar la pose si hombros, codos y muñecas se ven con buena visibilidad
+  const L=pr.landmarks[0];
+  let okPose=false;
+  if(L){const W=pr.worldLandmarks[0],vis=L.map(p=>p.visibility??0);
+   try{poseRig=K.Pose.solve(W,L,{runtime:'mediapipe',video,enableLegs:false})}catch(e){}
+   if(Math.abs(W[11].x-W[12].x)>0.1)SX=W[12].x>W[11].x?1:-1;
+   if($('ik').checked){okPose=ikArm(W,vis,'left',11,13,15)|ikArm(W,vis,'right',12,14,16)}
+   else if([11,12,13,14,15,16].reduce((s,i)=>s+vis[i],0)/6>0.65&&poseRig){rigArms(poseRig);okPose=true}}
+  if(okPose)missPose=0;
+  else if(++missPose>20)toRest(['rightUpperArm','leftUpperArm','rightLowerArm','leftLowerArm'],0.08,true);
+  let seen={Left:false,Right:false};
+  hr.landmarks.forEach((lm,i)=>{
+   if((hr.handednesses[i][0].score??0)<0.6)return; // descarta manos muy dudosas
+   // descarta manos falsas: la muñeca de la mano debe estar cerca de alguna muñeca de la pose (si la pose se ve)
+   // el lado se decide por la muñeca del cuerpo más cercana (15 = izq. del usuario, 16 = der.), no por la etiqueta de MediaPipe
+   let side;
+   if(L&&(L[15].visibility>0.4||L[16].visibility>0.4)){const w0=lm[0],d=p=>Math.hypot(w0.x-p.x,w0.y-p.y);
+    const dl=d(L[15]),dr=d(L[16]);if(Math.min(dl,dr)>0.22)return;side=dl<dr?'Left':'Right'}
+   else{side=hr.handednesses[i][0].categoryName==='Left'?'Right':'Left'} // sin pose: etiqueta (viene invertida con cámara cruda)
+   if(seen[side])return;
+   seen[side]=true;missHand[side]=0;rigHand(side,lm,poseRig,hr.worldLandmarks[i])});
+ for(const s of['Left','Right'])if(!seen[s]&&++missHand[s]>8)toRest(handBones(SWAP?(s==='Left'?'Right':'Left'):s),0.15);
+ }
+ vrm.update(clock.getDelta());renderer.render(scene,cam);
+ if(++nFr%30===0){$('fps').textContent=Math.round(30000/(performance.now()-t0))+' fps';t0=performance.now()}
+}
+loop();
+</script></body></html>

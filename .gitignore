@@ -107,3 +107,9 @@ graphify-out/
 # audios personales de prueba (voz): no subir
 data/eval/audio/*
 !data/eval/audio/.gitkeep
+
+# animaciones grabadas por glosa (datos propios, livianos): sí se versionan
+!data/signs/anim/
+
+# modelo VRM de prueba (10 MB): descargar, no versionar
+lab/v4_avatar/live/models/*.vrm

@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Tomás / Claude (feature/v4-avatar) · avatar VRM que firma + encadenado
+- Hice: avatar VRM en el navegador con webcam (`lab/v4_avatar/live/`), grabación de tomas por glosa (video crudo), extracción de manos con WiLoR, "cocción" a animación del avatar, fusión de tomas (DTW, mediana, suavizado) y encadenado con solape adaptativo (`chain.html`). 8 señas fusionadas (HOLA, GRACIAS, SÍ, NO, PERMISO, MÉDICO, ENFERMO/A, FIEBRE) en `data/signs/anim/`. Docs: `docs/V4-AVATAR.md` y `docs/GUION-GRABACION.md`.
+- Decidí: encadenado **solapado** (Fluidez "alta", 0,45 s): medido en 56 parejas baja la aceleración del empalme de 172× a 1,7× lo normal (`ml/chain_sim.py`); Tomás lo vio y lo aprobó. WiLoR solo offline y fuera del repo (licencia no comercial + MANO).
+- Falta / bloqueado: validar las señas con una persona señante de LSCh; grabar las ~71 glosas restantes, alfabeto manual y números (no están en el diccionario); conectar con la frase del ejecutivo (Haiku → glosas) y con el simulador de llamada; sin push al repo del equipo hasta que Tomás lo pida.
+
 ## 2026-11-21 — Claude (data-glosario)
 - Hice: glosario LSCh **A-H** extraído del PDF (UMCE 2009): 1057 entradas en `data/vocab/glosario.jsonl`, las 1057 con foto recortada (`data/signs/img/`, gitignored), más `glosario.md`, `glosario_compacto.txt` (33 KB, cabe entero en un prompt) y README. Todo local con pymupdf, **0 USD de API**; scripts en `data/vocab/scripts/` (`extract.py`, `build.py`), se regenera en segundos.
 - Decidí: el PDF trae texto seleccionable y fotos incrustadas, así que no se necesita visión de Claude. `escenario` (salud 37, banco 19) es heurística por palabras clave: revisar. El diccionario NO describe cómo se hace la seña ni trae categorías por tema: `descripcion_seña` y `categoría` quedan en null (la seña está en la foto).
