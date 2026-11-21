@@ -12,15 +12,15 @@ export interface Destino {
   disponible: boolean;
 }
 
-// TODO(real-data): la lista real sale de ALLOWED_DESTINATIONS en services/api. Para la demo, solo la clínica.
+// Por ahora solo salud. TODO(real-data): la lista real sale de ALLOWED_DESTINATIONS en services/api.
 export const DESTINOS: Destino[] = [
   { id: "clinica", nombre: "Clínica Santa María", corto: "Clínica", motivo: "Pedir una hora médica", icon: "llamar", disponible: true },
-  { id: "banco", nombre: "Tu banco", corto: "Banco", motivo: "Consultas y bloqueo de tarjeta", icon: "llamar", disponible: false },
-  { id: "registro", nombre: "Registro Civil", corto: "Registro Civil", motivo: "Trámites y certificados", icon: "llamar", disponible: false },
+  { id: "cesfam", nombre: "CESFAM de tu comuna", corto: "CESFAM", motivo: "Horas y controles", icon: "llamar", disponible: false },
+  { id: "fonasa", nombre: "Fonasa", corto: "Fonasa", motivo: "Bonos y consultas", icon: "llamar", disponible: false },
 ];
 
 const PASOS: { icon: IconName; titulo: string; texto: string }[] = [
-  { icon: "llamar", titulo: "Puente llama por ti", texto: "Elige a quién llamar. Al otro lado contesta una persona por teléfono." },
+  { icon: "llamar", titulo: "Te llaman o llamas tú", texto: "Cuando la clínica te llame, Puente te avisa en pantalla. También puedes llamar tú." },
   { icon: "subtitulos", titulo: "Lees lo que te dicen", texto: "Su voz aparece como texto simple y en lengua de señas." },
   { icon: "escribir", titulo: "Respondes a tu manera", texto: "Escribe o haz señas. Puente se lo dice con voz." },
 ];
@@ -34,7 +34,7 @@ export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
       </section>
 
       <section aria-labelledby="t-destinos" className="bloque">
-        <h2 id="t-destinos" className="pu-type-title">¿A quién quieres llamar?</h2>
+        <h2 id="t-destinos" className="pu-type-title">¿Quieres llamar tú?</h2>
         <ul className="destinos">
           {DESTINOS.map((d) => (
             <li key={d.id}>

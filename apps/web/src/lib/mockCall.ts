@@ -1,7 +1,8 @@
 // Llamada simulada (?mock=1): reemplaza a LiveKit + el agente para probar la app sin backend.
 // Se comporta igual que joinCall (misma interfaz CallHandle y mismos mensajes del contrato),
 // así que la pantalla no sabe si la llamada es real o de mentira.
-// Escenario: pedir hora al médico. TODO(real-data): glosas tomadas del escenario real cuando B lo congele.
+// Dos guiones de salud: la clínica te llama (entrante, versión 1) o tú llamas a pedir hora (saliente).
+// TODO(real-data): glosas tomadas del escenario real cuando B lo congele.
 import type { MensajePuente } from "@puente/glosses";
 import type { CallHandle } from "./call";
 
@@ -11,7 +12,7 @@ interface Turno {
   glosas: string[]; // lo que el avatar firmaría (v4)
 }
 
-const GUION: Turno[] = [
+const GUION_SALIENTE: Turno[] = [
   {
     texto: "Buenos días, Clínica Santa María, le saluda Carolina, ¿en qué la puedo ayudar?",
     simple: "Hola. Usted habla con la Clínica. ¿En qué le ayudo?",
@@ -44,9 +45,33 @@ const GUION: Turno[] = [
   },
 ];
 
+const GUION_ENTRANTE: Turno[] = [
+  {
+    texto: "Buenos días, le habla Carolina de Clínica Santa María. La llamo para confirmar su hora con medicina general el lunes 24 a las diez de la mañana. ¿Podrá asistir?",
+    simple: "Hola. Soy Carolina, de la Clínica. Tiene hora el lunes a las 10. ¿Va a ir?",
+    glosas: ["HOLA", "CLÍNICA", "LUNES", "HORA", "DIEZ", "IR"],
+  },
+  {
+    texto: "Perfecto. Le recuerdo traer su carnet y la orden médica, y llegar quince minutos antes.",
+    simple: "Bien. Traiga su carnet y la orden médica. Llegue 15 minutos antes.",
+    glosas: ["TRAER", "CARNET", "ORDEN", "LLEGAR", "ANTES"],
+  },
+  {
+    texto: "¿Tiene alguna consulta sobre su atención?",
+    simple: "¿Tiene alguna pregunta?",
+    glosas: ["PREGUNTA", "TENER"],
+  },
+  {
+    texto: "Muchas gracias, que tenga un buen día.",
+    simple: "Gracias. Que le vaya bien.",
+    glosas: ["GRACIAS", "CHAO"],
+  },
+];
+
 const ESPERA_RESPUESTA_MS = 2000; // lo que "tarda" el ejecutivo en contestar
 
-export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void }): Promise<CallHandle> {
+export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void; entrante?: boolean }): Promise<CallHandle> {
+  const GUION = opts.entrante ? GUION_ENTRANTE : GUION_SALIENTE;
   const timers: ReturnType<typeof setTimeout>[] = [];
   let turno = 0;
   let terminada = false;
@@ -67,8 +92,8 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
     }
   }
 
-  // Simula lo que tarda en conectar y que el ejecutivo conteste.
-  await new Promise((r) => setTimeout(r, 1000));
+  // Saliente: simula lo que tarda en conectar y que contesten. Entrante: ya contestaste, conecta altiro.
+  await new Promise((r) => setTimeout(r, opts.entrante ? 300 : 1000));
   opts.onMessage({ tipo: "estado", valor: "llamada_iniciada" });
   later(1500, hablaEjecutivo);
 

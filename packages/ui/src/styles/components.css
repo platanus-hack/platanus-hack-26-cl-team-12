@@ -107,3 +107,26 @@ body { margin: 0; font-family: var(--font-sans); font-size: 18px; line-height: 1
 .pu-avatar .shirt { fill: var(--cliente-soft); }
 .pu-avatar .hands { fill: var(--brand); }
 .pu-avatar .cap { position: absolute; left: var(--space-3); right: var(--space-3); bottom: var(--space-3); margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--fg); color: var(--bg); font-size: 22px; line-height: 30px; font-weight: 700; text-align: center; text-wrap: balance; }
+
+/* IncomingCall: pantalla completa mientras suena. El borde destella en vez del timbre. */
+.pu-incoming { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: calc(env(safe-area-inset-top, 0px) + var(--space-8)) max(var(--space-6), env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + var(--space-8)) max(var(--space-6), env(safe-area-inset-left, 0px)); background: var(--cliente-soft); color: var(--fg); text-align: center; border: 6px solid transparent; }
+.pu-incoming .ring { margin-top: var(--space-8); display: grid; place-items: center; width: 132px; height: 132px; border-radius: 50%; background: var(--live-soft); }
+.pu-incoming .ring .ico { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: var(--surface); color: var(--live); }
+.pu-incoming .kicker { margin: var(--space-4) 0 0; font-size: 15px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.pu-incoming .caller { margin: 0; font-family: var(--font-display); font-size: 36px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+.pu-incoming .detail { margin: 0; font-size: 18px; color: var(--muted); max-width: 28ch; }
+.pu-incoming .actions { margin-top: auto; width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+.pu-incoming .track { position: relative; width: 100%; height: 76px; border-radius: var(--radius-pill); background: var(--surface); border: 2px solid var(--line-strong); display: flex; align-items: center; justify-content: flex-end; padding: 0 4px; overflow: hidden; }
+.pu-incoming .hint { position: absolute; inset: 0 80px 0 var(--space-4); display: flex; align-items: center; font-size: 16px; font-weight: 700; color: var(--muted); pointer-events: none; }
+.pu-incoming .thumb { position: relative; z-index: 1; flex: none; width: 64px; height: 64px; border-radius: 50%; border: 0; background: var(--live); color: var(--surface); display: grid; place-items: center; cursor: grab; touch-action: none; transition: transform 0.2s ease; }
+.pu-incoming .track.dragging .thumb { transition: none; cursor: grabbing; }
+.pu-incoming .thumb:focus-visible, .pu-incoming .decline:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+.pu-incoming .decline { font: inherit; font-weight: 700; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target-min); padding: 0 var(--space-6); border-radius: var(--radius-pill); border: 2px solid var(--line-strong); background: transparent; color: var(--fg); cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) {
+  .pu-incoming { animation: pu-ring-border 1.2s steps(2, jump-none) infinite; }
+  .pu-incoming .ring { animation: pu-ring-pulse 1.4s ease-out infinite; }
+  .pu-incoming .hint { animation: pu-hint 1.6s ease-in-out infinite; }
+}
+@keyframes pu-ring-border { 50% { border-color: var(--live); } }
+@keyframes pu-ring-pulse { 0% { box-shadow: 0 0 0 0 var(--live-soft); } 100% { box-shadow: 0 0 0 28px transparent; } }
+@keyframes pu-hint { 50% { transform: translateX(-6px); } }

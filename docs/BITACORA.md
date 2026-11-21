@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4-avatar) · llamada entrante primero
+- Decidí (Rafael): **la versión 1 es la llamada entrante**. La clínica llama a la persona sorda, ve la pantalla de llamada y contesta deslizando a la izquierda; ahí se abre la app con el texto y el avatar. **La versión 2 es la saliente** (la persona llama a la clínica). Por ahora solo salud (clínica, CESFAM, Fonasa).
+- Hice: `IncomingCall` en `packages/ui` (pantalla completa, borde que destella y pulso en vez de timbre, vibración en Android, deslizar para contestar, Rechazar). En `?mock=1` la clínica "llama" a los 3 s de abrir la app, con un guion de confirmación de hora. Tema pastel por defecto, inicio con destinos de salud, aviso de conexión quitado (redundante con "En llamada" + duración), avatar grande con el subtítulo encima.
+- Falta / bloqueado: en producción el aviso llega como push / `call.incoming` (lo define A en el contrato). Una web no puede reemplazar la pantalla nativa de llamada del celular: para eso hace falta Capacitor + CallKit/ConnectionService.
+
 ## 2026-11-21 — Rafael / Claude (v4-avatar)
 - Hice: D2 y D3. Pantalla de llamada (`apps/web/src/components/CallPanel.tsx`): Llamar/Colgar, estado con contador, avisos, subtítulos (simple + original), escribir o tocar respuesta rápida → `cliente_dice`, y el avatar de ejemplo cuando llega `glosas_para_senar`. Modo `?mock=1` (`apps/web/src/lib/mockCall.ts`): llamada simulada de hora médica, el ejecutivo responde cada vez que el cliente dice algo.
 - Decidí: el simulador implementa la misma interfaz que `joinCall`, así la pantalla es igual con o sin backend. El texto del cliente se agrega a los subtítulos al enviarlo (el agente no lo devuelve).

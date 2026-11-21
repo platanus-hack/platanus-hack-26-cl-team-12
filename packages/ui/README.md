@@ -21,7 +21,7 @@ import { Button, CallStatus, Composer, Logo, Subtitles, VisualAlert } from "@pue
 
 | Ruta | Qué |
 |---|---|
-| `src/components/` | Logo, Icon, Button, CallStatus, VisualAlert, Subtitles, QuickReplies, Composer, GlossChip, SignCamera, SignAvatar |
+| `src/components/` | Logo, Icon, Button, CallStatus, VisualAlert, Subtitles, QuickReplies, Composer, GlossChip, SignCamera, SignAvatar, IncomingCall |
 | `src/styles/tokens.css` | Variables CSS generadas desde `src/tokens.json` |
 | `src/styles/components.css` | Estilos `pu-*` de los componentes |
 | `assets/logos/` | Logo Noche, Día, una tinta e ícono de la app (copiado a `apps/web/public/icons/icon.svg`) |

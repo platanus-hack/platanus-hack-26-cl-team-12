@@ -4,15 +4,16 @@
 // y donde el cliente escribe o toca una respuesta rápida para que Puente lo diga por teléfono.
 import { useEffect, useRef, useState } from "react";
 import {
-  Button, CallStatus, Composer, Logo, QuickReplies, SignAvatar, Subtitles, VisualAlert,
+  Button, CallStatus, Composer, IncomingCall, Logo, QuickReplies, SignAvatar, Subtitles, VisualAlert,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
 import type { MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
-import { Inicio, type Destino } from "./Inicio";
+import { DESTINOS, Inicio, type Destino } from "./Inicio";
 
-const AVATAR_MS_POR_SENA = 1300; // igual que el reproductor de fotos de lab/v4_avatar
+const AVATAR_MS_POR_SENA = 1300;
+const MOCK_TIMBRE_MS = 3000; // en ?mock=1, la clínica "llama" a los 3 s de abrir la app // igual que el reproductor de fotos de lab/v4_avatar
 
 const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
 
@@ -24,6 +25,7 @@ export function CallPanel({ mock }: { mock: boolean }) {
   const [alert, setAlert] = useState<{ message: string; tone: AlertTone } | null>(null);
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
   const [destino, setDestino] = useState<Destino | null>(null);
+  const [entrante, setEntrante] = useState<Destino | null>(null);
   const callRef = useRef<CallHandle | null>(null);
 
   // Contador de duración mientras la llamada está en curso.
@@ -39,6 +41,19 @@ export function CallPanel({ mock }: { mock: boolean }) {
     const id = setTimeout(() => setSenas((s) => (s ? { ...s, actual: s.actual + 1 } : s)), AVATAR_MS_POR_SENA);
     return () => clearTimeout(id);
   }, [senas]);
+
+  // Versión 1: la clínica te llama. En ?mock=1 se simula una llamada entrante al abrir la app.
+  // TODO(v1): en producción llega como notificación push / evento `call.incoming` desde services/api.
+  useEffect(() => {
+    if (!mock) return;
+    const clinica = DESTINOS[0];
+    if (!clinica) return;
+    const id = setTimeout(() => {
+      setEntrante(clinica);
+      setState((s) => (s === "idle" ? "ringing" : s)); // si ya estás en otra llamada, no interrumpe
+    }, MOCK_TIMBRE_MS);
+    return () => clearTimeout(id);
+  }, [mock]);
 
   // Cortar la conexión si el usuario cierra la pantalla en medio de una llamada.
   useEffect(() => () => callRef.current?.leave(), []);
@@ -66,15 +81,17 @@ export function CallPanel({ mock }: { mock: boolean }) {
     }
   }
 
-  async function llamar(d: Destino) {
+  async function llamar(d: Destino, esEntrante = false) {
     setDestino(d);
+    setEntrante(null);
     setLines([]);
     setSenas(null);
     setSeconds(0);
     setAlert(null);
     setState("connecting");
     try {
-      const handle = await (mock ? joinMockCall : joinCall)({ onMessage });
+      // TODO(v1): en una llamada entrante real, unirse a la sala `call-*` que creó la dispatch rule.
+      const handle = mock ? await joinMockCall({ onMessage, entrante: esEntrante }) : await joinCall({ onMessage });
       callRef.current = handle;
       setCall(handle);
     } catch (e) {
@@ -91,6 +108,12 @@ export function CallPanel({ mock }: { mock: boolean }) {
     setAlert({ message: "Colgaste la llamada", tone: "quiet" });
   }
 
+  function rechazar() {
+    setEntrante(null);
+    setState("idle");
+    setAlert({ message: "Rechazaste la llamada", tone: "quiet" });
+  }
+
   async function decir(texto: string) {
     if (!callRef.current) return;
     setLines((l) => [...l, { id: crypto.randomUUID(), who: "cliente", time: hora(), text: texto }]);
@@ -102,6 +125,17 @@ export function CallPanel({ mock }: { mock: boolean }) {
   }
 
   const enLlamada = state === "live";
+
+  if (state === "ringing" && entrante) {
+    return (
+      <IncomingCall
+        caller={entrante.nombre}
+        detail="Te llama por Puente. Al contestar verás lo que dice en texto y señas."
+        onAnswer={() => llamar(entrante, true)}
+        onDecline={rechazar}
+      />
+    );
+  }
 
   return (
     <main>
