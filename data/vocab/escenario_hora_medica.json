@@ -1,0 +1,397 @@
+[
+ {
+  "id": "hola",
+  "glosa": "HOLA",
+  "significa": "Hola"
+ },
+ {
+  "id": "por-favor",
+  "glosa": "POR-FAVOR",
+  "significa": "Por favor"
+ },
+ {
+  "id": "gracias-1",
+  "glosa": "GRACIAS",
+  "significa": "gracias"
+ },
+ {
+  "id": "si",
+  "glosa": "SÍ",
+  "significa": "Sí"
+ },
+ {
+  "id": "no",
+  "glosa": "NO",
+  "significa": "No"
+ },
+ {
+  "id": "permiso",
+  "glosa": "PERMISO",
+  "significa": "Permiso, disculpe"
+ },
+ {
+  "id": "medico",
+  "glosa": "MÉDICO",
+  "significa": "y f. Médico, doctor, terapeuta"
+ },
+ {
+  "id": "hora",
+  "glosa": "HORA",
+  "significa": "Hora"
+ },
+ {
+  "id": "horario",
+  "glosa": "HORARIO",
+  "significa": "Horario, cronograma"
+ },
+ {
+  "id": "hospital",
+  "glosa": "HOSPITAL",
+  "significa": "Hospital, clínica, sanatorio"
+ },
+ {
+  "id": "salud",
+  "glosa": "SALUD",
+  "significa": "Salud, fortaleza, vigor"
+ },
+ {
+  "id": "control",
+  "glosa": "CONTROL",
+  "significa": "Control, vigilancia, dominio"
+ },
+ {
+  "id": "dolor",
+  "glosa": "DOLOR",
+  "significa": "Dolor, padecimiento, malestar"
+ },
+ {
+  "id": "enfermo-a",
+  "glosa": "ENFERMO/A",
+  "significa": "Enfermo, doliente, aquejado"
+ },
+ {
+  "id": "fiebre",
+  "glosa": "FIEBRE",
+  "significa": "Fiebre, calentura, hipertermia"
+ },
+ {
+  "id": "tos",
+  "glosa": "TOS",
+  "significa": "Tos, carraspeo, catarro"
+ },
+ {
+  "id": "gripe",
+  "glosa": "GRIPE",
+  "significa": "Gripe, resfrío, catarro"
+ },
+ {
+  "id": "resfrio",
+  "glosa": "RESFRÍO",
+  "significa": "Resfrío, catarro, romadizo"
+ },
+ {
+  "id": "enfermedad",
+  "glosa": "ENFERMEDAD",
+  "significa": "Enfermedad, padecimiento, malestar"
+ },
+ {
+  "id": "prueba",
+  "glosa": "PRUEBA",
+  "significa": "Prueba, evaluación, examen"
+ },
+ {
+  "id": "remedio",
+  "glosa": "REMEDIO",
+  "significa": "Remedio, medi- camento"
+ },
+ {
+  "id": "atender",
+  "glosa": "ATENDER",
+  "significa": "Atender, considerar"
+ },
+ {
+  "id": "nombre-1",
+  "glosa": "NOMBRE",
+  "significa": "nombre"
+ },
+ {
+  "id": "apellido",
+  "glosa": "APELLIDO",
+  "significa": "Apellido"
+ },
+ {
+  "id": "telefono",
+  "glosa": "TELÉFONO",
+  "significa": "Teléfono"
+ },
+ {
+  "id": "documento",
+  "glosa": "DOCUMENTO",
+  "significa": "Documento, escrito, registro"
+ },
+ {
+  "id": "domicilio",
+  "glosa": "DOMICILIO",
+  "significa": "Domicilio, dirección"
+ },
+ {
+  "id": "seguro-a",
+  "glosa": "SEGURO/A",
+  "significa": "Seguro, indudable, innegable"
+ },
+ {
+  "id": "fecha",
+  "glosa": "FECHA",
+  "significa": "Fecha, día, data"
+ },
+ {
+  "id": "dia",
+  "glosa": "DÍA",
+  "significa": "Día"
+ },
+ {
+  "id": "hoy",
+  "glosa": "HOY",
+  "significa": "Hoy"
+ },
+ {
+  "id": "manana-1",
+  "glosa": "MAÑANA",
+  "significa": "mañana (el día siguiente)"
+ },
+ {
+  "id": "manana-2",
+  "glosa": "MAÑANA",
+  "significa": "mañana (horas de la mañana, AM)"
+ },
+ {
+  "id": "ayer",
+  "glosa": "AYER",
+  "significa": "Ayer, el día anterior"
+ },
+ {
+  "id": "tarde-1",
+  "glosa": "TARDE",
+  "significa": "tarde (PM)"
+ },
+ {
+  "id": "noche",
+  "glosa": "NOCHE",
+  "significa": "Noche, crepúsculo"
+ },
+ {
+  "id": "lunes",
+  "glosa": "LUNES",
+  "significa": "Lunes"
+ },
+ {
+  "id": "martes",
+  "glosa": "MARTES",
+  "significa": "Martes"
+ },
+ {
+  "id": "miercoles",
+  "glosa": "MIÉRCOLES",
+  "significa": "Miércoles"
+ },
+ {
+  "id": "jueves",
+  "glosa": "JUEVES",
+  "significa": "Jueves"
+ },
+ {
+  "id": "viernes",
+  "glosa": "VIERNES",
+  "significa": "Viernes"
+ },
+ {
+  "id": "sabado",
+  "glosa": "SÁBADO",
+  "significa": "Sábado"
+ },
+ {
+  "id": "semana",
+  "glosa": "SEMANA",
+  "significa": "Semana"
+ },
+ {
+  "id": "mes",
+  "glosa": "MES",
+  "significa": "Mes"
+ },
+ {
+  "id": "minuto",
+  "glosa": "MINUTO",
+  "significa": "Minuto"
+ },
+ {
+  "id": "antes",
+  "glosa": "ANTES",
+  "significa": "Antes, anteriormente"
+ },
+ {
+  "id": "despues",
+  "glosa": "DESPUÉS",
+  "significa": "Después, luego, enseguida"
+ },
+ {
+  "id": "primero-a",
+  "glosa": "PRIMERO/A",
+  "significa": "Primero, primer"
+ },
+ {
+  "id": "segundo-a",
+  "glosa": "SEGUNDO/A",
+  "significa": "Segundo"
+ },
+ {
+  "id": "querer",
+  "glosa": "QUERER",
+  "significa": "Querer, desear, aspirar"
+ },
+ {
+  "id": "necesitar",
+  "glosa": "NECESITAR",
+  "significa": "Necesitar, requerir, precisar"
+ },
+ {
+  "id": "poder-2",
+  "glosa": "PODER",
+  "significa": "poder (ser capaz)"
+ },
+ {
+  "id": "no-poder",
+  "glosa": "NO-PODER",
+  "significa": "No poder, imposibilidad, impedimento"
+ },
+ {
+  "id": "no-haber",
+  "glosa": "NO-HABER",
+  "significa": "No hay"
+ },
+ {
+  "id": "ocupado-a",
+  "glosa": "OCUPADO/A",
+  "significa": "Ocupado, atareado"
+ },
+ {
+  "id": "anular",
+  "glosa": "ANULAR",
+  "significa": "Anular, abolir, revocar"
+ },
+ {
+  "id": "cambiar",
+  "glosa": "CAMBIAR",
+  "significa": "Cambiar, mudar, variar"
+ },
+ {
+  "id": "comprobar",
+  "glosa": "COMPROBAR",
+  "significa": "Comprobar, confirmar, verificar"
+ },
+ {
+  "id": "repetir",
+  "glosa": "REPETIR",
+  "significa": "Repetir, redundar, insistir"
+ },
+ {
+  "id": "esperar",
+  "glosa": "ESPERAR",
+  "significa": "Esperar, hacer tiempo"
+ },
+ {
+  "id": "comprender",
+  "glosa": "COMPRENDER",
+  "significa": "Comprender, entender, captar una idea"
+ },
+ {
+  "id": "no-entender",
+  "glosa": "NO-ENTENDER",
+  "significa": "No entender, no saber, desconocer"
+ },
+ {
+  "id": "hablar",
+  "glosa": "HABLAR",
+  "significa": "Hablar, parlotear, conversar"
+ },
+ {
+  "id": "escribir",
+  "glosa": "ESCRIBIR",
+  "significa": "Escribir, anotar, redactar"
+ },
+ {
+  "id": "sordo-a",
+  "glosa": "SORDO/A",
+  "significa": "Sordo"
+ },
+ {
+  "id": "venir",
+  "glosa": "VENIR",
+  "significa": "Venir, llegar, arribar"
+ },
+ {
+  "id": "ir",
+  "glosa": "IR",
+  "significa": "Ir, trasladarse, caminar"
+ },
+ {
+  "id": "tener",
+  "glosa": "TENER",
+  "significa": "Tener, poseer"
+ },
+ {
+  "id": "donde",
+  "glosa": "DÓNDE",
+  "significa": "Dónde, adónde"
+ },
+ {
+  "id": "cuando",
+  "glosa": "CUÁNDO",
+  "significa": "Cuándo, en qué momento"
+ },
+ {
+  "id": "que",
+  "glosa": "QUÉ",
+  "significa": "Qué"
+ },
+ {
+  "id": "cuanto-s",
+  "glosa": "CUÁNTO/S",
+  "significa": "Cuánto, cuántos, qué cantidad"
+ },
+ {
+  "id": "como-1",
+  "glosa": "CÓMO",
+  "significa": "¿cómo?"
+ },
+ {
+  "id": "quien",
+  "glosa": "QUIÉN",
+  "significa": "Quién"
+ },
+ {
+  "id": "pagar",
+  "glosa": "PAGAR",
+  "significa": "Pagar, cancelar, saldar"
+ },
+ {
+  "id": "dinero",
+  "glosa": "DINERO",
+  "significa": "Dinero, plata, efectivo"
+ },
+ {
+  "id": "otro-a",
+  "glosa": "OTRO/A",
+  "significa": "Otro"
+ },
+ {
+  "id": "mas",
+  "glosa": "MÁS",
+  "significa": "Más, aumento"
+ },
+ {
+  "id": "bueno-a-2",
+  "glosa": "BUENO/A",
+  "significa": "bueno / está bien"
+ }
+]

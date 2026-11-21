@@ -103,3 +103,7 @@ tmp/
 .claude/worktrees/
 .claude/settings.local.json
 graphify-out/
+
+# audios personales de prueba (voz): no subir
+data/eval/audio/*
+!data/eval/audio/.gitkeep
