@@ -7,10 +7,10 @@
 //   abajo    respuestas rápidas y caja para escribir, fijas
 import { useEffect, useRef, useState } from "react";
 import {
-  Button, CallStatus, Composer, Logo, QuickReplies, SignAvatar, Subtitles, VisualAlert, DEFAULT_REPLIES,
+  Button, CallStatus, Composer, Icon, QuickReplies, SignAvatar, Subtitles, VisualAlert, DEFAULT_REPLIES,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
-import type { MensajePuente } from "@puente/glosses";
+import { isLiteralGloss, literalText, type MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
 import { Inicio, type Destino } from "./Inicio";
@@ -18,6 +18,14 @@ import { Inicio, type Destino } from "./Inicio";
 const AVATAR_MS_POR_SENA = 1300; // igual que el reproductor de fotos de lab/v4_avatar
 
 const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+
+// Id local de cada línea de subtítulo. No se usa crypto.randomUUID: solo existe con HTTPS y falla al probar
+// desde el celular por http://192.168.x.x:3000. (Aporte de Raimundo.)
+let siguienteId = 0;
+const nuevoId = () => `l${++siguienteId}`;
+
+// `TEXTO:10:30` (hora, cifra, RUT o nombre sin seña) se muestra como el dato, no como glosa (docs/contrato.md).
+const paraMostrar = (glosa: string) => (isLiteralGloss(glosa) ? literalText(glosa) : glosa);
 
 export function CallPanel({ mock }: { mock: boolean }) {
   const [call, setCall] = useState<CallHandle | null>(null);
@@ -28,7 +36,10 @@ export function CallPanel({ mock }: { mock: boolean }) {
   const [alert, setAlert] = useState<{ message: string; tone: AlertTone } | null>(null);
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
   const [destino, setDestino] = useState<Destino | null>(null);
+  // true desde que el cliente responde hasta que el otro lado vuelve a hablar: no se ofrecen respuestas.
+  const [esperando, setEsperando] = useState(false);
   const callRef = useRef<CallHandle | null>(null);
+  const destinoRef = useRef<Destino | null>(null); // onMessage corre fuera del render: lee el destino de aquí
   const chatRef = useRef<HTMLDivElement>(null);
 
   // Contador de duración mientras la llamada está en curso.
@@ -57,8 +68,9 @@ export function CallPanel({ mock }: { mock: boolean }) {
   function onMessage(msg: MensajePuente) {
     switch (msg.tipo) {
       case "ejecutivo_dice":
-        setLines((l) => [...l, { id: crypto.randomUUID(), who: "ejecutivo", time: hora(), text: msg.simple ?? msg.texto, original: msg.texto }]);
+        setLines((l) => [...l, { id: nuevoId(), who: "ejecutivo", time: hora(), text: msg.simple ?? msg.texto, original: msg.texto }]);
         setOpciones(msg.opciones?.length ? msg.opciones : DEFAULT_REPLIES);
+        setEsperando(false);
         // Sin v4 activa no llega glosas_para_senar: el subtítulo del avatar igual muestra lo último que dijeron.
         setSenas((s) => ({ glosas: s?.glosas ?? [], actual: s?.actual ?? 0, subtitulo: msg.simple ?? msg.texto }));
         break;
@@ -66,6 +78,9 @@ export function CallPanel({ mock }: { mock: boolean }) {
         if (msg.valor === "llamada_iniciada") {
           setState("live"); // CallStatus ya muestra "En llamada" + duración; no hace falta otro aviso.
           setAlert(null);
+          // Al contestar, se ofrecen las frases iniciales del destino para hablar primero con un toque.
+          setOpciones((o) => (destinoRef.current?.frasesIniciales.length ? destinoRef.current.frasesIniciales : o));
+          setSenas((s) => s ?? { glosas: [], actual: 0, subtitulo: "Contestaron.\nCuéntales qué pasa." });
         } else {
           setState("ended");
           callRef.current?.leave();
@@ -74,16 +89,18 @@ export function CallPanel({ mock }: { mock: boolean }) {
         }
         break;
       case "glosas_para_senar":
-        setSenas({ glosas: msg.glosas, subtitulo: msg.subtitulo, actual: 0 });
+        setSenas({ glosas: msg.glosas.map(paraMostrar), subtitulo: msg.subtitulo, actual: 0 });
         break;
     }
   }
 
   async function llamar(d: Destino) {
     setDestino(d);
+    destinoRef.current = d;
     setLines([]);
     setSenas(null);
     setOpciones(DEFAULT_REPLIES);
+    setEsperando(false);
     setSeconds(0);
     setAlert(null);
     setState("connecting");
@@ -113,7 +130,9 @@ export function CallPanel({ mock }: { mock: boolean }) {
 
   async function decir(texto: string) {
     if (!callRef.current) return;
-    setLines((l) => [...l, { id: crypto.randomUUID(), who: "cliente", time: hora(), text: texto }]);
+    setLines((l) => [...l, { id: nuevoId(), who: "cliente", time: hora(), text: texto }]);
+    setOpciones([]); // mientras responden no hay nada que tocar
+    setEsperando(true);
     try {
       await callRef.current.send({ tipo: "cliente_dice", texto });
     } catch {
@@ -124,10 +143,7 @@ export function CallPanel({ mock }: { mock: boolean }) {
   // Inicio (antes de llamar).
   if (state === "idle") {
     return (
-      <main>
-        <header className="app">
-          <Logo size={40} />
-        </header>
+      <main className="inicio-main">
         <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
         <Inicio onLlamar={llamar} />
       </main>
@@ -146,23 +162,38 @@ export function CallPanel({ mock }: { mock: boolean }) {
           <CallStatus state={state} seconds={seconds} />
         </div>
         {call && (
-          <Button variant="danger" icon="colgar" onClick={colgar}>
-            Colgar
-          </Button>
+          <button type="button" className="hangup" onClick={colgar} aria-label="Colgar">
+            <Icon name="colgar" size={26} />
+          </button>
         )}
       </header>
 
-      <SignAvatar glosses={senas?.glosas ?? []} current={senas?.actual} subtitle={subtitulo} />
+      <SignAvatar
+        glosses={senas?.glosas ?? []}
+        current={senas?.actual}
+        subtitle={subtitulo}
+        signing={!!senas && senas.actual < senas.glosas.length}
+      />
 
       <div className="chat" ref={chatRef}>
         {lines.length > 0 && <Subtitles lines={lines} showOriginal otherName={destino?.corto ?? "Ejecutivo"} />}
+        {esperando && enLlamada && (
+          <p className="typing" aria-live="polite">
+            <span className="dots" aria-hidden>
+              <i />
+              <i />
+              <i />
+            </span>
+            {destino?.corto ?? "El ejecutivo"} está respondiendo
+          </p>
+        )}
       </div>
 
       <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
 
       {enLlamada && (
-        <Composer compact onSend={decir} placeholder="Escribe tu respuesta">
-          <QuickReplies options={opciones} onPick={decir} />
+        <Composer compact onSend={decir} placeholder="Escribe un mensaje">
+          {opciones.length > 0 && <QuickReplies options={opciones} onPick={decir} />}
         </Composer>
       )}
       {state === "ended" && (

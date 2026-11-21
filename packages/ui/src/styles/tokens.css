@@ -1,26 +1,25 @@
-/* Puente — generado desde tokens.json (mismo contenido que el artefacto Puente Design System). */
-@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@500;600&display=swap");
+/* Puente: generado desde tokens.json. Tipografía del sistema (San Francisco en iPhone, Roboto en Android), como una app nativa. */
 
-/* Pastel es el tema por defecto; Noche con data-theme="dark" en <html>. */
+/* Claro es el tema por defecto; Noche con data-theme="dark" en <html>. */
 :root, [data-theme="light"] {
   color-scheme: light;
-  --bg: #f3f5fc;
+  --bg: #f2f3f6;
   --surface: #ffffff;
-  --surface-raised: #eceafb;
-  --line: #d9dcef;
+  --surface-raised: #e9ebef;
+  --line: #dde0e6;
   --line-strong: #6b7591;
-  --fg: #1f2540;
-  --muted: #555d78;
+  --fg: #14171c;
+  --muted: #5b6270;
   --accent: #ffe08a;
   --brand: #e6a700;
   --on-accent: #1f2540;
   --accent-soft: #fff4cc;
   --cliente: #1d6fa3;
-  --cliente-soft: #dcefff;
+  --cliente-soft: #dce9ff;
   --live: #1f7a4a;
   --live-soft: #d9f5e5;
-  --danger: #ffb4a8;
-  --on-danger: #5a1209;
+  --danger: #c9333a;
+  --on-danger: #ffffff;
   --focus: var(--fg);
 }
 
@@ -46,9 +45,9 @@
 }
 
 :root {
-  --font-display: "Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
-  --font-sans: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, "Segoe UI", system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

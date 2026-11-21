@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4-avatar) · guion de la demo y look de app nativa
+- Decidí (Rafael): guion fijo de la demo, caída de un niño con el codo quebrado (habla primero la persona sorda). Mientras el otro lado responde no se muestran respuestas rápidas.
+- Hice: simulador con ese guion (frase inicial lista para tocar al contestar, una respuesta del guion por turno, "Repita" repite, termina sola). Indicador "Urgencias está respondiendo". Intérprete dibujado como videollamada (ropa oscura y fondo liso, manos que se mueven al hacer señas, subtítulo encima). Look de app nativa: tipografía del sistema (San Francisco/Roboto), título grande, botón rojo de urgencia, lista agrupada, barra de pestañas (Historial y Perfil sin contenido todavía), burbujas de mensajería, caja de texto redonda con botón de enviar, Colgar redondo. Sin el indicador "N" de Next en desarrollo. Revisado con capturas automáticas en tamaño iPhone.
+- Falta: frases del guion > 40 caracteres (el agente real limita `opciones` a 40; pedir a B). Vocabulario de urgencias (hijo, sangre, brazo, ambulancia no tienen seña). Intérprete real = fotos/clips (D5).
+
 ## 2026-11-21 — Rafael / Claude (v4-avatar) · demo de urgencia
 - Decidí (Rafael): **la demo se enfoca solo en la persona sorda llamando a urgencias de la clínica para pedir una ambulancia**. La llamada entrante queda guardada (`IncomingCall` sigue en `packages/ui`) pero fuera del flujo.
 - Hice: inicio con un solo botón grande "Pedir una ambulancia". Pantalla de llamada que cabe entera sin bajar: arriba quién, estado y Colgar; el avatar siempre visible con lo último que dijeron encima; el chat baja solo; abajo, fijas, las respuestas rápidas y la caja para escribir. Las respuestas rápidas usan `ejecutivo_dice.opciones` cuando vienen (si no, Sí/No/Repita/Más lento). Quité las glosas bajo el avatar. Simulador con guion de urgencia (emergencia, dirección, si respira, ambulancia en 10 min, instrucciones); "Repita, por favor" repite la última frase. Mergeé `dev` (v2 de Raimundo).

@@ -1,8 +1,10 @@
 // Llamada simulada (?mock=1): reemplaza a LiveKit + el agente para probar la app sin backend.
 // Se comporta igual que joinCall (misma interfaz CallHandle y mismos mensajes del contrato),
 // así que la pantalla no sabe si la llamada es real o de mentira.
-// Escenario de la demo: la persona sorda llama a urgencias de la clínica para pedir una ambulancia.
-// TODO(real-data): glosas tomadas del escenario real cuando B lo congele.
+// Escenario de la demo: la persona sorda llama a urgencias porque su hijo se cayó y se quebró el codo.
+// Glosas del diccionario real (packages/glosses/data/glosses.json, 81 de hora médica). Lo que no tiene seña
+// (ambulancia, respirar, cifras) va como `TEXTO:<dato>`, igual que lo emite el agente.
+// TODO(real-data): pedir a B un escenario `urgencia` con su vocabulario.
 import type { MensajePuente } from "@puente/glosses";
 import type { CallHandle } from "./call";
 
@@ -13,40 +15,27 @@ interface Turno {
   opciones?: string[]; // respuestas rápidas sugeridas (contrato: ejecutivo_dice.opciones, máx. 4)
 }
 
+// Guion de la demo (Rafael, 21-11-2026): caída de un niño. Habla primero la persona sorda; su primera frase
+// la ofrece la app (Destino.frasesIniciales). Las `opciones` son las frases del guion para tocarlas en la demo.
+// Ojo: el agente real limita cada opción a 40 caracteres (contrato); acá son más largas porque es un guion fijo.
 const GUION: Turno[] = [
   {
-    texto: "Urgencias de Clínica Santa María, buenas tardes. ¿Cuál es su emergencia?",
-    simple: "Urgencias de la Clínica. ¿Qué emergencia tiene?",
-    glosas: ["URGENCIA", "CLÍNICA", "QUÉ", "PASAR"],
-    opciones: ["Necesito una ambulancia", "Mi papá se desmayó", "Me duele mucho el pecho"],
+    texto: "Hola, ¿su hijo está consciente y respira bien?",
+    simple: "¿Su hijo está despierto?\n¿Respira bien?",
+    glosas: ["HOLA", "TEXTO:hijo", "BUENO", "QUÉ"],
+    opciones: ["Sí, está consciente, pero no puede apoyar el codo y el brazo está muy hinchado."],
   },
   {
-    texto: "Entiendo, vamos a ayudarlo. ¿Me puede dar la dirección exacta donde se encuentra, con la comuna?",
-    simple: "Vamos a ayudarlo. ¿Cuál es su dirección? Diga también la comuna.",
-    glosas: ["AYUDAR", "DIRECCIÓN", "CUÁL", "COMUNA"],
+    texto: "Entendido. ¿Hay sangrado o el brazo se ve pálido o frío?",
+    simple: "¿Sale sangre?\n¿El brazo está pálido o frío?",
+    glosas: ["COMPRENDER", "TEXTO:sangre", "TEXTO:brazo", "QUÉ"],
+    opciones: ["Hay un poco de sangre, pero el brazo está normal. Necesito un traslado urgente."],
   },
   {
-    texto: "Muy bien. ¿La persona está consciente? ¿Respira con normalidad?",
-    simple: "¿La persona está despierta? ¿Respira bien?",
-    glosas: ["PERSONA", "DESPIERTO", "RESPIRAR", "BIEN"],
-    opciones: ["Sí, respira", "No responde", "Respira con dificultad"],
-  },
-  {
-    texto: "Ya despachamos una ambulancia a su dirección. Debería llegar en aproximadamente diez minutos.",
-    simple: "La ambulancia va en camino. Llega en unos 10 minutos.",
-    glosas: ["AMBULANCIA", "VENIR", "TEXTO:10", "MINUTO"],
-    opciones: ["Gracias", "¿Qué hago mientras?"],
-  },
-  {
-    texto: "Quédese junto a la persona, no le dé nada de comer ni de beber, y deje la puerta abierta para el equipo.",
-    simple: "Quédese con la persona. No le dé comida ni agua. Deje la puerta abierta.",
-    glosas: ["QUEDAR", "PERSONA", "COMIDA", "AGUA", "NO", "PUERTA", "ABRIR"],
-    opciones: ["Entendido", "Repita, por favor"],
-  },
-  {
-    texto: "Si algo cambia, vuelva a llamarnos. La ambulancia ya va en camino.",
-    simple: "Si algo cambia, llame de nuevo. La ambulancia ya viene.",
-    glosas: ["CAMBIAR", "LLAMAR", "AMBULANCIA", "VENIR"],
+    texto: "Registramos la solicitud de ambulancia. Tenemos su dirección señora, vamos en camino. Mientras llega, no mueva el brazo ni el codo de su hijo.",
+    simple: "La ambulancia va en camino.\nYa tenemos su dirección.\nNo mueva el brazo ni el codo de su hijo.",
+    glosas: ["TEXTO:ambulancia", "VENIR", "DOMICILIO", "TENER", "TEXTO:brazo", "NO"],
+    opciones: ["Gracias", "Repita, por favor"],
   },
 ];
 
@@ -71,7 +60,7 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
     turno += 1;
     decirTurno(t);
     if (turno === GUION.length) {
-      later(3000, () => {
+      later(10000, () => {
         terminada = true;
         opts.onMessage({ tipo: "estado", valor: "llamada_terminada" });
       });
@@ -86,7 +75,7 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
   // Simula lo que tarda en conectar y que contesten.
   await new Promise((r) => setTimeout(r, 1000));
   opts.onMessage({ tipo: "estado", valor: "llamada_iniciada" });
-  later(1200, siguiente);
+  // En el guion habla primero la persona sorda: la operadora espera su mensaje.
 
   return {
     async send(msg) {

@@ -2,6 +2,7 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "./Button";
+import { Icon } from "./Icon";
 
 export interface ComposerProps {
   value?: string;
@@ -65,12 +66,18 @@ export function Composer({
           if (e.key === "Enter" && !e.shiftKey) send(e);
         }}
       />
-      <div className="bar">
-        {!compact && <span className="hint">{hint}</span>}
-        <Button type="submit" icon="enviar" disabled={sending || !text.trim()}>
-          {sending ? "Hablando…" : sendLabel}
-        </Button>
-      </div>
+      {compact ? (
+        <button type="submit" className="pu-send" aria-label={sendLabel} disabled={sending || !text.trim()}>
+          <Icon name="enviar" size={22} />
+        </button>
+      ) : (
+        <div className="bar">
+          <span className="hint">{hint}</span>
+          <Button type="submit" icon="enviar" disabled={sending || !text.trim()}>
+            {sending ? "Hablando…" : sendLabel}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }
