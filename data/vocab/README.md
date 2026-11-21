@@ -2,11 +2,11 @@
 Generado el 2026-11-21 desde los diccionarios en PDF. No editar a mano: se regenera con los scripts.
 
 ## Cifras
-- **Entradas:** 1057 (Diccionario_LSCh_A-H.pdf: 1057)
-- **Con imagen:** 1057 (9 comparten la foto de la entrada anterior, ver más abajo)
-- **Confianza:** alta: 1055, media: 2
-- **Escenarios (heurística):** salud 37, banco 19
-- `glosario_compacto.txt` pesa ~33 KB: cabe entero en un prompt (usar prompt caching).
+- **Entradas:** 2167 (Diccionario_LSCh_A-H.pdf: 1057, Diccionario_LSCh_I-Z.pdf: 1110)
+- **Con imagen:** 2167 (15 comparten la foto de la entrada anterior, ver más abajo)
+- **Confianza:** alta: 2163, media: 4
+- **Escenarios (heurística):** salud 65, banco 27
+- `glosario_compacto.txt` pesa ~65 KB: cabe entero en un prompt (usar prompt caching).
 
 ## Archivos
 - `glosario.jsonl`: una entrada por seña (campos: id, glosa, español[], categoría, descripcion_seña, variantes[], fuente, imagen, confianza, escenario, y extra: definicion, clase, gramatica, antonimos, homonimo, imagen_compartida_con).
@@ -24,7 +24,7 @@ Generado el 2026-11-21 desde los diccionarios en PDF. No editar a mano: se regen
 - Homónimos llevan id `glosa-1`, `glosa-2` (orden de aparición); el resto, id sin sufijo.
 
 ## Problemas conocidos
-- Entradas con confianza no alta: `aplaudir-2` (p. 51, media), `dia-de` (p. 205, media).
+- Entradas con confianza no alta: `aplaudir-2` (p. 51, media), `dia-de` (p. 205, media), `juntarse` (p. 59, media), `nombre-2` (p. 147, media).
 - Si el PDF trae solo A-H, faltan I-Z (el PDF `Diccionario_LSCh_I-Z.pdf` se procesa con el mismo script).
 - `escenario` es por palabras clave sobre glosa y sinónimos cortos: puede dejar fuera glosas útiles o sumar falsas. Revisar antes de la demo.
 - Hay entradas con definición de varias acepciones en un solo texto (`// 2. ...`): se dejaron tal cual en `definicion`.

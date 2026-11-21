@@ -124,7 +124,10 @@ def page_entries(page, archivo):
             dueno = max(arriba, key=lambda a: a[0])[1]
         else:
             deb = sorted((h for h in heads if h["y0"] > y0 and "imgs" not in h), key=lambda h: h["y0"])
-            dueno = deb[0] if deb else (max(arriba, key=lambda a: a[0])[1] if arriba else None)
+            abajo = [a for a in asignadas if a[0] > y0 + 5]
+            dueno = (deb[0] if deb else
+                     max(arriba, key=lambda a: a[0])[1] if arriba else
+                     min(abajo, key=lambda a: a[0])[1] if abajo else None)
         if dueno is not None:
             for im in sorted(fila, key=lambda b: b["bbox"][0]):
                 dueno.setdefault("imgs", []).append(im["bbox"])
