@@ -16,7 +16,17 @@ al cliente (PWA) y al agente traductor (ADR-0005).
 PWA → `POST /llamadas {room, numero}` (services/api) → `CreateSIPParticipant` → suena el teléfono →
 el ejecutivo contesta y su audio entra a la sala → el agente lo transcribe.
 
+## Flujo entrante (te llaman a ti)
+Ejecutivo marca el número de Twilio → Twilio envía INVITE al *inbound trunk* de LiveKit → la *dispatch rule* lo manda a
+tu sala fija `sala-<usuario>` y despacha el agente → tu PWA (ya conectada con `/token`) ve entrar al participante SIP y
+avisa visualmente → al contestar, el agente publica `estado: llamada_iniciada`. Diagrama en `docs/ARQUITECTURA.md` §1.3.
+
+Configuración extra: en Twilio, apuntar el *Origination URI* del trunk al SIP URI de LiveKit; en LiveKit, crear el
+*inbound trunk* (números permitidos = el de Twilio) y una *dispatch rule* tipo `direct` con `roomName=sala-<usuario>`
+y el agente en `roomConfig.agents`. La PWA debe estar abierta (ADR-0007).
+
 ## Pendiente
+- `TODO(v1)`: aviso visual de llamada entrante en `apps/web` y `estado: llamada_entrante` / `contestar` en el contrato.
 - `TODO(v1)`: implementar `/llamadas` en `services/api/app/main.py`.
 - Audio telefónico a 8 kHz: medir el STT con audios chilenos reales (`data/eval/`, ver `data/research/…-v1-telefonia-stt-tts.md`).
 - Cuenta trial de Twilio: solo llama a números verificados.

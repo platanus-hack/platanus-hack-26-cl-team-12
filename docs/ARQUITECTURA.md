@@ -63,7 +63,8 @@ graph TD
     Tel <--> Twilio <--> Room
     PWA -- "data channel + token" --> Room
     PWA -- "POST /token" --> API
-    API -- "SIP saliente" --> Room
+    API -- "SIP saliente (cuando tú llamas)" --> Room
+    Twilio -- "SIP entrante + dispatch rule<br/>(cuando te llaman)" --> Room
     Room <--> Agent
     Agent --> STT --> Trad
     Agent --> Trad --> TTS --> Room
@@ -106,6 +107,45 @@ traductor lo vuelve una frase natural y cortés (`complejizar`, pendiente en `ag
 `emitir_glosas`), valida cada una contra el diccionario, deletrea lo que no existe y publica `glosas_para_senar`
 con un subtítulo. La PWA reproduce los clips en orden.
 
+**Llamada entrante (te llaman a ti).** El número de Twilio tiene un *inbound trunk* y una *dispatch rule* de LiveKit que
+manda toda llamada a **tu sala fija** (`sala-<usuario>`) y despacha el agente. Tu PWA ya está conectada a esa sala
+(token de `/token`, sin publicar audio), así que cuando entra el participante SIP se activa el aviso visual
+(pantalla, vibración, texto "Te llaman") sin polling ni endpoint nuevo. Mientras no contestas, el agente le dice al
+ejecutivo por TTS "Un momento, la persona es sorda y está conectándose". Al tocar **Contestar**, el agente publica
+`estado: llamada_iniciada` y sigue el mismo flujo v1–v4 que en una llamada saliente.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Ej as Ejecutivo (teléfono)
+    participant Tw as Twilio
+    participant LK as LiveKit (sala fija + dispatch rule)
+    participant Ag as Agente traductor
+    participant PWA as PWA (persona sorda)
+
+    Note over PWA,LK: PWA abierta: POST /token → conectada a sala-usuario
+    Ej->>Tw: Llama al número de Puente
+    Tw->>LK: INVITE (inbound trunk)
+    LK->>LK: Dispatch rule → sala-usuario, despacha agente
+    LK-->>Ag: Agente entra a la sala
+    LK-->>PWA: Participante SIP conectado
+    PWA->>PWA: Aviso visual: pantalla + vibración "Te llaman"
+    Ag-->>Ej: TTS "Un momento, la persona es sorda..."
+    PWA->>Ag: Contestar (data channel)
+    Ag-->>PWA: estado: llamada_iniciada
+    loop Conversación
+        Ej->>Ag: voz → STT → traductor
+        Ag-->>PWA: ejecutivo_dice / glosas_para_senar
+        PWA->>Ag: cliente_dice / glosas_cliente
+        Ag-->>Ej: traductor → TTS
+    end
+    Ej->>Tw: Cuelga
+    Ag-->>PWA: estado: llamada_terminada
+```
+
+**Límite del MVP:** la PWA debe estar abierta (o la app en primer plano). Con la app cerrada se necesita push +
+CallKit/ConnectionService (ADR-0007, fuera del MVP). Para la demo, abre la PWA antes de pedir que te llamen.
+
 ### 1.4 Contrato de mensajes (data channel de LiveKit)
 
 Definido en `packages/glosses/src/contract.ts` (TS) y validado en `services/agent/guard.py` (Python).
@@ -114,7 +154,7 @@ Definido en `packages/glosses/src/contract.ts` (TS) y validado en `services/agen
 |---|---|---|---|
 | `ejecutivo_dice` | agente | PWA | `texto`, `simple?` (null o ausente si la v2 está apagada) |
 | `cliente_dice` | PWA | agente | `texto` (≤ 500 caracteres) |
-| `estado` | agente | PWA | `valor`: `llamada_iniciada` \| `llamada_terminada` |
+| `estado` | agente | PWA | `valor`: `llamada_iniciada` \| `llamada_terminada` (`llamada_entrante` y `contestar` son plan para el flujo entrante: `TODO(v1)`, aún no están en `contract.ts`) |
 | `glosas_cliente` | PWA | agente | `glosas[]` (≤ 30), `confianza` |
 | `glosas_para_senar` | agente | PWA | `glosas[]`, `subtitulo` |
 
