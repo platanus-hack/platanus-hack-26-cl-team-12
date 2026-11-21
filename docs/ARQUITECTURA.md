@@ -31,7 +31,7 @@
 ### 1.1 Vista general
 
 ```mermaid
-graph TD
+graph LR
     subgraph Persona sorda
         PWA["PWA (apps/web)<br/>Capacitor en móvil"]
         Cam["Cámara"] --> MP["MediaPipe<br/>puntos clave (packages/signs)"]
@@ -71,6 +71,10 @@ graph TD
     Agent --> DB
     PWA --> DB
 ```
+
+> **Imágenes PNG** de los diagramas de este documento (para slides): [vista general](diagramas/arquitectura/01-vista-general.png),
+> [modelo de base de datos](diagramas/arquitectura/02-modelo-base-de-datos.png) y [despliegue](diagramas/arquitectura/03-despliegue.png).
+> Los 14 diagramas UML están en [`UML.md`](UML.md). Si cambias un diagrama, hay que regenerar su imagen.
 
 ### 1.2 Componentes por carpeta
 
