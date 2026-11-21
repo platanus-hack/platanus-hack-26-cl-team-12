@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4-avatar) · demo de urgencia
+- Decidí (Rafael): **la demo se enfoca solo en la persona sorda llamando a urgencias de la clínica para pedir una ambulancia**. La llamada entrante queda guardada (`IncomingCall` sigue en `packages/ui`) pero fuera del flujo.
+- Hice: inicio con un solo botón grande "Pedir una ambulancia". Pantalla de llamada que cabe entera sin bajar: arriba quién, estado y Colgar; el avatar siempre visible con lo último que dijeron encima; el chat baja solo; abajo, fijas, las respuestas rápidas y la caja para escribir. Las respuestas rápidas usan `ejecutivo_dice.opciones` cuando vienen (si no, Sí/No/Repita/Más lento). Quité las glosas bajo el avatar. Simulador con guion de urgencia (emergencia, dirección, si respira, ambulancia en 10 min, instrucciones); "Repita, por favor" repite la última frase. Mergeé `dev` (v2 de Raimundo).
+- Falta: mostrar `TEXTO:` en grande cuando llegue el reproductor real (D5). Pedir a B un escenario `urgencia` (vocabulario y frases); hoy el agente está armado para hora médica.
+
 ## 2026-11-21 — Rafael / Claude (v4-avatar) · llamada entrante primero
 - Decidí (Rafael): **la versión 1 es la llamada entrante**. La clínica llama a la persona sorda, ve la pantalla de llamada y contesta deslizando a la izquierda; ahí se abre la app con el texto y el avatar. **La versión 2 es la saliente** (la persona llama a la clínica). Por ahora solo salud (clínica, CESFAM, Fonasa).
 - Hice: `IncomingCall` en `packages/ui` (pantalla completa, borde que destella y pulso en vez de timbre, vibración en Android, deslizar para contestar, Rechazar). En `?mock=1` la clínica "llama" a los 3 s de abrir la app, con un guion de confirmación de hora. Tema pastel por defecto, inicio con destinos de salud, aviso de conexión quitado (redundante con "En llamada" + duración), avatar grande con el subtítulo encima.

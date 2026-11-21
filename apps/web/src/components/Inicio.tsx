@@ -1,6 +1,6 @@
 "use client";
 
-// Pantalla de inicio: qué es Puente, a quién llamar y cómo funciona.
+// Pantalla de inicio. Enfoque de la demo: pedir una ambulancia a urgencias de la clínica.
 import { Icon, type IconName } from "@puente/ui";
 
 export interface Destino {
@@ -8,50 +8,39 @@ export interface Destino {
   nombre: string;
   corto: string; // cómo aparece en los subtítulos
   motivo: string;
-  icon: IconName;
-  disponible: boolean;
 }
 
-// Por ahora solo salud. TODO(real-data): la lista real sale de ALLOWED_DESTINATIONS en services/api.
-export const DESTINOS: Destino[] = [
-  { id: "clinica", nombre: "Clínica Santa María", corto: "Clínica", motivo: "Pedir una hora médica", icon: "llamar", disponible: true },
-  { id: "cesfam", nombre: "CESFAM de tu comuna", corto: "CESFAM", motivo: "Horas y controles", icon: "llamar", disponible: false },
-  { id: "fonasa", nombre: "Fonasa", corto: "Fonasa", motivo: "Bonos y consultas", icon: "llamar", disponible: false },
-];
+// TODO(real-data): el número real sale de ALLOWED_DESTINATIONS en services/api.
+export const URGENCIAS: Destino = {
+  id: "urgencias",
+  nombre: "Urgencias Clínica Santa María",
+  corto: "Urgencias",
+  motivo: "Pedir una ambulancia",
+};
 
 const PASOS: { icon: IconName; titulo: string; texto: string }[] = [
-  { icon: "llamar", titulo: "Te llaman o llamas tú", texto: "Cuando la clínica te llame, Puente te avisa en pantalla. También puedes llamar tú." },
-  { icon: "subtitulos", titulo: "Lees lo que te dicen", texto: "Su voz aparece como texto simple y en lengua de señas." },
-  { icon: "escribir", titulo: "Respondes a tu manera", texto: "Escribe o haz señas. Puente se lo dice con voz." },
+  { icon: "llamar", titulo: "Puente llama por ti", texto: "Contesta una persona de urgencias, por teléfono." },
+  { icon: "subtitulos", titulo: "Lees lo que te dicen", texto: "En texto simple y en lengua de señas, siempre arriba." },
+  { icon: "escribir", titulo: "Respondes rápido", texto: "Toca una respuesta o escribe. Puente se lo dice con voz." },
 ];
 
 export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
   return (
     <div className="inicio">
       <section className="hero">
-        <h1 className="pu-type-display">Llama a cualquier lugar sin necesidad de oír.</h1>
-        <p>Puente convierte la llamada en texto y señas para ti, y en voz para quien atiende.</p>
+        <h1 className="pu-type-display">Pide ayuda urgente sin necesidad de oír.</h1>
+        <p>Puente llama a urgencias por ti y te muestra todo lo que te dicen.</p>
       </section>
 
-      <section aria-labelledby="t-destinos" className="bloque">
-        <h2 id="t-destinos" className="pu-type-title">¿Quieres llamar tú?</h2>
-        <ul className="destinos">
-          {DESTINOS.map((d) => (
-            <li key={d.id}>
-              <button type="button" className="destino" disabled={!d.disponible} onClick={() => onLlamar(d)}>
-                <span className="ico" aria-hidden>
-                  <Icon name={d.icon} size={26} />
-                </span>
-                <span className="txt">
-                  <strong>{d.nombre}</strong>
-                  <span>{d.motivo}</span>
-                </span>
-                <span className="cta">{d.disponible ? "Llamar" : "Pronto"}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <button type="button" className="sos" onClick={() => onLlamar(URGENCIAS)}>
+        <span className="sos-ico" aria-hidden>
+          <Icon name="llamar" size={34} />
+        </span>
+        <span className="sos-txt">
+          <strong>{URGENCIAS.motivo}</strong>
+          <span>{URGENCIAS.nombre}</span>
+        </span>
+      </button>
 
       <section aria-labelledby="t-pasos" className="bloque">
         <h2 id="t-pasos" className="pu-type-title">Cómo funciona</h2>

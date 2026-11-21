@@ -9,23 +9,36 @@ header.app { display: flex; justify-content: space-between; align-items: center;
 
 h1, h2 { font-family: var(--font-display); letter-spacing: -0.01em; margin: 0; }
 
-
 /* Inicio */
 .inicio { display: flex; flex-direction: column; gap: var(--space-8); }
 .hero { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6) var(--space-4); border-radius: var(--radius-lg); background: var(--cliente-soft); }
 .hero h1 { margin: 0; text-wrap: balance; }
 .hero p { margin: 0; color: var(--fg); max-width: 34ch; }
 .bloque { display: flex; flex-direction: column; gap: var(--space-4); }
-.destinos, .pasos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
-.destino { font: inherit; width: 100%; min-height: var(--target-lg); display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border: 2px solid var(--line); background: var(--surface); color: var(--fg); text-align: left; cursor: pointer; }
-.destino:not(:disabled):hover { border-color: var(--line-strong); }
-.destino:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
-.destino:disabled { cursor: not-allowed; background: transparent; }
-.destino:disabled .txt, .destino:disabled .ico { opacity: 0.6; }
+
+/* Botón de urgencia: lo único que hay que tocar en el inicio. */
+.sos { font: inherit; width: 100%; min-height: 96px; display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg); border: 2px solid var(--on-danger); background: var(--danger); color: var(--on-danger); text-align: left; cursor: pointer; }
+.sos:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+.sos-ico { flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--surface); color: var(--on-danger); }
+.sos-txt { display: flex; flex-direction: column; min-width: 0; }
+.sos-txt strong { font-family: var(--font-display); font-size: 28px; line-height: 32px; }
+.sos-txt span { font-size: 16px; }
+
+.pasos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.pasos li { display: flex; gap: var(--space-3); align-items: flex-start; }
 .ico { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--surface-raised); color: var(--fg); }
 .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .txt span { color: var(--muted); font-size: 16px; line-height: 22px; }
-.cta { flex: none; font-weight: 700; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); border: 2px solid var(--brand); }
-.destino:disabled .cta { background: transparent; border-color: var(--line); color: var(--muted); }
-.pasos li { display: flex; gap: var(--space-3); align-items: flex-start; }
-.call-title { margin: 0; }
+
+/* Llamada: ocupa exactamente la pantalla. Solo el chat tiene scroll (y baja solo). */
+main.call { height: 100dvh; gap: var(--space-3); padding-block: var(--space-3); }
+.call-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.call-head .who { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); min-width: 0; }
+.call-head .who strong { font-size: 17px; line-height: 22px; }
+.call .pu-avatar { flex: none; padding: 0; border: 0; background: none; }
+.call .pu-avatar .stage { aspect-ratio: auto; height: 36dvh; min-height: 200px; }
+.call .pu-avatar .stage > svg { width: auto; height: 70%; margin-bottom: 14%; }
+.chat { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.chat .pu-subs { min-height: 100%; }
+.chat .pu-sub, .chat .pu-sub.last { font-size: 18px; line-height: 26px; font-weight: 400; outline: none; }
+.call .pu-composer, .call > .pu-btn { flex: none; }
