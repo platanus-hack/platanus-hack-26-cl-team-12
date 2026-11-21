@@ -12,6 +12,7 @@ import os
 from dataclasses import asdict, dataclass, field
 
 from . import prompts
+from .cache_key import normalizar_entrada
 from .escenario import Escenario, load_escenario
 from .glossary import LITERAL_MAX_CHARS, LITERAL_PREFIX, Glossary, fingerspell, is_literal, literal
 
@@ -21,8 +22,6 @@ MODEL = os.getenv("TRANSLATOR_MODEL", "claude-haiku-5-5")
 MAX_OPCIONES = 4
 MAX_OPCION_CHARS = 40
 MAX_GLOSAS = 30
-# Texto libre del cliente: solo se cachean respuestas cortas ("Sí", "martes bueno"), nunca frases largas.
-CACHE_MAX_PALABRAS_CLIENTE = int(os.getenv("AGENT_CACHE_MAX_PALABRAS_CLIENTE", "4"))
 
 SIMPLE_TOOL = {
     "name": "emitir_simple",
@@ -99,6 +98,10 @@ class Translator:
         self.escenario = escenario or load_escenario()
         self.store = store
         self.cache_hits = 0  # métrica (B6): cuántas traducciones salieron de la caché
+        self._frecuentes = {
+            lado: {normalizar_entrada(f) for f in frases}
+            for lado, frases in self.escenario.frases_frecuentes.items()
+        }
         base = prompts.system_base(self.escenario.descripcion, glossary.as_prompt())
         params = {"max_opciones": MAX_OPCIONES, "literal": LITERAL_PREFIX, "literal_max": LITERAL_MAX_CHARS}
         self._base = base
@@ -115,20 +118,22 @@ class Translator:
             {"type": "text", "text": self._tareas[tarea]},
         ]
 
-    def _max_palabras(self, tarea: str) -> int | None:
-        return CACHE_MAX_PALABRAS_CLIENTE if tarea == "complejizar" else None
+    def _cacheable(self, tarea: str, texto: str) -> bool:
+        """Solo frases de la lista blanca del escenario: nunca se guarda texto libre de la llamada."""
+        lado = "cliente" if tarea == "complejizar" else "ejecutivo"
+        return self.store is not None and normalizar_entrada(texto) in self._frecuentes.get(lado, set())
 
     def _cache_get(self, tarea: str, texto: str) -> dict | None:
-        if not self.store:
+        if not self._cacheable(tarea, texto):
             return None
-        hit = self.store.cache_get(tarea, self._version[tarea], texto, self._max_palabras(tarea))
+        hit = self.store.cache_get(tarea, self._version[tarea], texto)
         if hit is not None:
             self.cache_hits += 1
         return hit
 
     def _cache_put(self, tarea: str, texto: str, salida: dict) -> None:
-        if self.store:
-            self.store.cache_put(tarea, self._version[tarea], texto, salida, self._max_palabras(tarea))
+        if self._cacheable(tarea, texto):
+            self.store.cache_put(tarea, self._version[tarea], texto, salida)
 
     def simplificar(self, texto: str) -> SimpleResult:
         """v2: lo que dice el ejecutivo → español simple + respuestas rápidas."""

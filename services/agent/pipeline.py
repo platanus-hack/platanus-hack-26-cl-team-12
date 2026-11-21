@@ -6,6 +6,7 @@
 
 import asyncio
 import logging
+import re
 import time
 from collections.abc import Awaitable, Callable
 
@@ -15,6 +16,13 @@ from translator.voz import normalizar_para_voz
 log = logging.getLogger("puente.pipeline")
 
 Publish = Callable[[dict], Awaitable[None]]
+
+
+def faltantes_sin_nombres(descartadas: list[str], texto: str) -> list[str]:
+    """Quita las glosas descartadas que vienen de una palabra con mayúscula del texto (posible nombre propio:
+    "doctor Pérez" → PÉREZ). Así la tabla de glosas faltantes no guarda nombres de personas."""
+    capitalizadas = {w.lower() for w in re.findall(r"[^\W\d_]+", texto) if w[0].isupper()}
+    return [g for g in descartadas if g.lower() not in capitalizadas]
 
 
 def _ms(t0: float) -> int:
@@ -52,8 +60,9 @@ async def turno_ejecutivo(texto: str, translator: Translator, publish: Publish, 
         r = await asyncio.to_thread(translator.espanol_a_glosas, texto)
         metricas["llm_glosas_ms"] = _ms(t)
         metricas["n_glosas"], metricas["n_descartadas"] = len(r.glosas), len(r.descartadas)
-        if r.descartadas and translator.store is not None:
-            await asyncio.to_thread(translator.store.registrar_faltantes, r.descartadas)
+        faltantes = faltantes_sin_nombres(r.descartadas, texto)
+        if faltantes and translator.store is not None:
+            await asyncio.to_thread(translator.store.registrar_faltantes, faltantes)
         if r.glosas:
             await publish({"tipo": "glosas_para_senar", "glosas": r.glosas, "subtitulo": r.subtitulo})
 

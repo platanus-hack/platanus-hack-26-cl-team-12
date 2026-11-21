@@ -20,16 +20,10 @@ def test_cache_solo_frases_sin_digitos():
     assert not cacheable("Su RUT es 12.345.678-9") and not cacheable("")
 
 
-def test_cache_no_guarda_nombres_ni_texto_largo_del_cliente_ni_la_entrada():
+def test_cache_no_guarda_la_entrada_ni_salidas_con_cifras():
     s = store()
-    assert not cacheable("soy María y necesito hora")  # nombre propio a mitad de frase
-    assert cacheable("¿En qué puedo ayudarle?") and cacheable("YO QUERER HORA MÉDICO") and cacheable("Sí. Bueno")
-    s.cache_put("simplificar", "v1", "le habla la secretaria", {"simple": "Habla Camila", "opciones": []})
-    assert s.cache_get("simplificar", "v1", "le habla la secretaria") is None  # la salida traía un nombre
-    s.cache_put("complejizar", "v1", "yo tener dolor cabeza fuerte hace semanas", {"frase": "x"}, max_palabras=4)
-    assert s.cache_get("complejizar", "v1", "yo tener dolor cabeza fuerte hace semanas", max_palabras=4) is None
-    s.cache_put("complejizar", "v1", "sí", {"frase": "Sí."}, max_palabras=4)
-    assert s.cache_get("complejizar", "v1", "Sí", max_palabras=4) == {"frase": "Sí."}
+    s.cache_put("simplificar", "v1", "un momento", {"simple": "Espere el 2"})
+    assert s.cache_get("simplificar", "v1", "un momento") is None
     cols = [c[1] for c in s._db.execute("PRAGMA table_info(traducciones_cache)")]
     assert "entrada" not in cols
 
@@ -60,6 +54,19 @@ def test_translator_usa_la_cache():
     a = t.simplificar("¿En qué puedo ayudarle?")
     b = t.simplificar("¿En qué puedo ayudarle?")
     assert a == b and len(client.messages.calls) == 1
-    t.simplificar("Su hora es a las 10:30")
-    t.simplificar("Su hora es a las 10:30")
-    assert len(client.messages.calls) == 3  # con dígitos siempre va a Claude
+    t.simplificar("en que puedo ayudarle")  # el STT sin signos ni mayúsculas también calza
+    assert len(client.messages.calls) == 1
+    # fuera de la lista blanca del escenario nunca se cachea, aunque no tenga cifras ni nombres
+    t.simplificar("soy maría y tengo diabetes")
+    t.simplificar("soy maría y tengo diabetes")
+    assert len(client.messages.calls) == 3
+    assert t.store._db.execute("SELECT COUNT(*) FROM traducciones_cache").fetchone()[0] == 1
+
+
+def test_complejizar_cachea_solo_respuestas_de_la_lista():
+    client = SimpleNamespace(messages=FakeMessages([SimpleNamespace(type="text", text="Sí.")]))
+    t = Translator(client, load_glossary(), store=store())
+    t.complejizar("sí")
+    t.complejizar("Sí")
+    t.complejizar("sí pero mi hijo se llama tomás")
+    assert len(client.messages.calls) == 2

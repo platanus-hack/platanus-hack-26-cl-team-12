@@ -1,6 +1,6 @@
 import asyncio
 
-from pipeline import turno_cliente, turno_ejecutivo
+from pipeline import faltantes_sin_nombres, turno_cliente, turno_ejecutivo
 from store import Store
 from translator import GlossResult, SimpleResult, load_escenario
 
@@ -85,3 +85,7 @@ def test_turno_cliente_devuelve_texto_para_voz():
     assert voz == "Mi rut es 12 millones 345 mil 678, guion 9"
     assert correr(turno_cliente({"tipo": "glosas_cliente", "glosas": ["YO", "QUERER", "HORA"]}, t)) == "Quiero pedir una hora."
     assert t.store.resumen_latencia()[0]["direccion"] == "cliente_a_ejecutivo"
+
+
+def test_faltantes_no_guardan_nombres():
+    assert faltantes_sin_nombres(["PÉREZ", "VACUNA", "MARÍA"], "Doctor Pérez, traiga la vacuna. María igual") == ["VACUNA"]

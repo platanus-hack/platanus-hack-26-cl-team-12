@@ -5,12 +5,12 @@ Por qué SQLite y no Supabase todavía: ADR-0009 propone Supabase, pero aún no 
 TODO(real-data): con DATABASE_URL de Supabase, mover estas tablas allá (A es dueño de esa infra).
 
 Privacidad (ADR-0010): no se guarda nada que identifique a la persona.
-- Caché: solo frases genéricas. Se descarta (entrada o salida) todo lo que tenga dígitos (RUT, horas, teléfonos,
-  montos) o nombres propios (mayúscula a mitad de frase). La entrada NO se guarda: solo su hash como clave.
-  El texto libre del cliente solo se cachea si es una respuesta corta (`max_palabras`, ej. "Sí", "martes bueno").
-  TTL corto (AGENT_CACHE_TTL_S, defecto 24 h).
+- Caché: solo frases de una LISTA BLANCA escrita por el equipo (`frases_frecuentes` del escenario; la aplica el
+  Translator). Ningún texto libre de la llamada se guarda. Además, por si acaso: la entrada no se guarda (solo su
+  hash), se descarta cualquier entrada o salida con dígitos y hay TTL corto (AGENT_CACHE_TTL_S, defecto 24 h).
 - Métricas: solo tiempos y contadores, sin texto.
-- Glosas faltantes: solo tokens con forma de glosa (MAYÚSCULAS), no texto libre.
+- Glosas faltantes: solo tokens con forma de glosa (MAYÚSCULAS), sin los que vienen de palabras con mayúscula del
+  texto original (posibles nombres; lo filtra pipeline.py) y con purga (AGENT_FALTANTES_TTL_S, defecto 7 días).
 """
 
 import hashlib
@@ -23,35 +23,19 @@ import threading
 import time
 from pathlib import Path
 
+from translator.cache_key import normalizar_entrada
+
 SCHEMA = Path(__file__).parent / "db/schema.sql"
 DEFAULT_PATH = Path(__file__).parent / ".data/puente.db"
 CACHE_TTL_S = int(os.getenv("AGENT_CACHE_TTL_S", str(24 * 3600)))
+FALTANTES_TTL_S = int(os.getenv("AGENT_FALTANTES_TTL_S", str(7 * 24 * 3600)))
 _DIGITO = re.compile(r"\d")
-_PALABRA = re.compile(r"[^\W\d_]+")
 _FORMA_GLOSA = re.compile(r"[A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜ0-9-]{0,29}")
 
 
-def tiene_nombre_propio(texto: str) -> bool:
-    """Palabra con mayúscula inicial que no abre frase ni es glosa en MAYÚSCULAS (ej. "soy María")."""
-    for m in _PALABRA.finditer(texto):
-        w = m.group()
-        if not w[0].isupper() or (len(w) > 1 and w.isupper()):
-            continue
-        antes = texto[: m.start()].rstrip(' "«¿¡(')
-        if antes and antes[-1] not in ".!?:\n":
-            return True
-    return False
-
-
-def cacheable(texto: str, max_palabras: int | None = None) -> bool:
-    """Solo frases genéricas: sin dígitos ni nombres propios, de largo razonable."""
-    if not 0 < len(texto) <= 300 or _DIGITO.search(texto) or tiene_nombre_propio(texto):
-        return False
-    return max_palabras is None or len(texto.split()) <= max_palabras
-
-
-def normalizar_entrada(texto: str) -> str:
-    return " ".join(texto.split()).lower()
+def cacheable(texto: str) -> bool:
+    """Defensa extra (la garantía es la lista blanca): sin dígitos y de largo razonable."""
+    return 0 < len(texto) <= 300 and not _DIGITO.search(texto)
 
 
 def _textos(v) -> list[str]:
@@ -80,8 +64,8 @@ class Store:
         self._db.executescript(SCHEMA.read_text(encoding="utf-8"))
 
     # ── caché de traducciones ──────────────────────────────────────────────
-    def cache_get(self, tarea: str, version: str, entrada: str, max_palabras: int | None = None) -> dict | None:
-        if not cacheable(entrada, max_palabras):
+    def cache_get(self, tarea: str, version: str, entrada: str) -> dict | None:
+        if not cacheable(entrada):
             return None
         clave = huella(tarea, version, normalizar_entrada(entrada))
         with self._lock:
@@ -93,10 +77,9 @@ class Store:
                 self._db.execute("UPDATE traducciones_cache SET usos = usos + 1 WHERE clave = ?", (clave,))
         return json.loads(fila[0]) if fila else None
 
-    def cache_put(self, tarea: str, version: str, entrada: str, salida: dict, max_palabras: int | None = None) -> None:
-        texto_salida = " ".join(_textos(salida))
-        if not cacheable(entrada, max_palabras) or _DIGITO.search(texto_salida) or tiene_nombre_propio(texto_salida):
-            return  # si el modelo agregó cifras o nombres, tampoco se guarda
+    def cache_put(self, tarea: str, version: str, entrada: str, salida: dict) -> None:
+        if not cacheable(entrada) or _DIGITO.search(" ".join(_textos(salida))):
+            return  # si el modelo agregó cifras, tampoco se guarda
         clave = huella(tarea, version, normalizar_entrada(entrada))
         with self._lock:
             self._db.execute(
@@ -139,6 +122,7 @@ class Store:
                 "ON CONFLICT(glosa) DO UPDATE SET veces = veces + 1, ultima_vez = excluded.ultima_vez",
                 [(g, time.time()) for g in validas],
             )
+            self._db.execute("DELETE FROM glosas_faltantes WHERE ultima_vez <= ?", (time.time() - FALTANTES_TTL_S,))
 
     def glosas_faltantes(self, limite: int = 20) -> list[tuple[str, int]]:
         with self._lock:

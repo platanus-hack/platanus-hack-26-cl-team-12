@@ -21,6 +21,7 @@ class Escenario:
     stt_keyterms: list[str] = field(default_factory=list)
     pronunciacion: dict[str, str] = field(default_factory=dict)
     ejemplos: dict[str, list[dict]] = field(default_factory=dict)
+    frases_frecuentes: dict[str, list[str]] = field(default_factory=dict)  # lista blanca de la caché
 
 
 def load_escenario(path_o_id: str | Path | None = None) -> Escenario:
@@ -34,4 +35,7 @@ def load_escenario(path_o_id: str | Path | None = None) -> Escenario:
         stt_keyterms=list(data.get("stt_keyterms", [])),
         pronunciacion=dict(data.get("pronunciacion", {})),
         ejemplos={k: list(v) for k, v in data.get("ejemplos", {}).items()},
+        frases_frecuentes={
+            k: list(v) for k, v in data.get("frases_frecuentes", {}).items() if not k.startswith("_")
+        },
     )
