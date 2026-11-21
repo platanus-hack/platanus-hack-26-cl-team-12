@@ -318,6 +318,9 @@ El agente se inicia con `python agent.py start`. **No se han construido todavía
 
 ### 3.5 Desarrollo local
 
+Atajo: `make setup` (crea `.env` e instala todo) y `make dev` (PWA + API; `make dev-all` suma el agente). Lista completa con `make help`.
+Esto es lo que hace por dentro:
+
 ```bash
 pnpm install                                                      # dependencias JS
 uv --directory services/api   sync                                # dependencias Python

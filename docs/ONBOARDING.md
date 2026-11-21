@@ -67,7 +67,7 @@ Por qué: Vercel/Render no pueden conectarse a repos de la organización, solo a
 2. Confirmar acceso de escritura al repo de la organización: `gh repo view platanus-hack/platanus-hack-26-cl-team-12 --json viewerPermission -q .viewerPermission` debe decir `WRITE` (o `ADMIN`). Si dice `READ`, pídele a Tomás que revise que estás en el equipo.
 3. Clonar: `gh repo clone platanus-hack/platanus-hack-26-cl-team-12` y abrir **esa carpeta raíz** en VSCode.
 4. Crear tu `.env` local desde `.env.example` (pídele las claves a Tomás por un canal privado; nunca por el repo).
-5. Instalar: `pnpm install` (JS) y `uv sync` dentro de `services/api` y `services/agent` (Python, crea su `.venv`). Levantar: `pnpm --filter @puente/web dev`, `uv --directory services/api run uvicorn app.main:app --reload` y `uv --directory services/agent run python agent.py dev`. Verificar: `pnpm typecheck && pnpm build` y `uv --directory services/<api|agent> run pytest`.
+5. **Atajo:** `make setup` y luego `make dev` (todos los comandos con `make help`; `make doctor` revisa las herramientas). A mano: `pnpm install` (JS) y `uv sync` dentro de `services/api` y `services/agent` (Python, crea su `.venv`). Levantar: `pnpm --filter @puente/web dev`, `uv --directory services/api run uvicorn app.main:app --reload` y `uv --directory services/agent run python agent.py dev`. Verificar: `pnpm typecheck && pnpm build` y `uv --directory services/<api|agent> run pytest`.
 6. Crear tu rama de vertical (ver abajo), trabajar, hacer commits pequeños y subir con `git push -u origin <rama>`.
 7. Abrir PR a `main` (`gh pr create`) con descripción corta. Avisar al equipo. Tomás o quien revise lo mergea.
 8. Anotar en `docs/BITACORA.md` lo que hiciste (ver formato en ese archivo).

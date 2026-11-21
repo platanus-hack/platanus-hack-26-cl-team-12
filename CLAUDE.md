@@ -11,6 +11,7 @@ Equipo de 4. Lo que importa es una **demo funcionando**, no código perfecto.
 - `data/` investigación, vocabulario, clips y evaluación (no se despliega). `docs/` plan y contrato.
 - `apps/`, `packages/` y `services/` no leen de `data/research` ni `docs`.
 - Rutas viejas → nuevas: ver el mapa en `docs/ONBOARDING.md` §3.
+- Atajos: `make help` (`make setup`, `make dev`, `make check`).
 - JS: `pnpm install`, `pnpm typecheck`, `pnpm build`. Python: `uv --directory services/<api|agent> run pytest`.
 
 ## Cómo trabajar
