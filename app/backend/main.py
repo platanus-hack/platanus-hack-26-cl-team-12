@@ -38,14 +38,18 @@ async def enviar(rol: str, msg: dict):
 
 
 async def stt(audio: bytes, mime: str) -> str:
+    mime = (mime or "audio/webm").split(";")[0]  # quitar ;codecs=opus
     ext = "webm" if "webm" in mime else "mp4" if "mp4" in mime else "ogg"
+    if len(audio) < 1500:
+        return ""  # grabación vacía o demasiado corta
     r = await http.post(
         "https://api.elevenlabs.io/v1/speech-to-text",
         headers={"xi-api-key": EL_KEY},
         data={"model_id": STT_MODEL, "language_code": "spa"},
-        files={"file": (f"a.{ext}", audio, mime or "audio/webm")},
+        files={"file": (f"a.{ext}", audio, mime)},
     )
-    r.raise_for_status()
+    if r.status_code >= 400:
+        raise RuntimeError(f"ElevenLabs STT {r.status_code}: {r.text[:300]} (audio {len(audio)} bytes, {mime})")
     return r.json()["text"].strip()
 
 
