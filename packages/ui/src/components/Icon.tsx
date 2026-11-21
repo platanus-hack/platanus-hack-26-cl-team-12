@@ -13,6 +13,8 @@ const ICONS = {
   aviso: ["M12 3l10 18H2z", "M12 10v4.5M12 17.5h.01"],
   escribir: ["M5 6h14M12 6v13M9 19h6"],
   avatar: ["M16 8a4 4 0 1 1-8 0a4 4 0 1 1 8 0", "M4 21a8 8 0 0 1 16 0"],
+  inicio: ["M3 11l9-7 9 7", "M5 10v10h5v-6h4v6h5V10"],
+  historial: ["M21 12a9 9 0 1 1-9-9a9 9 0 0 1 9 9z", "M12 7v5l3 2"],
 } as const;
 
 export type IconName = keyof typeof ICONS;
