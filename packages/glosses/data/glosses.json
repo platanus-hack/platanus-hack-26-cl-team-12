@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "_comment": "Generado por data/vocab/build_glosses.py desde data/vocab/escenario_hora_medica.json (hora médica). Solo aditivo: no reordenar classifierLabel. TODO(real-data): validar con una persona señante (validatedBy).",
+  "_comment": "Generado por data/vocab/build_glosses.py (vocabulario + curación en data/vocab). Solo aditivo: no reordenar classifierLabel. TODO(real-data): validar con una persona señante (validatedBy).",
   "glosses": [
     {"gloss": "HOLA", "category": "saludo", "es": ["hola"], "classifierLabel": 0, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "hola"},
     {"gloss": "GRACIAS", "category": "saludo", "es": ["gracias"], "classifierLabel": 1, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "gracias-1"},

@@ -1,0 +1,319 @@
+{
+ "_comment": "Curación del vocabulario del escenario: la lee data/vocab/build_glosses.py. glosa = renombres (duplicados o X/A), es = palabras en español por id del glosario UMCE, categorias = ids por categoría, non_manual = rasgo no manual por categoría.",
+ "glosa": {
+  "manana-2": "MAÑANA-AM"
+ },
+ "es": {
+  "permiso": [
+   "permiso",
+   "disculpe"
+  ],
+  "medico": [
+   "médico",
+   "doctor",
+   "doctora"
+  ],
+  "horario": [
+   "horario",
+   "agenda"
+  ],
+  "hospital": [
+   "hospital",
+   "clínica",
+   "centro médico"
+  ],
+  "salud": [
+   "salud"
+  ],
+  "control": [
+   "control",
+   "chequeo"
+  ],
+  "dolor": [
+   "dolor",
+   "malestar"
+  ],
+  "enfermo-a": [
+   "enfermo",
+   "enferma"
+  ],
+  "gripe": [
+   "gripe"
+  ],
+  "resfrio": [
+   "resfrío"
+  ],
+  "enfermedad": [
+   "enfermedad"
+  ],
+  "prueba": [
+   "examen",
+   "prueba"
+  ],
+  "remedio": [
+   "remedio",
+   "medicamento"
+  ],
+  "atender": [
+   "atender",
+   "atención"
+  ],
+  "documento": [
+   "documento",
+   "cédula",
+   "carnet"
+  ],
+  "domicilio": [
+   "domicilio",
+   "dirección"
+  ],
+  "seguro-a": [
+   "seguro",
+   "segura"
+  ],
+  "fecha": [
+   "fecha"
+  ],
+  "manana-1": [
+   "mañana (el día siguiente)"
+  ],
+  "manana-2": [
+   "mañana (en la mañana, AM)"
+  ],
+  "ayer": [
+   "ayer"
+  ],
+  "tarde-1": [
+   "tarde (PM)"
+  ],
+  "noche": [
+   "noche"
+  ],
+  "antes": [
+   "antes",
+   "anticipación"
+  ],
+  "despues": [
+   "después",
+   "luego"
+  ],
+  "primero-a": [
+   "primero",
+   "primera"
+  ],
+  "segundo-a": [
+   "segundo",
+   "segunda",
+   "segundo piso"
+  ],
+  "querer": [
+   "querer",
+   "desear"
+  ],
+  "necesitar": [
+   "necesitar"
+  ],
+  "poder-2": [
+   "poder"
+  ],
+  "no-poder": [
+   "no poder"
+  ],
+  "no-haber": [
+   "no hay",
+   "no quedan"
+  ],
+  "ocupado-a": [
+   "ocupado",
+   "ocupada",
+   "sin cupo"
+  ],
+  "anular": [
+   "anular",
+   "cancelar (una hora)"
+  ],
+  "cambiar": [
+   "cambiar",
+   "reagendar"
+  ],
+  "comprobar": [
+   "comprobar",
+   "confirmar"
+  ],
+  "repetir": [
+   "repetir"
+  ],
+  "esperar": [
+   "esperar"
+  ],
+  "comprender": [
+   "comprender",
+   "entender"
+  ],
+  "no-entender": [
+   "no entender"
+  ],
+  "hablar": [
+   "hablar"
+  ],
+  "escribir": [
+   "escribir",
+   "mensaje escrito"
+  ],
+  "sordo-a": [
+   "sordo",
+   "sorda"
+  ],
+  "venir": [
+   "venir",
+   "llegar",
+   "presentarse"
+  ],
+  "ir": [
+   "ir"
+  ],
+  "tener": [
+   "tener"
+  ],
+  "donde": [
+   "dónde"
+  ],
+  "cuando": [
+   "cuándo"
+  ],
+  "que": [
+   "qué"
+  ],
+  "cuanto-s": [
+   "cuánto",
+   "cuántos"
+  ],
+  "como-1": [
+   "cómo"
+  ],
+  "quien": [
+   "quién"
+  ],
+  "pagar": [
+   "pagar",
+   "costo"
+  ],
+  "dinero": [
+   "dinero",
+   "plata",
+   "valor"
+  ],
+  "otro-a": [
+   "otro",
+   "otra"
+  ],
+  "mas": [
+   "más"
+  ],
+  "bueno-a-2": [
+   "bueno",
+   "está bien",
+   "ok"
+  ]
+ },
+ "categorias": {
+  "saludo": [
+   "hola",
+   "por-favor",
+   "gracias-1",
+   "permiso"
+  ],
+  "respuesta": [
+   "si",
+   "no",
+   "bueno-a-2"
+  ],
+  "salud": [
+   "medico",
+   "hospital",
+   "salud",
+   "control",
+   "dolor",
+   "enfermo-a",
+   "fiebre",
+   "tos",
+   "gripe",
+   "resfrio",
+   "enfermedad",
+   "prueba",
+   "remedio",
+   "atender"
+  ],
+  "dato": [
+   "nombre-1",
+   "apellido",
+   "telefono",
+   "documento",
+   "domicilio",
+   "seguro-a"
+  ],
+  "tiempo": [
+   "hora",
+   "horario",
+   "fecha",
+   "dia",
+   "hoy",
+   "manana-1",
+   "manana-2",
+   "ayer",
+   "tarde-1",
+   "noche",
+   "lunes",
+   "martes",
+   "miercoles",
+   "jueves",
+   "viernes",
+   "sabado",
+   "semana",
+   "mes",
+   "minuto",
+   "antes",
+   "despues",
+   "primero-a",
+   "segundo-a"
+  ],
+  "verbo": [
+   "querer",
+   "necesitar",
+   "poder-2",
+   "no-poder",
+   "no-haber",
+   "ocupado-a",
+   "anular",
+   "cambiar",
+   "comprobar",
+   "repetir",
+   "esperar",
+   "comprender",
+   "no-entender",
+   "hablar",
+   "escribir",
+   "sordo-a",
+   "venir",
+   "ir",
+   "tener",
+   "pagar"
+  ],
+  "pregunta": [
+   "donde",
+   "cuando",
+   "que",
+   "cuanto-s",
+   "como-1",
+   "quien"
+  ],
+  "otro": [
+   "dinero",
+   "otro-a",
+   "mas"
+  ]
+ },
+ "non_manual": {
+  "pregunta": "cejas fruncidas (pregunta abierta)"
+ }
+}
