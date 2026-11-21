@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4-avatar)
+- Hice: D2 y D3. Pantalla de llamada (`apps/web/src/components/CallPanel.tsx`): Llamar/Colgar, estado con contador, avisos, subtítulos (simple + original), escribir o tocar respuesta rápida → `cliente_dice`, y el avatar de ejemplo cuando llega `glosas_para_senar`. Modo `?mock=1` (`apps/web/src/lib/mockCall.ts`): llamada simulada de hora médica, el ejecutivo responde cada vez que el cliente dice algo.
+- Decidí: el simulador implementa la misma interfaz que `joinCall`, así la pantalla es igual con o sin backend. El texto del cliente se agrega a los subtítulos al enviarlo (el agente no lo devuelve).
+- Falta: probar contra el agente real (Sync 1). D5 con `ClipSignPlayer` / fotos de `lab/v4_avatar`.
+
 ## 2026-11-21 — Tomás / Claude (lab-v1-v2)
 - Hice: simulación de llamada en el navegador (sin Twilio): `app/backend/main.py` (FastAPI + WebSocket) con páginas `/ejecutivo` (micrófono → Scribe) y `/cliente` (chat). Checkbox v2 activa simplificar/naturalizar. Probado de punta a punta por WebSocket: STT ~0,5 s, LLM ~1 s, TTS ~0,6 s. Prompt de "complejizar" afinado (suena normal, sin agregados). Scribe: 7/10 frases perfectas con audio de WhatsApp.
 - Decidí: simular al ejecutivo en el navegador hasta decidir el upgrade de Twilio (pide cargar saldo).
@@ -16,7 +21,7 @@ Las entradas nuevas van **arriba**. Formato:
 ## 2026-11-21 — Rafael / Claude (dev)
 - Hice: sistema de diseño de Puente. Artefacto con la guía completa (https://claude.ai/artifact/7kbPXxp6kcwGSb3hQV3WVh) y su versión en código en `packages/ui`: tokens (Noche por defecto + Día), logo, 9 íconos y 11 componentes (Logo, Icon, Button, CallStatus, VisualAlert, Subtitles, QuickReplies, Composer, GlossChip, SignCamera, SignAvatar). La app ya importa los estilos; el inicio usa los componentes nuevos, `/design` muestra el catálogo y la PWA tiene ícono.
 - Decidí: tipografías Atkinson Hyperlegible (lectura), Bricolage Grotesque (títulos) y JetBrains Mono (glosas). Se mantienen los nombres de variables de `globals.css` (`--bg`, `--fg`, `--muted`, `--accent`, `--cliente`). `Subtitles` y `VisualAlert` siguen aceptando las props de antes.
-- Falta / bloqueado: no corrí `pnpm typecheck` ni `build` (WSL sin node). La figura de cámara y avatar es de ejemplo, `TODO(real-data)`. `dev` sin push (falta `gh`).
+- Falta / bloqueado: la figura de cámara y avatar es de ejemplo, `TODO(real-data)`. (Typecheck y build verificados después; mergeado en PR #2.)
 
 ## 2026-11-21 — Raimundo / Claude (rama worktree-adrs-arquitectura) — ⚠️ requiere acuerdo del equipo antes de merge
 - Hice: 11 ADRs + índice en `docs/adr/` y esqueleto de monorepo en 3 commits separados: (a) ADRs, (b) esqueleto **aditivo** (`apps/ packages/ services/ ml/`, CI, Dockerfiles), (c) **movimiento**: borra `app/` y actualiza CLAUDE.md, ONBOARDING (§3 con mapa de rutas viejas→nuevas, §5, §6), plan.md y contrato.md (solo agrega 2 tipos).
