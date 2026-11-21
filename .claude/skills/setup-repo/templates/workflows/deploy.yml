@@ -1,0 +1,46 @@
+# Deploy por ambiente, SOLO si el CI pasó: dev -> development, main -> production.
+# Reemplaza el paso "Deploy" con el comando del proveedor elegido (ver docs/COSTOS.md).
+name: deploy
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [dev, main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false   # nunca cortar un deploy a medias
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    # Solo merges (push) con CI exitoso; nunca PRs.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
+      url: ${{ vars.APP_URL }}
+    env:
+      BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Build
+        run: echo "Construir artefacto (npm run build / docker build)"
+      - name: Deploy
+        env:
+          # Secretos definidos POR AMBIENTE: gh secret set DEPLOY_TOKEN --env production
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          echo "Desplegando $BRANCH"
+          # Ejemplos:
+          # npx vercel deploy --prebuilt $([ "$BRANCH" = main ] && echo --prod) --token "$DEPLOY_TOKEN"
+          # curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+      - name: Smoke test
+        if: ${{ vars.APP_URL != '' }}
+        run: curl -fsS --retry 5 --retry-delay 10 "${{ vars.APP_URL }}/health"

@@ -1,0 +1,31 @@
+# Auditoría / enforcement suave: detecta commits en main o dev que NO vienen de un PR mergeado.
+# Imprescindible si el plan no permite rulesets (repo privado en GitHub Free).
+name: guard-main
+on:
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' && github.actor != 'release-please[bot]' }}
+    steps:
+      - name: Verificar que el commit viene de un PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          prs=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '[.[] | select(.merged_at != null)] | length')
+          if [ "$prs" = "0" ]; then
+            gh label create "type:seguridad" -R "${{ github.repository }}" --color b60205 --force
+            gh issue create -R "${{ github.repository }}" \
+              --title "🚨 Push directo a ${{ github.ref_name }} por @${{ github.actor }}" \
+              --label "type:seguridad" \
+              --body "Commit ${{ github.sha }} llegó a \`${{ github.ref_name }}\` sin Pull Request. Revisar y, si corresponde, revertir con un PR."
+            echo "::error::Push directo a ${{ github.ref_name }} sin PR"
+            exit 1
+          fi

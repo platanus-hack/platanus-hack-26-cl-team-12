@@ -1,0 +1,4 @@
+# Reemplaza por los usuarios de GitHub del equipo. GitHub pide review automáticamente.
+*                         @usuario1 @usuario2 @usuario3 @usuario4
+/.github/                 @usuario1
+/docs/DATOS-PERSONALES.md @usuario1 @usuario2

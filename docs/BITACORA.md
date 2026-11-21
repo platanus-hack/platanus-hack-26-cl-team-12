@@ -8,6 +8,10 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Raimundo / Claude (rama worktree-skills-hackaton)
+- Hice: instalé como skills de proyecto en `.claude/skills/` las 5 skills de `rlabbev/hackaton_test`: `criterios-evaluacion`, `pr-hackaton`, `setup-repo`, `workflow-kanban`, `seguridad-datos-cl`.
+- Ojo: asumen ramas `dev`/`main` y `.github/pull_request_template.md`, que este repo aún no tiene; `workflow-kanban setup` requiere `gh auth refresh -s project`.
+
 ## 2026-11-21 — Raimundo / Claude (rama worktree-adrs-arquitectura) — ⚠️ requiere acuerdo del equipo antes de merge
 - Hice: 11 ADRs + índice en `docs/adr/` y esqueleto de monorepo en 3 commits separados: (a) ADRs, (b) esqueleto **aditivo** (`apps/ packages/ services/ ml/`, CI, Dockerfiles), (c) **movimiento**: borra `app/` y actualiza CLAUDE.md, ONBOARDING (§3 con mapa de rutas viejas→nuevas, §5, §6), plan.md y contrato.md (solo agrega 2 tipos).
 - Decidí (propuesto, Raimundo eligió esto): monorepo pnpm+Turborepo / uv; LiveKit (SIP+Twilio para el teléfono) como tiempo real; PWA Next.js export estático + Capacitor; glosas LSCh como formato intermedio; TTS ElevenLabs; reproductor de señas con clips primero (`ClipSignPlayer`) y avatar 3D después.
