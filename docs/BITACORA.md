@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4/reproductor-senas) · D5 con fotos del diccionario
+- Hice: `apps/web/scripts/extraer_senas.py` saca del Diccionario LSCh (los 2 PDF + `indice_LSCh.csv`) las fotos de cada seña del vocabulario (81 de hora médica) + las del guion de urgencia (AMBULANCIA, HIJO, SANGRE, RESPIRAR, PÁLIDO, FRÍO, URGENTE…): 91 señas, ~120 fotos, ~1 MB, en `apps/web/public/senas/` con `manifest.json`. Elige la variante numerada según `lexiconId` (gracias-1, poder-2). Reproductor `SenasFotos` en la ventana del intérprete: alterna las 2 o 3 fotos de cada seña (750 ms por foto, 250 ms entre señas), `TEXTO:` y glosas sin foto como palabra grande, y deja una franja para el subtítulo para no tapar las manos. Sin fotos en el computador, sigue el intérprete dibujado.
+- Decidí: las fotos **no se versionan** (derechos UMCE): `apps/web/public/senas/` en `.gitignore`; cada uno las genera con el script (necesita PyMuPDF y los PDF).
+- Falta: sin seña en el diccionario: YO, TÚ, ESPERAR, BRAZO, CODO, MOVER (y TOS, MAÑANA-AM, BUENO no se encontraron por formato). **Decidir con el equipo si el deploy público puede llevar las fotos** (derechos UMCE); si no, la demo desplegada muestra el intérprete dibujado. El agente real tiene que emitir estas glosas (pedir a B el escenario `urgencia`).
+
 ## 2026-11-21 — Rafael / Claude (v4-avatar) · guion de la demo y look de app nativa
 - Decidí (Rafael): guion fijo de la demo, caída de un niño con el codo quebrado (habla primero la persona sorda). Mientras el otro lado responde no se muestran respuestas rápidas.
 - Hice: simulador con ese guion (frase inicial lista para tocar al contestar, una respuesta del guion por turno, "Repita" repite, termina sola). Indicador "Urgencias está respondiendo". Intérprete dibujado como videollamada (ropa oscura y fondo liso, manos que se mueven al hacer señas, subtítulo encima). Look de app nativa: tipografía del sistema (San Francisco/Roboto), título grande, botón rojo de urgencia, lista agrupada, barra de pestañas (Historial y Perfil sin contenido todavía), burbujas de mensajería, caja de texto redonda con botón de enviar, Colgar redondo. Sin el indicador "N" de Next en desarrollo. Revisado con capturas automáticas en tamaño iPhone.

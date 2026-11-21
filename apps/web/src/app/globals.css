@@ -63,3 +63,9 @@ main.call { height: 100dvh; gap: 10px; padding-block: 10px; }
   .typing .dots i:nth-child(3) { animation-delay: 0.3s; }
 }
 @keyframes typing { 0%, 60%, 100% { opacity: 0.35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+/* Fotos de señas (D5): ocupan la ventana del intérprete. */
+/* La foto deja libre una franja abajo para el subtítulo: así no tapa las manos. */
+.pu-avatar .stage > .senas-foto { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 84px); object-fit: contain; object-position: center top; }
+.pu-avatar .stage > .senas-foto.pausa { opacity: 0.85; }
+.pu-avatar .stage > .senas-palabra { position: absolute; inset: 0 0 84px 0; display: grid; place-items: center; padding: 0 var(--space-4); color: #14171c; font-size: 40px; line-height: 44px; font-weight: 700; letter-spacing: 0.02em; text-align: center; }

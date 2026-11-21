@@ -2,9 +2,9 @@
 // Se comporta igual que joinCall (misma interfaz CallHandle y mismos mensajes del contrato),
 // así que la pantalla no sabe si la llamada es real o de mentira.
 // Escenario de la demo: la persona sorda llama a urgencias porque su hijo se cayó y se quebró el codo.
-// Glosas del diccionario real (packages/glosses/data/glosses.json, 81 de hora médica). Lo que no tiene seña
-// (ambulancia, respirar, cifras) va como `TEXTO:<dato>`, igual que lo emite el agente.
-// TODO(real-data): pedir a B un escenario `urgencia` con su vocabulario.
+// Glosas con foto en el Diccionario LSCh (las del vocabulario de hora médica + EXTRA de apps/web/scripts/extraer_senas.py).
+// Lo que no tiene seña (brazo, codo, cifras) va como `TEXTO:<dato>`, igual que lo emite el agente.
+// TODO(real-data): pedir a B un escenario `urgencia` con este vocabulario para que el agente real lo use.
 import type { MensajePuente } from "@puente/glosses";
 import type { CallHandle } from "./call";
 
@@ -22,19 +22,19 @@ const GUION: Turno[] = [
   {
     texto: "Hola, ¿su hijo está consciente y respira bien?",
     simple: "¿Su hijo está despierto?\n¿Respira bien?",
-    glosas: ["HOLA", "TEXTO:hijo", "BUENO", "QUÉ"],
+    glosas: ["HOLA", "HIJO", "RESPIRAR", "QUÉ"],
     opciones: ["Sí, está consciente, pero no puede apoyar el codo y el brazo está muy hinchado."],
   },
   {
     texto: "Entendido. ¿Hay sangrado o el brazo se ve pálido o frío?",
     simple: "¿Sale sangre?\n¿El brazo está pálido o frío?",
-    glosas: ["COMPRENDER", "TEXTO:sangre", "TEXTO:brazo", "QUÉ"],
+    glosas: ["COMPRENDER", "SANGRE", "PÁLIDO", "FRÍO", "QUÉ"],
     opciones: ["Hay un poco de sangre, pero el brazo está normal. Necesito un traslado urgente."],
   },
   {
     texto: "Registramos la solicitud de ambulancia. Tenemos su dirección señora, vamos en camino. Mientras llega, no mueva el brazo ni el codo de su hijo.",
     simple: "La ambulancia va en camino.\nYa tenemos su dirección.\nNo mueva el brazo ni el codo de su hijo.",
-    glosas: ["TEXTO:ambulancia", "VENIR", "DOMICILIO", "TENER", "TEXTO:brazo", "NO"],
+    glosas: ["AMBULANCIA", "VENIR", "URGENTE", "DOMICILIO", "TEXTO:brazo", "NO"],
     opciones: ["Gracias", "Repita, por favor"],
   },
 ];
