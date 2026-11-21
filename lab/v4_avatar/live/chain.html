@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Encadenar señas</title>
+<style>
+html,body{margin:0;height:100%;background:#14161a;color:#eee;font-family:system-ui,sans-serif}
+#wrap{display:flex;height:100%}
+#stage{flex:1;position:relative;min-width:0}
+canvas{width:100%;height:100%;display:block;transform:scaleX(-1)}
+#sub{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:44px;font-weight:800;letter-spacing:2px;text-shadow:0 0 10px #000,0 0 3px #000;pointer-events:none}
+#side{width:330px;padding:14px;background:#1d2026;box-sizing:border-box;overflow:auto;font-size:13px}
+h1{font-size:15px;margin:0 0 8px}
+input[type=text]{width:100%;box-sizing:border-box;padding:9px;border-radius:6px;border:0;font-size:15px;text-transform:uppercase}
+button,select{border:0;border-radius:8px;padding:8px 12px;background:#3a4150;color:#fff;font-size:13px;cursor:pointer}
+button.go{background:#2a6f5e;font-size:15px;padding:10px 16px}
+#chips{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 12px}
+#chips button{padding:4px 9px;font-size:12px}
+label{display:block;margin:8px 0}
+#msg{color:#9ad;margin-top:10px;min-height:34px}
+#pre{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+@media(max-width:800px){#wrap{flex-direction:column}#side{width:auto}#stage{min-height:60vh}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/kalidokit@1.1.5/dist/kalidokit.umd.js"></script>
+<script type="importmap">{"imports":{
+ "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+ "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+ "@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.0.0/lib/three-vrm.module.js"}}</script>
+</head><body>
+<div id="wrap">
+ <div id="stage"><canvas id="c"></canvas><div id="sub"></div></div>
+ <div id="side">
+  <h1>Encadenar señas</h1>
+  <input type="text" id="seq" value="HOLA PERMISO MEDICO" placeholder="GLOSAS separadas por espacio">
+  <div id="chips">—</div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+   <button class="go" id="play">▶ Reproducir</button><button id="stop">⏹</button>
+   <label style="margin:0"><input type="checkbox" id="loop"> repetir</label>
+  </div>
+  <div id="pre">
+   <span>Velocidad</span><select id="speed"><option value="1.25">1,25×</option><option value="1" selected>1×</option><option value="0.75">0,75×</option><option value="0.5">0,5×</option></select>
+   <span>Transición</span><select id="tr"><option value="0.15">corta</option><option value="0.3" selected>media</option><option value="0.5">larga</option></select>
+  </div>
+  <label><input type="checkbox" id="rest"> volver al reposo entre señas</label>
+  <div id="msg">Cargando…</div>
+  <p style="color:#999;font-size:12px">Toca una seña de arriba para agregarla a la secuencia. Solo aparecen las que ya tienen animación guardada.</p>
+ </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {VRMLoaderPlugin} from '@pixiv/three-vrm';
+import {createRig} from './rig.js';
+const $=id=>document.getElementById(id),msg=m=>$('msg').textContent=m;
+
+// ---- escena
+const canvas=$('c'),renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x14161a);
+scene.add(new THREE.HemisphereLight(0xffffff,0x667788,1.6));const dl=new THREE.DirectionalLight(0xffffff,1.4);dl.position.set(1,2,2);scene.add(dl);
+const cam=new THREE.PerspectiveCamera(28,1,0.1,20);cam.position.set(0,1.25,1.9);cam.lookAt(0,1.18,0);
+const resize=()=>{const r=canvas.parentElement.getBoundingClientRect();renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix()};
+addEventListener('resize',resize);resize();
+const loader=new GLTFLoader();loader.register(p=>new VRMLoaderPlugin(p));
+const vrm=(await loader.loadAsync('models/avatar.vrm')).userData.vrm;scene.add(vrm.scene);
+const rig=createRig(vrm,cam),bone=rig.bone;   // createRig deja los brazos en reposo
+const BONES=[];for(const s of['left','right']){BONES.push(s+'UpperArm',s+'LowerArm',s+'Hand');
+ for(const f of['Thumb','Index','Middle','Ring','Little'])for(const j of(f==='Thumb'?['Metacarpal','Proximal','Distal']:['Proximal','Intermediate','Distal']))BONES.push(s+f+j)}
+const REST=BONES.map(b=>bone(b).quaternion.clone());
+
+// ---- animaciones
+let AVAIL=[];const cache={};
+async function clip(n){if(!cache[n]){const c=await (await fetch('/anim/'+n+'.json')).json();
+ if(JSON.stringify(c.bones)!==JSON.stringify(BONES))throw new Error(n+': huesos distintos');cache[n]=c}return cache[n]}
+const pose=(c,i)=>BONES.map((_,k)=>new THREE.Quaternion().fromArray(c.frames[i].q,k*4));
+function resolve(tok){tok=tok.toUpperCase();return AVAIL.includes(tok)?tok:AVAIL.find(a=>a.startsWith(tok+'-')||a.startsWith(tok))||null}
+async function loadAvail(){AVAIL=await (await fetch('/api/anims')).json();const el=$('chips');el.innerHTML=AVAIL.length?'':'—';
+ for(const a of AVAIL){const b=document.createElement('button');b.textContent=a;b.onclick=()=>{const i=$('seq');i.value=(i.value.trim()+' '+a).trim()};el.appendChild(b)}}
+await loadAvail();
+
+// ---- línea de tiempo: [transición → seña] × n, con mezcla (slerp) entre la última pose de una y la primera de la siguiente
+let T=null,t0=0,playing=false;
+async function build(){
+ const speed=+$('speed').value,TR=+$('tr').value/speed,toRest=$('rest').checked;
+ const names=$('seq').value.trim().split(/\s+/).filter(Boolean),clips=[],miss=[];
+ for(const w of names){const n=resolve(w);if(n)clips.push(await clip(n));else miss.push(w)}
+ if(miss.length)msg('Sin animación aún: '+miss.join(', ')+' (se omiten)');
+ if(!clips.length)return null;
+ const segs=[];let t=0,prev=REST.map(q=>q.clone());
+ clips.forEach((c,ci)=>{
+  const first=pose(c,0);
+  segs.push({k:'tr',t0:t,t1:t+TR,from:prev,to:first,label:c.glosa});t+=TR;
+  const d=c.duration/speed;segs.push({k:'clip',t0:t,t1:t+d,c,label:c.glosa});t+=d;
+  prev=pose(c,c.frames.length-1);
+  if(toRest&&ci<clips.length-1){segs.push({k:'tr',t0:t,t1:t+TR,from:prev,to:REST,label:''});t+=TR;prev=REST.map(q=>q.clone())}
+ });
+ segs.push({k:'tr',t0:t,t1:t+0.5,from:prev,to:REST,label:''});t+=0.5;
+ return {segs,total:t,speed};
+}
+const ease=u=>u*u*(3-2*u),qa=new THREE.Quaternion();
+function apply(T,t){
+ const s=T.segs.find(s=>t>=s.t0&&t<s.t1)||T.segs[T.segs.length-1];
+ $('sub').textContent=s.label;
+ if(s.k==='tr'){const u=ease(Math.min(1,(t-s.t0)/(s.t1-s.t0)));BONES.forEach((b,k)=>bone(b).quaternion.copy(qa.copy(s.from[k]).slerp(s.to[k],u)))}
+ else{const c=s.c,lt=(t-s.t0)*T.speed;let i=0;while(i<c.frames.length-2&&c.frames[i+1].t<lt)i++;
+  const a=c.frames[i],b=c.frames[Math.min(i+1,c.frames.length-1)],al=b.t>a.t?Math.min(1,Math.max(0,(lt-a.t)/(b.t-a.t))):0;
+  BONES.forEach((bn,k)=>{const qa2=new THREE.Quaternion().fromArray(a.q,k*4),qb=new THREE.Quaternion().fromArray(b.q,k*4);bone(bn).quaternion.copy(qa2.slerp(qb,al))})}
+}
+async function start(){T=await build();if(!T)return;t0=performance.now();playing=true;msg('Reproduciendo '+T.total.toFixed(1)+' s')}
+$('play').onclick=start;
+$('stop').onclick=()=>{playing=false;$('sub').textContent='';BONES.forEach((b,k)=>bone(b).quaternion.copy(REST[k]));msg('Detenido')};
+msg(AVAIL.length?'Listo. '+AVAIL.length+' señas con animación.':'Aún no hay animaciones guardadas en data/signs/anim.');
+const clock=new THREE.Clock();
+(function loop(){requestAnimationFrame(loop);
+ if(playing&&T){const t=(performance.now()-t0)/1000;if(t>=T.total){if($('loop').checked)t0=performance.now();else{playing=false;$('sub').textContent='';msg('Fin')}}else apply(T,t)}
+ vrm.update(clock.getDelta());renderer.render(scene,cam)})();
+</script></body></html>
