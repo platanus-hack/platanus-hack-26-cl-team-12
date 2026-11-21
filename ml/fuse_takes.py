@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
+WARMUP = 6
 
 
 def load(path):
@@ -19,15 +20,16 @@ def load(path):
     return c['bones'], q
 
 
-def trim(q, bones, thr=0.22, margin=4):
-    """Recorta el inicio/fin donde los brazos siguen en reposo (ángulo respecto al primer cuadro)."""
-    idx = [i for i, b in enumerate(bones) if b.endswith('UpperArm')]
-    ref = q[0, idx]
-    act = np.array([np.mean(2 * np.arccos(np.clip(np.abs(np.sum(q[t, idx] * ref, -1)), 0, 1))) for t in range(len(q))])
-    on = np.where(act > thr)[0]
-    if len(on) == 0: return q
-    a, b = max(0, on[0] - margin), min(len(q), on[-1] + margin + 1)
-    return q[a:b]
+def trim(q, bones, thr=0.12, margin=3, k=6):
+    """Recorta las pausas del inicio y del final: el inicio mientras la pose no se aleje de la del primer cuadro,
+    el final mientras no se acerque a la del último. Mide los k huesos que más se mueven (brazos, muñeca o dedos)."""
+    def dist(ref):
+        ang = 2 * np.arccos(np.clip(np.abs(np.sum(q * ref[None], -1)), 0, 1))   # (T, huesos)
+        return np.sort(ang, 1)[:, -k:].mean(1)
+    a_ = np.where(dist(q[0]) > thr)[0]; b_ = np.where(dist(q[-1]) > thr)[0]
+    if len(a_) == 0 or len(b_) == 0: return q
+    lo, hi = max(0, a_[0] - margin), min(len(q), b_[-1] + margin + 1)
+    return q[lo:hi] if hi - lo >= 12 else q
 
 
 def frame_cost(A, B, w):
@@ -66,7 +68,8 @@ def main():
     if len(files) < 2: sys.exit(f'Se necesitan al menos 2 tomas cocidas de {a.glosa} (hay {len(files)}).')
     bones, _ = load(files[0])
     w = np.array([3.0 if b.endswith(('UpperArm', 'LowerArm')) else 2.0 if b.endswith('Hand') else 1.0 for b in bones])
-    takes = [trim(load(f)[1], bones) for f in files]
+    # los primeros cuadros de cada toma cocida son el avatar convergiendo desde el reposo (artefacto): se descartan
+    takes = [trim(load(f)[1][WARMUP:], bones) for f in files]
     for f, t in zip(files, takes): print(f'{f.stem}: {len(t)} cuadros útiles ({len(t)/30:.2f} s)')
     n = len(takes)
     M = np.zeros((n, n)); paths = {}
