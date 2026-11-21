@@ -4,6 +4,7 @@
 - /token           token de LiveKit con permisos mínimos por rol.
 - /llamadas        crea la llamada telefónica saliente (LiveKit SIP + Twilio) — v1.
 - /glosses         diccionario de glosas (contrato de ADR-0001).
+- /twilio/*        v1 sin LiveKit: Twilio conversa por turnos con el ejecutivo (app/twilio_media.py, app/llamada.py).
 
 Swagger (solo en desarrollo): http://localhost:8000/docs  ·  ReDoc: /redoc  ·  esquema: /openapi.json
 Se apaga con API_ENV=production (el Dockerfile ya lo fija) o con API_DOCS=0.
@@ -21,6 +22,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.llamada import router as llamada_router
+from app.twilio_media import router as twilio_router
 
 load_dotenv()
 
@@ -81,6 +85,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(twilio_router)
+app.include_router(llamada_router)
 
 
 class ErrorResponse(BaseModel):

@@ -50,6 +50,21 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta: que cada dueño renombre sus ramas abiertas que no siguen la convención (`worktree-adrs-arquitectura`, `worktree-skills-hackaton`, `ui-design-system`, `lab-v1-v2`, `roles-martin-tomas`), o que las borre si ya están mergeadas.
 
 ## 2026-11-21 — Martín / Claude (v1-telefonia)
+- Hice: **v1 + v2 funcionando de punta a punta con llamada real (gratis, trial de Twilio)**. El celular del ejecutivo habla → Twilio transcribe (`<Gather speech>` con pistas "RUT, Fonasa…") → Claude simplifica → aparece en el chat del cliente; el cliente escribe → Claude complejiza → Twilio se lo dice (`<Say>`). Código: `services/api/app/twilio_media.py` y `app/llamada.py`.
+- Para el resto: **Rafael**, la PWA se conecta al WebSocket `/twilio/cliente` con los mensajes de `docs/contrato.md` (`ejecutivo_dice`, `cliente_dice`, `estado`); hay un chat de ejemplo en `/twilio/prueba`. **Raimundo**, uso tus prompts de `lab/v2_simplificar/prompts.py` tal cual (cárgalos de ahí o avísame si se mueven).
+- Falta: A2 (botón "Llamar" en la app, hoy se lanza a mano), deploy (A3), seguridad (A4: firma de Twilio, token en `/twilio/cliente`, tope de costo). Una sola llamada a la vez.
+
+## 2026-11-21 — Martín / Claude (v1-telefonia)
+- Probé en el trial de Twilio: ❌ SIP hacia LiveKit (trunk y `<Dial><Sip>`), ❌ Media Streams (`<Connect>` y `<Start><Stream>`: Twilio nunca abre el WebSocket). ✅ `<Say>` y ✅ `<Gather input="speech">`.
+- Hice: **plan C gratis, funcionando con llamada real a un celular**: Twilio transcribe al ejecutivo → `POST /twilio/turno` recibe el texto → respondemos con `<Say>`. Código en `services/api/app/twilio_media.py`, probado con ngrok.
+- Falta: conectar `/twilio/turno` con el traductor (Claude) y la PWA; decir la respuesta del cliente. Es por turnos (tipo walkie-talkie) y con la voz de Twilio, no ElevenLabs. Si se paga el upgrade, se vuelve al plan original con LiveKit (trunk `ST_ND4YzQ9nquNA` ya creado).
+
+## 2026-11-21 — Martín / Claude (v1-telefonia)
+- Hice: cuentas de LiveKit Cloud (proyecto "Platanus") y Twilio (trial, número +1 737). Claves verificadas contra ambas APIs.
+- Decidí: probar v1 gratis. Twilio llama al celular y lo conecta por `<Dial><Sip>` al SIP URI de LiveKit, sin Elastic SIP Trunking.
+- Falta / bloqueado: **TODO(Martín): decidir si vale la pena pagar el upgrade de Twilio (~20 USD)**. El trial bloquea Elastic SIP Trunking (error 20003), pone un aviso de "trial account" al contestar y solo llama a 5 números verificados de Chile. Pagar solo cuando v1 funcione de punta a punta con el desvío gratis.
+
+## 2026-11-21 — Martín / Claude (v1-telefonia)
 - Decidí: Martín y Tomás intercambian roles: **Martín queda en A (telefonía, deploy, v1)** y **Tomás en C (visión, v3)**. Tabla actualizada en `PLAN-TRABAJO.md`.
 - Falta / bloqueado: acordar si el deploy sigue saliendo del repo personal de Tomás o pasa a Martín, y quién es dueño de las cuentas de LiveKit y Twilio.
 ## 2026-11-21 — Tomás / Claude (lab-v1-v2)
