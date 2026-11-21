@@ -10,6 +10,7 @@ import {
 import type { MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
+import { Inicio, type Destino } from "./Inicio";
 
 const AVATAR_MS_POR_SENA = 1300; // igual que el reproductor de fotos de lab/v4_avatar
 
@@ -22,6 +23,7 @@ export function CallPanel({ mock }: { mock: boolean }) {
   const [lines, setLines] = useState<SubtitleLine[]>([]);
   const [alert, setAlert] = useState<{ message: string; tone: AlertTone } | null>(null);
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
+  const [destino, setDestino] = useState<Destino | null>(null);
   const callRef = useRef<CallHandle | null>(null);
 
   // Contador de duración mientras la llamada está en curso.
@@ -49,10 +51,10 @@ export function CallPanel({ mock }: { mock: boolean }) {
       case "estado":
         if (msg.valor === "llamada_iniciada") {
           setState("live");
-          setAlert({ message: "Llamada conectada", tone: "notice" });
+          setAlert({ message: "Llamada conectada", tone: "success" });
         } else {
           setState("ended");
-          setAlert({ message: "La llamada terminó", tone: "info" });
+          setAlert({ message: "La llamada terminó", tone: "quiet" });
           callRef.current?.leave();
           callRef.current = null;
           setCall(null);
@@ -64,7 +66,8 @@ export function CallPanel({ mock }: { mock: boolean }) {
     }
   }
 
-  async function llamar() {
+  async function llamar(d: Destino) {
+    setDestino(d);
     setLines([]);
     setSenas(null);
     setSeconds(0);
@@ -85,7 +88,7 @@ export function CallPanel({ mock }: { mock: boolean }) {
     callRef.current = null;
     setCall(null);
     setState("ended");
-    setAlert({ message: "Colgaste la llamada", tone: "info" });
+    setAlert({ message: "Colgaste la llamada", tone: "quiet" });
   }
 
   async function decir(texto: string) {
@@ -111,19 +114,15 @@ export function CallPanel({ mock }: { mock: boolean }) {
 
       <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
 
-      {state === "idle" || state === "ended" ? (
-        <section className="start">
-          <h1 className="pu-type-display">Llama a la clínica</h1>
-          <p>Puente convierte lo que te dicen en texto, y dice por teléfono lo que tú escribes.</p>
-          <Button size="lg" icon="llamar" block onClick={llamar}>
-            Llamar
-          </Button>
-        </section>
-      ) : null}
+      {(state === "connecting" || state === "live") && destino && (
+        <h1 className="pu-type-title call-title">{destino.nombre}</h1>
+      )}
+
+      {state === "idle" || state === "ended" ? <Inicio onLlamar={llamar} /> : null}
 
       {senas && <SignAvatar glosses={senas.glosas} current={senas.actual} subtitle={senas.subtitulo} />}
 
-      {lines.length > 0 && <Subtitles lines={lines} showOriginal otherName="Clínica" />}
+      {lines.length > 0 && <Subtitles lines={lines} showOriginal otherName={destino?.corto ?? "Ejecutivo"} />}
 
       {call && (
         <>

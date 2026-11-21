@@ -13,17 +13,19 @@ export interface SignAvatarProps {
   player?: ReactNode;
 }
 
-/** Panel de avatar (v4): firma lo que dice el ejecutivo, con la secuencia de glosas y el subtítulo. */
+/** Panel de avatar (v4): hace las señas de lo que dice el ejecutivo, con el subtítulo encima y la secuencia de glosas debajo. */
 export function SignAvatar({ glosses, current = 0, subtitle, player }: SignAvatarProps) {
   return (
     <section className="pu-avatar" aria-label="Avatar de señas">
-      <div className="stage">{player ?? <Figure skin="skin" body="shirt" hand="hands" />}</div>
+      <div className="stage">
+        {player ?? <Figure skin="skin" body="shirt" hand="hands" />}
+        {subtitle && <p className="cap">{subtitle}</p>}
+      </div>
       <div className="pu-chips">
         {glosses.map((g, i) => (
           <GlossChip key={`${i}-${g}`} gloss={g} state={i < current ? "done" : i === current ? "active" : "pending"} />
         ))}
       </div>
-      {subtitle && <p className="sub" style={{ margin: 0 }}>{subtitle}</p>}
     </section>
   );
 }

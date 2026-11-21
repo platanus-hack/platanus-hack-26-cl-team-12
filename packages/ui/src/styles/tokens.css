@@ -1,8 +1,30 @@
 /* Puente — generado desde tokens.json (mismo contenido que el artefacto Puente Design System). */
 @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@500;600&display=swap");
 
-/* Noche es el tema por defecto; Día con data-theme="light" en <html>. */
-:root, [data-theme="dark"] {
+/* Pastel es el tema por defecto; Noche con data-theme="dark" en <html>. */
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f5fc;
+  --surface: #ffffff;
+  --surface-raised: #eceafb;
+  --line: #d9dcef;
+  --line-strong: #6b7591;
+  --fg: #1f2540;
+  --muted: #555d78;
+  --accent: #ffe08a;
+  --brand: #e6a700;
+  --on-accent: #1f2540;
+  --accent-soft: #fff4cc;
+  --cliente: #1d6fa3;
+  --cliente-soft: #dcefff;
+  --live: #1f7a4a;
+  --live-soft: #d9f5e5;
+  --danger: #ffb4a8;
+  --on-danger: #5a1209;
+  --focus: var(--fg);
+}
+
+[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0b1220;
   --surface: #131c2e;
@@ -12,6 +34,7 @@
   --fg: #f5f7fb;
   --muted: #9aa4b8;
   --accent: #ffd34d;
+  --brand: #ffd34d;
   --on-accent: #111111;
   --accent-soft: #3a3214;
   --cliente: #7dd3fc;
@@ -20,27 +43,6 @@
   --live-soft: #0f2e1c;
   --danger: #ff8a80;
   --on-danger: #0b1220;
-  --focus: var(--fg);
-}
-
-[data-theme="light"] {
-  color-scheme: light;
-  --bg: #f4f6fa;
-  --surface: #ffffff;
-  --surface-raised: #e9edf4;
-  --line: #c9d1de;
-  --line-strong: #6b7891;
-  --fg: #0b1220;
-  --muted: #475266;
-  --accent: #ffc61a;
-  --on-accent: #111111;
-  --accent-soft: #fff4cc;
-  --cliente: #0369a1;
-  --cliente-soft: #e0f2fe;
-  --live: #15803d;
-  --live-soft: #dcfce7;
-  --danger: #b91c1c;
-  --on-danger: #ffffff;
 }
 
 :root {

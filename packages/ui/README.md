@@ -6,14 +6,14 @@ Componentes por defecto, tokens y assets de la app. Es la versión en código de
 
 ```tsx
 // apps/web/src/app/layout.tsx (ya está hecho)
-import "@puente/ui/src/styles/tokens.css";      // colores, tipografías, espacios (Noche por defecto)
+import "@puente/ui/src/styles/tokens.css";      // colores, tipografías, espacios (Pastel por defecto)
 import "@puente/ui/src/styles/components.css";  // estilos de los componentes
 
 // en cualquier pantalla
 import { Button, CallStatus, Composer, Logo, Subtitles, VisualAlert } from "@puente/ui";
 ```
 
-- Tema Día: `document.documentElement.dataset.theme = "light"`.
+- Tema Noche: `document.documentElement.dataset.theme = "dark"`.
 - Catálogo con todos los componentes y datos de ejemplo: `pnpm --filter @puente/web dev` y abre `/design`.
 - Los tokens también están como datos: `import { tokens } from "@puente/ui"` (`src/tokens.json`).
 
@@ -51,13 +51,13 @@ El cliente es una persona sorda. Para muchas el español escrito es su segunda l
 
 ## Color
 
-Noche es el tema por defecto (es el de `apps/web/src/app/globals.css`). Día es el mismo sistema con más luz, para usar al sol.
+Pastel (claro, colores suaves) es el tema por defecto. Noche es la versión oscura: `document.documentElement.dataset.theme = "dark"`.
 
 - Fondo `bg`; paneles en `surface`; chips, burbujas del ejecutivo y botones secundarios en `surface-raised`.
 - Texto en `fg`. Lo secundario (horas, quién habla, el texto original) en `muted`.
-- `accent` (amarillo Puente) es para rellenos: el botón principal, los avisos visuales y la línea de subtítulos más reciente. Lo que va encima se escribe en `on-accent`. En Día nunca uses `accent` como color de texto.
+- `accent` (amarillo pastel) es para rellenos: el botón principal, los avisos y la glosa activa. Lo que va encima se escribe en `on-accent`. Nunca como color de texto. `brand` (amarillo intenso) es para el arco del logo y el borde del botón principal.
 - `cliente` (celeste) marca todo lo que dice la persona sorda: "Tú" en los subtítulos y el punto izquierdo del logo. Sus burbujas van sobre `cliente-soft` con texto en `fg`.
-- `live` (verde) significa llamada en curso o cámara leyendo; `danger` es Colgar y los errores. Los dos van siempre con palabra o ícono: el color nunca es la única señal.
+- `live` (verde) significa llamada en curso o cámara leyendo; el aviso "Llamada conectada" es texto `live` chico y sin fondo (`VisualAlert tone="success"`). `danger` (coral pastel) es el relleno de Colgar y de los errores, con texto `on-danger`. Los dos van siempre con palabra o ícono: el color nunca es la única señal.
 - Bordes decorativos en `line`; bordes de inputs y botones en `line-strong` (≥3:1).
 - Todo texto cumple 4,5:1 sobre su fondo en los dos temas.
 
@@ -107,7 +107,7 @@ Los componentes siguen las cuatro versiones del producto:
 
 El arco de Puente: dos personas (punto celeste = cliente, punto claro = ejecutivo) unidas por un puente amarillo. Úsalo con `variant="wordmark"` en la pantalla de inicio y en el encabezado; `variant="mark"` solo cuando no hay espacio (barra superior durante la llamada, ícono de la app).
 
-- Los colores vienen de `accent`, `cliente` y `fg`, así que el logo funciona en Noche y en Día sin variantes.
+- Los colores vienen de `brand`, `cliente` y `fg`, así que el logo funciona en Pastel y en Noche sin variantes.
 - `tone="mono"` hereda `color`: úsalo sobre fotos o rellenos `accent`.
 - No lo gires, no le cambies los colores de los puntos y no le pongas sombra. Deja libre alrededor al menos el diámetro de un punto.
 - El consumidor da `size` (alto en px del arco; el nombre escala con él).
