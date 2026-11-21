@@ -80,5 +80,5 @@ export function createRig(vrm, cam, flags = {}) {
   }
   const restArms = l => { for (const k in RESTQ) bone(k).quaternion.slerp(RESTQ[k], l); for (const s of ['left', 'right']) bone(s + 'LowerArm').quaternion.slerp(new THREE.Quaternion(), l); };
 
-  return { arms, wrist, fingersGeo, fingersKal, handMP, restHand, restArms, V3a, RB, LB, SWAP };
+  return { bone, arms, wrist, fingersGeo, fingersKal, handMP, restHand, restArms, V3a, RB, LB, SWAP };
 }

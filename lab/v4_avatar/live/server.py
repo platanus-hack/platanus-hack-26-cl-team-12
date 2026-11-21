@@ -62,6 +62,12 @@ class H(SimpleHTTPRequestHandler):
             k = len(list(vd.glob(f"{n}__*.webm"))) + 1  # cada grabación es una toma nueva: NOMBRE__1, NOMBRE__2...
             f = vd / f"{n}__{k}.webm"; f.write_bytes(self.rfile.read(int(self.headers.get("Content-Length", 0))))
             return self._json({"ok": True, "path": str(f.relative_to(HERE.parents[2])), "bytes": f.stat().st_size, "toma": k})
+        if u.path == "/api/bake":  # animación "cocida" de una toma (se fusionan después con ml/fuse_takes.py)
+            n = (parse_qs(u.query).get("name", [""])[0]).upper()
+            if not re.fullmatch(r"[A-Z0-9_-]{1,40}", n): return self._json({"error": "nombre inválido"}, 400)
+            bd = HERE.parents[2] / "data" / "signs" / "baked"; bd.mkdir(parents=True, exist_ok=True)
+            (bd / f"{n}.json").write_bytes(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+            return self._json({"ok": True})
         if u.path != "/api/save": return self._json({"error": "ruta"}, 404)
         g = (parse_qs(u.query).get("glosa", [""])[0]).upper()
         if not re.fullmatch(r"[A-Z0-9_-]{1,40}", g): return self._json({"error": "nombre de glosa inválido"}, 400)
