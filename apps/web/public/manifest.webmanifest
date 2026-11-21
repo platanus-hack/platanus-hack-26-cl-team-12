@@ -1,0 +1,11 @@
+{
+  "name": "Puente — llamadas accesibles",
+  "short_name": "Puente",
+  "description": "Llamadas telefónicas para personas sordas: voz a texto y señas, texto y señas a voz.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "lang": "es-CL",
+  "icons": []
+}

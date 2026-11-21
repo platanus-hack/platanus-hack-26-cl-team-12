@@ -9,7 +9,7 @@ Cliente = persona sorda. Ejecutivo = persona al teléfono.
 Escenario único de demo: _(por definir: reserva de hora médica / banco)_
 
 ## Reparto (ramas)
-- v1-telefonia: Twilio + STT/TTS  (app/backend/telefonia)
-- v2-llm: simplificar/complejizar  (app/backend/llm)
-- v3-vision: MediaPipe + clasificador  (app/web/camara)
-- v4-avatar: avatar/clips + frontend  (app/web/avatar)
+- v1-telefonia: Twilio + LiveKit SIP + STT/TTS  (services/agent/telefonia, services/api `/llamadas`)
+- v2-llm: simplificar/complejizar  (services/agent/translator)
+- v3-vision: MediaPipe + clasificador  (packages/signs, ml/training)
+- v4-avatar: avatar/clips + frontend  (packages/avatar, apps/web)

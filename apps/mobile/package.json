@@ -1,0 +1,19 @@
+{
+  "name": "@puente/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "sync": "pnpm --filter @puente/web build && cap sync",
+    "android": "cap open android",
+    "ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0",
+    "typescript": "^5.7.2"
+  }
+}

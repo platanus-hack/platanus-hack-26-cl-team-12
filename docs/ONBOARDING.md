@@ -23,12 +23,32 @@ Decisiones ya tomadas:
 
 ## 3. Estructura del repo
 ```
-app/backend   FastAPI: telefonía (Twilio), STT/TTS, LLM
-app/web       Next.js PWA del cliente
-data/         investigación, vocabulario, clips/datasets de señas, evaluación (NO se despliega)
-docs/         plan, contrato de mensajes, bitácora, prácticas
+apps/web          Next.js PWA del cliente (export estático)
+apps/mobile       Capacitor: envuelve apps/web para Android/iOS
+apps/desktop      Tauri (opcional)
+packages/glosses  diccionario de glosas LSCh + tipos del contrato (fuente única de verdad)
+packages/signs    MediaPipe + clasificador ONNX (v3)
+packages/avatar   reproductor de señas: clips primero, avatar 3D después (v4)
+packages/ui       componentes accesibles compartidos
+services/api      FastAPI: tokens de LiveKit, /llamadas (Twilio SIP), /glosses
+services/agent    LiveKit Agents: STT (Deepgram) + traductor Claude + TTS (ElevenLabs)
+ml/training       entrenamiento del clasificador de señas
+data/             investigación, vocabulario, clips/datasets de señas, evaluación (NO se despliega)
+docs/             plan, contrato de mensajes, bitácora, prácticas, adr/ (decisiones de arquitectura)
 ```
-Regla: `app/` nunca lee de `data/research` ni de `docs`. Contrato de mensajes entre piezas: `docs/contrato.md`.
+Regla: `apps/`, `packages/` y `services/` nunca leen de `data/research` ni de `docs`. Contrato de mensajes entre piezas: `docs/contrato.md`.
+Las decisiones técnicas y sus alternativas están en `docs/adr/`.
+
+**Mapa de rutas viejas → nuevas** (el scaffold anterior `app/` ya no existe):
+| Antes | Ahora |
+|---|---|
+| `app/backend/main.py` | `services/api/app/main.py` |
+| `app/backend/requirements.txt` | `services/api/pyproject.toml` (uv) |
+| `app/backend/telefonia` | `services/agent/telefonia` + `/llamadas` en `services/api` |
+| `app/backend/llm` | `services/agent/translator` |
+| `app/web` | `apps/web` |
+| `app/web/camara` | `packages/signs` (+ `ml/training`) |
+| `app/web/avatar` | `packages/avatar` |
 
 ## 4. Repos y cómo se hacen los pushes
 Hay **dos repos con el mismo código**:
@@ -47,7 +67,7 @@ Por qué: Vercel/Render no pueden conectarse a repos de la organización, solo a
 2. Confirmar acceso de escritura al repo de la organización: `gh repo view platanus-hack/platanus-hack-26-cl-team-12 --json viewerPermission -q .viewerPermission` debe decir `WRITE` (o `ADMIN`). Si dice `READ`, pídele a Tomás que revise que estás en el equipo.
 3. Clonar: `gh repo clone platanus-hack/platanus-hack-26-cl-team-12` y abrir **esa carpeta raíz** en VSCode.
 4. Crear tu `.env` local desde `.env.example` (pídele las claves a Tomás por un canal privado; nunca por el repo).
-5. Backend: `cd app/backend && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && uvicorn main:app --reload`.
+5. Instalar: `pnpm install` (JS) y `uv sync` dentro de `services/api` y `services/agent` (Python, crea su `.venv`). Levantar: `pnpm --filter @puente/web dev`, `uv --directory services/api run uvicorn app.main:app --reload` y `uv --directory services/agent run python agent.py dev`. Verificar: `pnpm typecheck && pnpm build` y `uv --directory services/<api|agent> run pytest`.
 6. Crear tu rama de vertical (ver abajo), trabajar, hacer commits pequeños y subir con `git push -u origin <rama>`.
 7. Abrir PR a `main` (`gh pr create`) con descripción corta. Avisar al equipo. Tomás o quien revise lo mergea.
 8. Anotar en `docs/BITACORA.md` lo que hiciste (ver formato en ese archivo).
@@ -55,10 +75,10 @@ Por qué: Vercel/Render no pueden conectarse a repos de la organización, solo a
 ## 6. Ramas y reparto (una vertical por persona)
 | Rama | Qué | Carpeta |
 |---|---|---|
-| `v1-telefonia` | Twilio + STT/TTS | `app/backend/telefonia` |
-| `v2-llm` | simplificar / complejizar | `app/backend/llm` |
-| `v3-vision` | MediaPipe + clasificador de señas | `app/web/camara` |
-| `v4-avatar` | avatar/clips + frontend | `app/web/avatar` |
+| `v1-telefonia` | Twilio + LiveKit SIP + STT/TTS | `services/agent/telefonia`, `services/api` |
+| `v2-llm` | simplificar / complejizar | `services/agent/translator` |
+| `v3-vision` | MediaPipe + clasificador de señas | `packages/signs`, `ml/training` |
+| `v4-avatar` | avatar/clips + frontend | `packages/avatar`, `apps/web` |
 
 Cada quien toca su carpeta para evitar conflictos. Si necesitas tocar un archivo compartido (`main.py`, `package.json`, `docs/contrato.md`), avisa en la bitácora y haz el cambio en un commit aparte y pequeño.
 
