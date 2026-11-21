@@ -14,14 +14,30 @@ from dataclasses import asdict, dataclass, field
 from . import prompts
 from .cache_key import normalizar_entrada
 from .escenario import Escenario, load_escenario
-from .glossary import LITERAL_MAX_CHARS, LITERAL_PREFIX, Glossary, fingerspell, is_literal, literal
+from .glossary import (
+    CONTRATO,
+    LITERAL_MAX_CHARS,
+    LITERAL_PREFIX,
+    Glossary,
+    fingerspell,
+    is_literal,
+    literal,
+)
 
-MODEL = os.getenv("TRANSLATOR_MODEL", "claude-haiku-5-5")
+MODELO_DEFECTO = "claude-haiku-5-5"
+# Tope de tokens de salida por tarea. Las glosas necesitan más: con 300 Haiku a veces devolvía vacío (lab/v4_avatar).
+MAX_TOKENS = {"simplificar": 500, "complejizar": 200, "espanol_a_glosas": 1000}
 
-# Topes del contrato (packages/glosses/src/contract.ts): si cambian allá, cambian aquí.
-MAX_OPCIONES = 4
-MAX_OPCION_CHARS = 40
-MAX_GLOSAS = 30
+
+def modelo() -> str:
+    """Se lee al usarlo (no al importar), para que el .env cargado por agent.py ya esté aplicado."""
+    return os.getenv("TRANSLATOR_MODEL", MODELO_DEFECTO)
+
+# Topes del contrato (packages/glosses/data/contrato.json, compartido con la web).
+MAX_OPCIONES = CONTRATO["max_opciones"]
+MAX_OPCION_CHARS = CONTRATO["max_opcion_chars"]
+MAX_GLOSAS = CONTRATO["max_glosas"]
+MAX_TEXTO = CONTRATO["max_texto"]
 
 SIMPLE_TOOL = {
     "name": "emitir_simple",
@@ -97,6 +113,7 @@ class Translator:
         self.glossary = glossary
         self.escenario = escenario or load_escenario()
         self.store = store
+        self.model = modelo()
         self.cache_hits = 0  # métrica (B6): cuántas traducciones salieron de la caché
         self._frecuentes = {
             lado: {normalizar_entrada(f) for f in frases}
@@ -108,7 +125,7 @@ class Translator:
         self._tareas = {n: prompts.tarea(n, self.escenario.ejemplos, **params) for n in prompts.TAREAS}
         # Si cambia el modelo, un prompt, el escenario o el diccionario, la caché vieja deja de calzar.
         self._version = {
-            n: hashlib.sha256(f"{MODEL}\x1f{base}\x1f{t}".encode()).hexdigest()[:16] for n, t in self._tareas.items()
+            n: hashlib.sha256(f"{self.model}\x1f{base}\x1f{t}".encode()).hexdigest()[:16] for n, t in self._tareas.items()
         }
 
     def _system(self, tarea: str) -> list[dict]:
@@ -145,8 +162,8 @@ class Translator:
 
     def _simplificar(self, texto: str) -> SimpleResult:
         msg = self.client.messages.create(
-            model=MODEL,
-            max_tokens=500,
+            model=self.model,
+            max_tokens=MAX_TOKENS["simplificar"],
             system=self._system("simplificar"),
             tools=[SIMPLE_TOOL],
             tool_choice={"type": "tool", "name": "emitir_simple"},
@@ -162,8 +179,8 @@ class Translator:
         if (hit := self._cache_get("complejizar", texto)) is not None:
             return hit["frase"]
         msg = self.client.messages.create(
-            model=MODEL,
-            max_tokens=200,
+            model=self.model,
+            max_tokens=MAX_TOKENS["complejizar"],
             system=self._system("complejizar"),
             messages=[{"role": "user", "content": texto}],
         )
@@ -188,8 +205,8 @@ class Translator:
 
     def _espanol_a_glosas(self, texto: str) -> GlossResult:
         msg = self.client.messages.create(
-            model=MODEL,
-            max_tokens=1000,  # con 300 Haiku a veces devolvía vacío (lab/v4_avatar)
+            model=self.model,
+            max_tokens=MAX_TOKENS["espanol_a_glosas"],
             system=self._system("espanol_a_glosas"),
             tools=[GLOSAS_TOOL],
             tool_choice={"type": "tool", "name": "emitir_glosas"},
