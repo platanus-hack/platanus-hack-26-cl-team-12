@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Claude (data-glosario)
+- Hice: glosario LSCh **A-H** extraído del PDF (UMCE 2009): 1057 entradas en `data/vocab/glosario.jsonl`, las 1057 con foto recortada (`data/signs/img/`, gitignored), más `glosario.md`, `glosario_compacto.txt` (33 KB, cabe entero en un prompt) y README. Todo local con pymupdf, **0 USD de API**; scripts en `data/vocab/scripts/` (`extract.py`, `build.py`), se regenera en segundos.
+- Decidí: el PDF trae texto seleccionable y fotos incrustadas, así que no se necesita visión de Claude. `escenario` (salud 37, banco 19) es heurística por palabras clave: revisar. El diccionario NO describe cómo se hace la seña ni trae categorías por tema: `descripcion_seña` y `categoría` quedan en null (la seña está en la foto).
+- Falta / bloqueado: procesar `Diccionario_LSCh_I-Z.pdf` (mismo script). **Licencia:** los créditos dicen "Prohibida la reproducción total o parcial de los textos, sin expresa autorización de las autoras": decidir si se pushea el texto extraído a un repo público. Sin push ni PR hasta que Tomás confirme.
+
 ## 2026-11-21 — Raimundo / Claude (rama worktree-adrs-arquitectura) — ⚠️ requiere acuerdo del equipo antes de merge
 - Hice: 11 ADRs + índice en `docs/adr/` y esqueleto de monorepo en 3 commits separados: (a) ADRs, (b) esqueleto **aditivo** (`apps/ packages/ services/ ml/`, CI, Dockerfiles), (c) **movimiento**: borra `app/` y actualiza CLAUDE.md, ONBOARDING (§3 con mapa de rutas viejas→nuevas, §5, §6), plan.md y contrato.md (solo agrega 2 tipos).
 - Decidí (propuesto, Raimundo eligió esto): monorepo pnpm+Turborepo / uv; LiveKit (SIP+Twilio para el teléfono) como tiempo real; PWA Next.js export estático + Capacitor; glosas LSCh como formato intermedio; TTS ElevenLabs; reproductor de señas con clips primero (`ClipSignPlayer`) y avatar 3D después.
