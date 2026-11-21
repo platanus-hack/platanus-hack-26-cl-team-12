@@ -110,3 +110,6 @@ tmp/
 worktrees/
 .claude/settings.local.json
 graphify-out/
+
+# Fotos del Diccionario LSCh (derechos UMCE): se generan con apps/web/scripts/extraer_senas.py, no se versionan.
+apps/web/public/senas/

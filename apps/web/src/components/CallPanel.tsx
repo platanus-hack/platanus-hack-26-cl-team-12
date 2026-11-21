@@ -10,10 +10,11 @@ import {
   Button, CallStatus, Composer, Icon, QuickReplies, SignAvatar, Subtitles, VisualAlert, DEFAULT_REPLIES,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
-import { isLiteralGloss, literalText, type MensajePuente } from "@puente/glosses";
+import type { MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
 import { Inicio, type Destino } from "./Inicio";
+import { SenasFotos, useManifestSenas } from "./SenasFotos";
 
 const AVATAR_MS_POR_SENA = 1300; // igual que el reproductor de fotos de lab/v4_avatar
 
@@ -24,8 +25,6 @@ const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", min
 let siguienteId = 0;
 const nuevoId = () => `l${++siguienteId}`;
 
-// `TEXTO:10:30` (hora, cifra, RUT o nombre sin seña) se muestra como el dato, no como glosa (docs/contrato.md).
-const paraMostrar = (glosa: string) => (isLiteralGloss(glosa) ? literalText(glosa) : glosa);
 
 export function CallPanel({ mock }: { mock: boolean }) {
   const [call, setCall] = useState<CallHandle | null>(null);
@@ -36,6 +35,10 @@ export function CallPanel({ mock }: { mock: boolean }) {
   const [alert, setAlert] = useState<{ message: string; tone: AlertTone } | null>(null);
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
   const [destino, setDestino] = useState<Destino | null>(null);
+  // Fotos de señas (D5). null = no están en este computador: se usa el intérprete dibujado.
+  const manifest = useManifestSenas();
+  const [frase, setFrase] = useState(0); // sube con cada glosas_para_senar para reiniciar el reproductor
+  const [senando, setSenando] = useState(false);
   // true desde que el cliente responde hasta que el otro lado vuelve a hablar: no se ofrecen respuestas.
   const [esperando, setEsperando] = useState(false);
   const callRef = useRef<CallHandle | null>(null);
@@ -49,7 +52,7 @@ export function CallPanel({ mock }: { mock: boolean }) {
     return () => clearInterval(id);
   }, [state]);
 
-  // El avatar avanza una seña cada AVATAR_MS_POR_SENA. TODO(v4): reemplazar por ClipSignPlayer / fotos.
+  // Intérprete dibujado (sin fotos): avanza una seña cada AVATAR_MS_POR_SENA para mover las manos.
   useEffect(() => {
     if (!senas || senas.actual >= senas.glosas.length) return;
     const id = setTimeout(() => setSenas((s) => (s ? { ...s, actual: s.actual + 1 } : s)), AVATAR_MS_POR_SENA);
@@ -89,7 +92,9 @@ export function CallPanel({ mock }: { mock: boolean }) {
         }
         break;
       case "glosas_para_senar":
-        setSenas({ glosas: msg.glosas.map(paraMostrar), subtitulo: msg.subtitulo, actual: 0 });
+        // Glosas tal cual (con TEXTO:): el reproductor decide cómo mostrar cada una.
+        setSenas({ glosas: msg.glosas, subtitulo: msg.subtitulo, actual: 0 });
+        setFrase((f) => f + 1);
         break;
     }
   }
@@ -172,7 +177,10 @@ export function CallPanel({ mock }: { mock: boolean }) {
         glosses={senas?.glosas ?? []}
         current={senas?.actual}
         subtitle={subtitulo}
-        signing={!!senas && senas.actual < senas.glosas.length}
+        signing={manifest ? senando : !!senas && senas.actual < senas.glosas.length}
+        player={
+          manifest ? <SenasFotos manifest={manifest} glosas={senas?.glosas ?? []} frase={frase} onSenando={setSenando} /> : undefined
+        }
       />
 
       <div className="chat" ref={chatRef}>
