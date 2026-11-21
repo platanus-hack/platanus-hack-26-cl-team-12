@@ -51,7 +51,7 @@ graph TD
         Agent["Agente traductor<br/>LiveKit Agents"]
         LLM["Claude<br/>glosas ↔ español"]
         STT["STT es-CL"]
-        TTS["TTS es-CL"]
+        TTS["TTS ElevenLabs<br/>voz chilena"]
         API["API FastAPI"]
     end
 
@@ -80,7 +80,7 @@ graph TD
 | [0003](0003-generacion-de-senas-con-avatar-3d.md) | Generación de señas con avatar 3D, no video generativo | Propuesto |
 | [0004](0004-agente-traductor-llm-con-salida-estructurada.md) | Agente traductor LLM (Claude) con salida estructurada y vocabulario restringido | Propuesto |
 | [0005](0005-tiempo-real-con-livekit.md) | Llamadas en tiempo real con LiveKit y el traductor como participante | Propuesto |
-| [0006](0006-stt-y-tts-espanol-chileno.md) | Proveedores de STT y TTS en español chileno | Propuesto |
+| [0006](0006-stt-y-tts-espanol-chileno.md) | Proveedores de STT y TTS en español chileno (TTS: ElevenLabs) | Propuesto |
 | [0007](0007-cliente-multiplataforma-pwa-capacitor.md) | Cliente multiplataforma: PWA + Capacitor + Tauri | Propuesto |
 | [0008](0008-monorepo-ts-y-backend-python.md) | Monorepo TypeScript (pnpm + Turborepo) y backend Python | Propuesto |
 | [0009](0009-supabase-para-datos-y-archivos.md) | Supabase para datos y archivos | Propuesto |
