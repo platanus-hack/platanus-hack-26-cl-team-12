@@ -465,7 +465,9 @@ Todas están en [`.env.example`](../.env.example), que es la documentación comp
 |---|---|---|
 | `ANTHROPIC_API_KEY` | agent | Secreto |
 | `TRANSLATOR_MODEL` | agent | Por defecto `claude-haiku-5-5` |
-| `ESCENARIO_DEMO` | agent | Contexto del prompt (banco, hora médica) |
+| `ESCENARIO` | agent | Id del escenario (`packages/glosses/data/escenarios/<id>.json`): contexto, ejemplos, keyterms STT, pronunciaciones |
+| `AGENT_DB_PATH` | agent | SQLite del agente (caché, latencia, glosas faltantes); `off` la desactiva |
+| `ELEVENLABS_VOICE_ID_HOMBRE`, `VOZ_CLIENTE` | agent | Voz de hombre y voz por defecto (`mujer`/`hombre`) |
 | `DEEPGRAM_API_KEY`, `STT_LANGUAGE` | agent | STT; `es` por defecto |
 | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL` | agent | TTS; modelo por defecto `eleven_flash_v2_5`. El plugin espera `ELEVEN_API_KEY`; el agente le pasa `ELEVENLABS_API_KEY` |
 | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | api, agent | Secretos (salvo la URL) |

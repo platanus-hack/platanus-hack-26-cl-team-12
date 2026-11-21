@@ -145,8 +145,8 @@ fly secrets set --app puente-agent \
   ANTHROPIC_API_KEY="..." \
   DEEPGRAM_API_KEY="..." \
   ELEVENLABS_API_KEY="..." \
-  ELEVENLABS_VOICE_ID="<voz chilena>" \
-  ESCENARIO_DEMO="reserva de hora médica"
+  ELEVENLABS_VOICE_ID="Fd38GRHtJllY0CuguAy9" ELEVENLABS_VOICE_ID_HOMBRE="6WgXEzo1HGn3i7ilT4Fh" \
+  ESCENARIO=hora_medica AGENT_DB_PATH=/tmp/puente.db
 
 fly deploy . --config services/agent/fly.toml --dockerfile services/agent/Dockerfile
 fly logs --app puente-agent
