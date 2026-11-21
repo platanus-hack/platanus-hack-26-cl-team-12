@@ -8,6 +8,10 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Martín / Claude (v1-telefonia)
+- Decidí: Martín y Tomás intercambian roles: **Martín queda en A (telefonía, deploy, v1)** y **Tomás en C (visión, v3)**. Tabla actualizada en `PLAN-TRABAJO.md`.
+- Falta / bloqueado: acordar si el deploy sigue saliendo del repo personal de Tomás o pasa a Martín, y quién es dueño de las cuentas de LiveKit y Twilio.
+
 ## 2026-11-21 — Rafael / Claude (dev)
 - Hice: sistema de diseño de Puente. Artefacto con la guía completa (https://claude.ai/artifact/7kbPXxp6kcwGSb3hQV3WVh) y su versión en código en `packages/ui`: tokens (Noche por defecto + Día), logo, 9 íconos y 11 componentes (Logo, Icon, Button, CallStatus, VisualAlert, Subtitles, QuickReplies, Composer, GlossChip, SignCamera, SignAvatar). La app ya importa los estilos; el inicio usa los componentes nuevos, `/design` muestra el catálogo y la PWA tiene ícono.
 - Decidí: tipografías Atkinson Hyperlegible (lectura), Bricolage Grotesque (títulos) y JetBrains Mono (glosas). Se mantienen los nombres de variables de `globals.css` (`--bg`, `--fg`, `--muted`, `--accent`, `--cliente`). `Subtitles` y `VisualAlert` siguen aceptando las props de antes.
