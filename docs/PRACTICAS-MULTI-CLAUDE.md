@@ -1,10 +1,10 @@
 # Prácticas para trabajar con varios Claudes en paralelo
 
-1. **Al empezar la sesión**: `git pull --rebase origin main`, lee `docs/BITACORA.md` (últimas entradas) y `CLAUDE.md`. No asumas el estado: míralo.
-2. **Una rama por vertical** y un dueño por carpeta. No edites carpetas de otra vertical; si hace falta, pídelo en la bitácora.
+1. **Al empezar la sesión**: `git pull --rebase origin dev`, lee `docs/BITACORA.md` (últimas entradas) y `CLAUDE.md`. No asumas el estado: míralo.
+2. **Una rama corta por PR, con el prefijo de su vertical** (`v1/<tema>`…`v4/<tema>`, o `docs/`, `chore/`, `fix/`; ver `PLAN-TRABAJO.md` §2), que sale de `dev` y vuelve a `dev`, y un dueño por carpeta. Al crear un worktree, ponle ese nombre a la rama (`git worktree add .claude/worktrees/<tema> -b v1/<tema> origin/dev`); nunca subas una rama `worktree-*`. No edites carpetas de otra vertical; si hace falta, pídelo en la bitácora.
 3. **Archivos compartidos** (`main.py`, `package.json`, `requirements.txt`, `.env.example`, `docs/contrato.md`): cambios mínimos, en un commit aparte, y hacer pull justo antes. Agrega, no reescribas.
-4. **Commits pequeños y frecuentes**; `git pull --rebase origin main` antes de cada push para evitar merges feos.
-5. **Nunca** `push --force` a `main`, ni `git reset --hard` sobre trabajo ajeno, ni borrar ramas de otros.
+4. **Commits pequeños y frecuentes**; `git pull --rebase origin dev` antes de cada push para evitar merges feos.
+5. **Nunca** `push --force` a `main` ni a `dev`, ni `git reset --hard` sobre trabajo ajeno, ni borrar ramas de otros.
 6. **El contrato manda**: si cambias un formato de mensaje, actualiza `docs/contrato.md` primero y avisa en la bitácora; los demás programan contra él.
 7. **Bitácora al terminar cada bloque de trabajo**: qué hiciste, qué decidiste, qué falta, qué bloqueó. Es la memoria compartida entre Claudes (cada Claude parte sin contexto de los otros).
 8. **Investigación** va a `data/research/` (una nota por tema, nombre con fecha: `2026-11-21-stt-espanol.md`), con fuente y conclusión en 3 líneas. Decisiones importantes también a la bitácora.

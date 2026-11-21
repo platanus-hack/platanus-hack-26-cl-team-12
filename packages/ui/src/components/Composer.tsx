@@ -2,6 +2,7 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "./Button";
+import { Icon } from "./Icon";
 
 export interface ComposerProps {
   value?: string;
@@ -14,6 +15,8 @@ export interface ComposerProps {
   placeholder?: string;
   hint?: string;
   sendLabel?: string;
+  /** Versión de una línea para dejar fija abajo durante la llamada (sin etiqueta visible ni ayuda). */
+  compact?: boolean;
   children?: ReactNode;
 }
 
@@ -28,6 +31,7 @@ export function Composer({
   placeholder = "Ej: Quiero una hora para el lunes",
   hint = "Puente lo dice por teléfono con voz.",
   sendLabel = "Decir",
+  compact = false,
   children,
 }: ComposerProps) {
   const id = useId();
@@ -47,9 +51,13 @@ export function Composer({
   }
 
   return (
-    <form className="pu-composer" onSubmit={send}>
-      <label htmlFor={id}>{label}</label>
+    <form className={compact ? "pu-composer compact" : "pu-composer"} onSubmit={send}>
+      {children}
+      <label htmlFor={id} className={compact ? "pu-sr" : undefined}>
+        {label}
+      </label>
       <textarea
+        rows={compact ? 1 : undefined}
         id={id}
         value={text}
         placeholder={placeholder}
@@ -58,13 +66,18 @@ export function Composer({
           if (e.key === "Enter" && !e.shiftKey) send(e);
         }}
       />
-      {children}
-      <div className="bar">
-        <span className="hint">{hint}</span>
-        <Button type="submit" icon="enviar" disabled={sending || !text.trim()}>
-          {sending ? "Hablando…" : sendLabel}
-        </Button>
-      </div>
+      {compact ? (
+        <button type="submit" className="pu-send" aria-label={sendLabel} disabled={sending || !text.trim()}>
+          <Icon name="enviar" size={22} />
+        </button>
+      ) : (
+        <div className="bar">
+          <span className="hint">{hint}</span>
+          <Button type="submit" icon="enviar" disabled={sending || !text.trim()}>
+            {sending ? "Hablando…" : sendLabel}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

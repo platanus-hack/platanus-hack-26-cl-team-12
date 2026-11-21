@@ -8,10 +8,11 @@ Cualquier participante de la sala puede publicar datos, así que el agente solo 
 import json
 
 from translator import Glossary
+from translator.glossary import CONTRATO
 
-MAX_TEXTO = 500
-MAX_GLOSAS = 30
-MAX_GLOSAS_CHARS = 400
+MAX_TEXTO = CONTRATO["max_texto"]
+MAX_GLOSAS = CONTRATO["max_glosas"]
+MAX_GLOSAS_CHARS = CONTRATO["max_glosas_chars"]
 ROL_CLIENTE = "cliente"
 
 

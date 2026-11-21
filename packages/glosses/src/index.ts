@@ -4,6 +4,7 @@
 import dictionary from "../data/glosses.json";
 
 export * from "./contract";
+import { LIMITES } from "./contract";
 
 export interface GlossEntry {
   gloss: string;
@@ -15,6 +16,8 @@ export interface GlossEntry {
   animationId: string | null;
   nonManual: string | null;
   validatedBy: string | null;
+  /** id en el glosario LSCh de origen (UMCE); la foto está en data/signs/img/<lexiconId>.png. */
+  lexiconId?: string;
 }
 
 export interface GlossDictionary {
@@ -40,8 +43,31 @@ export function isKnownGloss(gloss: string): boolean {
 }
 
 /** Prefijo para el deletreo manual de palabras fuera del vocabulario (ADR-0001). */
-export const FINGERSPELL_PREFIX = "DACTILOLOGÍA:";
+export const FINGERSPELL_PREFIX = LIMITES.deletreo.prefijo;
+export const FINGERSPELL_MAX_LETTERS = LIMITES.deletreo.max_letras;
+const LETRA = new RegExp(`[${LIMITES.deletreo.letras}]`, "u");
 
+/** Prefijo para datos sin seña (horas, cifras, RUT, nombres) que el reproductor muestra como texto grande. */
+export const LITERAL_PREFIX = LIMITES.literal.prefijo;
+export const LITERAL_MAX_CHARS = LIMITES.literal.max_chars;
+const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const LITERAL_RE = new RegExp(
+  `^${escapar(LITERAL_PREFIX)}[${LIMITES.literal.caracteres}]{1,${LITERAL_MAX_CHARS}}$`,
+  "u",
+);
+
+/** Glosa literal válida (misma regla que el agente): `TEXTO:` + 1 a 24 caracteres permitidos. */
+export function isLiteralGloss(gloss: string): boolean {
+  return LITERAL_RE.test(gloss);
+}
+
+/** Texto a mostrar para una glosa literal (`TEXTO:10:30` → `10:30`). */
+export function literalText(gloss: string): string {
+  return gloss.slice(LITERAL_PREFIX.length);
+}
+
+/** Deletreo manual de una palabra (igual que el agente): solo letras, máx. 20; "" si no queda ninguna. */
 export function fingerspell(word: string): string {
-  return FINGERSPELL_PREFIX + word.toUpperCase().split("").join("-");
+  const letras = [...word.toUpperCase()].filter((c) => LETRA.test(c)).slice(0, FINGERSPELL_MAX_LETTERS);
+  return letras.length ? FINGERSPELL_PREFIX + letras.join("-") : "";
 }

@@ -137,3 +137,40 @@ def test_twilio_media_echoes_audio():
         ws.send_json({"event": "media", "media": {"payload": "AAEC"}})
         assert ws.receive_json() == {"event": "media", "streamSid": "MZ1", "media": {"payload": "AAEC"}}
         ws.send_json({"event": "stop"})
+
+
+def test_glosses_respeta_el_modelo_publicado():
+    data = client.get("/glosses").json()
+    assert all({"gloss", "category", "es", "classifierLabel"} <= g.keys() for g in data["glosses"])
+
+
+def _app_con_env(monkeypatch, **env):
+    import importlib
+
+    import app.main as main
+
+    for k in ("API_ENV", "API_DOCS"):
+        monkeypatch.delenv(k, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    return TestClient(importlib.reload(main).app)
+
+
+def test_swagger_en_desarrollo(monkeypatch):
+    c = _app_con_env(monkeypatch)
+    assert c.get("/docs").status_code == 200
+    spec = c.get("/openapi.json").json()
+    assert {"/health", "/token", "/llamadas", "/glosses"} <= spec["paths"].keys()
+    assert {t["name"] for t in spec["tags"]} == {"sistema", "llamada", "glosas"}
+    assert "503" in spec["paths"]["/token"]["post"]["responses"]
+
+
+def test_swagger_apagado_en_produccion(monkeypatch):
+    c = _app_con_env(monkeypatch, API_ENV="production")
+    for ruta in ("/docs", "/redoc", "/openapi.json"):
+        assert c.get(ruta).status_code == 404
+    assert c.get("/health").status_code == 200
+    assert _app_con_env(monkeypatch, API_ENV="production", API_DOCS="1").get("/docs").status_code == 200
+    assert _app_con_env(monkeypatch, API_DOCS="0").get("/docs").status_code == 404
+    # `API_DOCS=` vacío (como viene en .env.example) no apaga Swagger en desarrollo
+    assert _app_con_env(monkeypatch, API_DOCS="").get("/docs").status_code == 200
