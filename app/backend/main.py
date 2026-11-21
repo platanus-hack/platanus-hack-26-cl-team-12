@@ -15,6 +15,12 @@ ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 sys.path.insert(0, str(ROOT / "lab" / "v2_simplificar"))
 from prompts import SIMPLIFICAR, COMPLEJIZAR  # noqa: E402  (fuente única de los prompts)
+sys.path.insert(0, str(ROOT / "lab" / "v4_avatar"))
+import importlib.util  # noqa: E402  (v4 tiene su propio prompts.py: cargarlo por ruta, sin chocar con v2)
+_sp = importlib.util.spec_from_file_location("prompts_v4", ROOT / "lab" / "v4_avatar" / "prompts.py")
+v4 = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(v4)
+VOCAB4 = {v["id"]: v for v in v4.VOCAB}
+IMG4 = ROOT / "data" / "signs" / "img"
 
 MODELO_LLM = os.getenv("MODELO_LLM", "claude-haiku-5-5")
 STT_MODEL = os.getenv("ELEVENLABS_STT_MODEL", "scribe_v1")
@@ -64,12 +70,29 @@ async def tts(texto: str) -> bytes:
     return r.content
 
 
-async def reescribir(sistema: str, texto: str) -> str:
+async def reescribir(sistema: str, texto: str, max_tokens: int = 300) -> str:
     r = await llm.messages.create(
-        model=MODELO_LLM, max_tokens=300, system=sistema,
+        model=MODELO_LLM, max_tokens=max_tokens, system=sistema,
         messages=[{"role": "user", "content": texto}],
     )
     return "".join(b.text for b in r.content if b.type == "text").strip()
+
+
+async def a_glosas(texto: str) -> list[dict]:
+    """Frase -> secuencia de señas [{id, glosa, significa}] o [{texto}] si no hay seña (horas, nombres)."""
+    raw = await reescribir(v4.A_GLOSAS, texto, max_tokens=1500)  # Haiku piensa: con 300 a veces no alcanza a responder
+    try:
+        lista = json.loads(raw[raw.index("["): raw.rindex("]") + 1])
+    except ValueError:
+        return []
+    out = []
+    for g in lista:
+        g = str(g)
+        if g in VOCAB4 and (IMG4 / f"{g}.png").exists():
+            out.append({"id": g, "glosa": VOCAB4[g]["glosa"], "significa": VOCAB4[g]["significa"]})
+        else:
+            out.append({"texto": g})  # TODO(real-data): deletrear / clip propio para horas y nombres
+    return out
 
 
 async def desde_ejecutivo(m: dict):
@@ -85,8 +108,13 @@ async def desde_ejecutivo(m: dict):
         t1 = time.time()
         simple = await reescribir(SIMPLIFICAR, texto)
         t_llm = time.time() - t1
-    await enviar("cliente", {"tipo": "ejecutivo_dice", "texto": texto, "simple": simple,
-                             "ms": {"stt": round(t_stt * 1000), "llm": round(t_llm * 1000)}})
+    glosas, t_v4 = None, 0.0
+    if m.get("v4"):
+        t2 = time.time()
+        glosas = await a_glosas(simple or texto)
+        t_v4 = time.time() - t2
+    await enviar("cliente", {"tipo": "ejecutivo_dice", "texto": texto, "simple": simple, "glosas": glosas,
+                             "ms": {"stt": round(t_stt * 1000), "llm": round(t_llm * 1000), "v4": round(t_v4 * 1000)}})
 
 
 async def desde_cliente(m: dict):
@@ -131,6 +159,18 @@ async def ws_endpoint(ws: WebSocket, rol: str):
 def health():
     return {"ok": True, "stt": STT_MODEL, "tts": TTS_MODEL, "llm": MODELO_LLM,
             "claves": {"elevenlabs": bool(EL_KEY and EL_VOZ), "anthropic": bool(os.getenv("ANTHROPIC_API_KEY"))}}
+
+
+@app.get("/signs/{id}.png")
+def sena(id: str):
+    f = IMG4 / f"{id}.png"
+    return FileResponse(f) if f.exists() and id in VOCAB4 else FileResponse(STATIC / "index.html", status_code=404)
+
+
+@app.post("/api/glosas")
+async def api_glosas(body: dict):
+    """Prueba rápida sin micrófono: POST {"texto": "..."}."""
+    return {"glosas": await a_glosas(body["texto"])}
 
 
 @app.get("/{pagina}")

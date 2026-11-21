@@ -9,6 +9,7 @@ small{color:#666}
 </style>
 <h2>📞 Ejecutivo</h2>
 <label><input type=checkbox id=v2 checked> v2: simplificar para el cliente</label>
+<label><input type=checkbox id=v4 checked> v4: mostrar señas al cliente</label>
 <p><button id=b>🎙️ Hablar</button></p>
 <small id=estado>Haz clic en Hablar, di tu frase y vuelve a hacer clic para enviarla. Usa audífonos.</small>
 <div id=log></div>
@@ -33,6 +34,6 @@ b.onclick=async()=>{
   rec.onstop=async()=>{s.getTracks().forEach(t=>t.stop());b.classList.remove('rec');b.textContent='🎙️ Hablar';
     const blob=new Blob(chunks,{type:rec.mimeType});
     const buf=new Uint8Array(await blob.arrayBuffer());let bin='';for(let i=0;i<buf.length;i+=8192)bin+=String.fromCharCode(...buf.subarray(i,i+8192));
-    ws.send(JSON.stringify({data:btoa(bin),mime:rec.mimeType,v2:document.getElementById('v2').checked}));est.textContent='Transcribiendo…'};
+    ws.send(JSON.stringify({data:btoa(bin),mime:rec.mimeType,v2:document.getElementById('v2').checked,v4:document.getElementById('v4').checked}));est.textContent='Transcribiendo…'};
   rec.start();b.classList.add('rec');b.textContent='⏹️ Enviar';est.textContent='Grabando…'};
 </script>
