@@ -104,3 +104,5 @@ def test_swagger_apagado_en_produccion(monkeypatch):
     assert c.get("/health").status_code == 200
     assert _app_con_env(monkeypatch, API_ENV="production", API_DOCS="1").get("/docs").status_code == 200
     assert _app_con_env(monkeypatch, API_DOCS="0").get("/docs").status_code == 404
+    # `API_DOCS=` vacío (como viene en .env.example) no apaga Swagger en desarrollo
+    assert _app_con_env(monkeypatch, API_DOCS="").get("/docs").status_code == 200

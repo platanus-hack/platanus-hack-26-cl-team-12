@@ -36,9 +36,9 @@ API_DIR = Path(__file__).resolve().parents[1]
 def docs_habilitados() -> bool:
     """Swagger/ReDoc solo en desarrollo: en producción no se expone el mapa de la API.
     API_DOCS (1/0) manda; si no está, se decide por API_ENV (defecto: development)."""
-    explicito = os.getenv("API_DOCS")
-    if explicito is not None:
-        return explicito.strip().lower() in ("1", "true", "si", "sí", "yes")
+    explicito = (os.getenv("API_DOCS") or "").strip().lower()
+    if explicito:  # vacío (`API_DOCS=` del .env.example) = no definido
+        return explicito in ("1", "true", "si", "sí", "yes")
     return os.getenv("API_ENV", "development").strip().lower() != "production"
 
 
