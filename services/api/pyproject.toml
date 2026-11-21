@@ -10,6 +10,7 @@ dependencies = [
     "livekit-api>=0.8",
     "twilio>=9.0",
     "python-multipart>=0.0.34",
+    "anthropic>=0.40",
 ]
 
 [dependency-groups]

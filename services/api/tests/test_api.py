@@ -1,6 +1,8 @@
 import base64
 import json
 
+import pytest
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -71,11 +73,62 @@ def test_llamada_blocks_numbers_outside_allowlist(monkeypatch):
     assert r.status_code == 501  # permitido, pero la llamada SIP sigue como TODO(v1)
 
 
-def test_twilio_voz_points_stream_to_public_wss(monkeypatch):
+
+class FakeTraductor:
+    async def simplificar(self, texto):
+        return f"simple({texto})"
+
+    async def complejizar(self, texto):
+        return f"formal({texto})"
+
+
+@pytest.fixture
+def sala_falsa(monkeypatch):
+    from app.llamada import sala
+
     monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    monkeypatch.setattr(sala, "traductor", FakeTraductor())
+    sala.reiniciar()
+    return sala
+
+
+def test_twilio_voz_saluda_y_escucha_con_urls_absolutas(sala_falsa):
     r = client.post("/twilio/voz")
-    assert r.status_code == 200
+    assert '<Gather input="speech"' in r.text and "Puente" in r.text
+    assert 'action="https://abc.ngrok-free.app/twilio/turno"' in r.text
+
+
+def test_twilio_stream_mode_points_to_public_wss(sala_falsa):
+    r = client.post("/twilio/voz?modo=stream")
     assert '<Stream url="wss://abc.ngrok-free.app/twilio/media"/>' in r.text
+
+
+def test_conversacion_completa_por_turnos(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
+
+        # Turno del ejecutivo: el texto (escapado) va simplificado a la PWA y Twilio queda esperando.
+        r = client.post("/twilio/turno", data={"SpeechResult": "su hora es el martes <x>"})
+        assert "/twilio/espera?n=0" in r.text
+        assert pwa.receive_json() == {
+            "tipo": "ejecutivo_dice", "texto": "su hora es el martes <x>", "simple": "simple(su hora es el martes <x>)"
+        }
+        assert "<Pause" in client.post("/twilio/espera?n=0").text  # el cliente todavía no responde
+
+        # Turno del cliente: se complejiza y se le dice al ejecutivo (escapado), y se vuelve a escuchar.
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})  # mensaje desconocido: se ignora
+        for _ in range(50):
+            r = client.post("/twilio/espera?n=1")
+            if "formal(" in r.text:
+                break
+        assert "formal(martes bueno)" in r.text and '<Gather input="speech"' in r.text
+
+
+def test_twilio_turno_vacio_vuelve_a_escuchar(sala_falsa):
+    r = client.post("/twilio/turno", data={"SpeechResult": ""})
+    assert '<Gather input="speech"' in r.text
 
 
 def test_twilio_media_echoes_audio():
@@ -84,17 +137,3 @@ def test_twilio_media_echoes_audio():
         ws.send_json({"event": "media", "media": {"payload": "AAEC"}})
         assert ws.receive_json() == {"event": "media", "streamSid": "MZ1", "media": {"payload": "AAEC"}}
         ws.send_json({"event": "stop"})
-
-
-def test_twilio_gather_uses_absolute_urls(monkeypatch):
-    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
-    r = client.post("/twilio/voz?modo=gather")
-    assert 'action="https://abc.ngrok-free.app/twilio/turno"' in r.text
-    assert '<Gather input="speech"' in r.text
-
-
-def test_twilio_turno_receives_transcript(monkeypatch):
-    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
-    r = client.post("/twilio/turno", data={"SpeechResult": "quiero una hora <x>", "Confidence": "0.9"})
-    assert r.status_code == 200
-    assert "Entendí: quiero una hora &lt;x&gt;" in r.text  # escapado: el texto del teléfono no puede inyectar TwiML
