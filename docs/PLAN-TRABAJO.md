@@ -14,9 +14,9 @@
 
 | | Persona (sugerida) | Rama | Es dueño de | Entrega |
 |---|---|---|---|---|
-| **A** | Tomás (ya hizo la investigación) | `v1-telefonia` | `services/api/`, `services/agent/telefonia/`, `.github/`, Dockerfiles, deploy, `.env` | Llamada telefónica real de punta a punta y todo desplegado |
+| **A** | Martín (cambió con Tomás) | `v1-telefonia` | `services/api/`, `services/agent/telefonia/`, `.github/`, Dockerfiles, deploy, `.env` | Llamada telefónica real de punta a punta y todo desplegado |
 | **B** | Raimundo | `v2-llm` | `services/agent/translator/`, `services/agent/agent.py`, `packages/glosses/data/`, `data/vocab/`, `data/eval/` | Traducción simple/compleja + voz + vocabulario del escenario |
-| **C** | Martín | `v3-vision` | `packages/signs/`, `ml/training/`, `apps/web/src/app/captura/` | Cámara → glosas con vocabulario cerrado |
+| **C** | Tomás | `v3-vision` | `packages/signs/`, `ml/training/`, `apps/web/src/app/captura/` | Cámara → glosas con vocabulario cerrado |
 | **D** | Rafael | `v4-avatar` | `apps/web/` (shell), `packages/avatar/`, `packages/ui/`, `apps/mobile/`, clips | App usable, reproductor de señas y PWA instalable |
 
 Entrega final (`platanus-hack-project.jsonc`, `project-description.md`, logo, guion de la demo): **A** la arma, **todos** revisan.
