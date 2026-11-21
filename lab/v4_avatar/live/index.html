@@ -28,7 +28,6 @@ h1{font-size:15px;margin:0 0 8px}
   <h1>Avatar en vivo</h1>
   <video id="v" autoplay playsinline muted></video>
   <div id="st">Cargando…</div>
-  <label><input type="checkbox" id="mirror" checked> Efecto espejo (ver el avatar como en un espejo)</label>
   <label><input type="checkbox" id="flipxz" checked> Corregir ejes VRM1 (x y z)</label>
   <label><input type="checkbox" id="swap"> Intercambiar manos izquierda/derecha</label>
   <label><input type="checkbox" id="fingers" checked> Mover dedos</label>
@@ -82,8 +81,7 @@ const dl=new THREE.DirectionalLight(0xffffff,1.4);dl.position.set(1,2,2);scene.a
 const cam=new THREE.PerspectiveCamera(28,1,0.1,20);cam.position.set(0,1.25,1.9);cam.lookAt(0,1.18,0);
 function resize(){const r=canvas.parentElement.getBoundingClientRect();renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
-$('mirror').onchange=()=>canvas.style.transform=$('mirror').checked?'scaleX(-1)':'';
-canvas.style.transform='scaleX(-1)';
+canvas.style.transform='scaleX(-1)'; // siempre espejo: tu mano derecha se ve a la derecha de la pantalla
 
 // ---- avatar VRM
 let vrm;
@@ -119,7 +117,8 @@ function rigHand(side,lm,poseRig){ // side: 'Left'|'Right' del usuario
 
 // ---- brazos "directos": cada hueso apunta hacia donde apunta tu hombro→codo→muñeca (sin los límites de Kalidokit)
 const AX=new THREE.Vector3(1,0,0);
-const V3=p=>new THREE.Vector3(p.x,-p.y,$('zinv').checked?p.z:-p.z); // MediaPipe (y abajo, z hacia cámara) → avatar (y arriba, z al frente)
+let SX=1; // signo del eje x, autocalibrado cada cuadro con la separación de hombros (hombro izq. del usuario debe quedar en +X del avatar)
+const V3=p=>new THREE.Vector3(p.x*SX,-p.y,$('zinv').checked?p.z:-p.z); // MediaPipe (y abajo, z hacia cámara) → avatar (y arriba, z al frente)
 function ikArm(W,vis,side,iS,iE,iW){
  if(Math.min(vis[iS],vis[iE])<0.45||vis[iW]<0.25)return false;
  const rest=side==='left'?AX:AX.clone().negate(),up=bone(side+'UpperArm'),lo=bone(side+'LowerArm');
@@ -188,15 +187,15 @@ function stepMode(now){ // devuelve true si el modo controla los huesos (se salt
 // ---- cámara + MediaPipe
 const video=$('v');
 st('Pidiendo cámara…');
-video.srcObject=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'},audio:false});
+video.srcObject=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:'user'},audio:false});
 await video.play();
 st('Cargando modelos MediaPipe…');
 const fs=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
 const mk=async(Cls,url,opts)=>{try{return await Cls.createFromOptions(fs,{baseOptions:{modelAssetPath:url,delegate:'GPU'},runningMode:'VIDEO',...opts})}
  catch(e){return await Cls.createFromOptions(fs,{baseOptions:{modelAssetPath:url,delegate:'CPU'},runningMode:'VIDEO',...opts})}};
 const G='https://storage.googleapis.com/mediapipe-models/';
-const pose=await mk(PoseLandmarker,G+'pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',{numPoses:1,minPoseDetectionConfidence:0.7,minPosePresenceConfidence:0.7,minTrackingConfidence:0.7});
-const hands=await mk(HandLandmarker,G+'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',{numHands:2,minHandDetectionConfidence:0.75,minHandPresenceConfidence:0.75,minTrackingConfidence:0.75});
+const pose=await mk(PoseLandmarker,G+'pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',{numPoses:1,minPoseDetectionConfidence:0.5,minPosePresenceConfidence:0.5,minTrackingConfidence:0.5});
+const hands=await mk(HandLandmarker,G+'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',{numHands:2,minHandDetectionConfidence:0.5,minHandPresenceConfidence:0.5,minTrackingConfidence:0.5});
 st('Listo: levanta las manos 👋');
 
 let last=-1,nFr=0,t0=performance.now(),clock=new THREE.Clock();
@@ -212,13 +211,17 @@ function loop(){
   let okPose=false;
   if(L){const W=pr.worldLandmarks[0],vis=L.map(p=>p.visibility??0);
    try{poseRig=K.Pose.solve(W,L,{runtime:'mediapipe',video,enableLegs:false})}catch(e){}
+   if(Math.abs(W[11].x-W[12].x)>0.1)SX=W[11].x>W[12].x?1:-1;
    if($('ik').checked){okPose=ikArm(W,vis,'left',11,13,15)|ikArm(W,vis,'right',12,14,16)}
    else if([11,12,13,14,15,16].reduce((s,i)=>s+vis[i],0)/6>0.65&&poseRig){rigArms(poseRig);okPose=true}}
   if(okPose)missPose=0;
   else if(++missPose>20)toRest(['RightUpperArm','LeftUpperArm','RightLowerArm','LeftLowerArm']);
   let seen={Left:false,Right:false};
   hr.landmarks.forEach((lm,i)=>{
-   if((hr.handednesses[i][0].score??0)<0.85)return; // descarta manos dudosas
+   if((hr.handednesses[i][0].score??0)<0.6)return; // descarta manos muy dudosas
+   // descarta manos falsas: la muñeca de la mano debe estar cerca de alguna muñeca de la pose (si la pose se ve)
+   if(L&&(L[15].visibility>0.4||L[16].visibility>0.4)){const w0=lm[0],d=p=>Math.hypot(w0.x-p.x,w0.y-p.y);
+    if(Math.min(d(L[15]),d(L[16]))>0.22)return}
    // etiqueta de MediaPipe asume imagen espejada; con cámara cruda va invertida
    let label=hr.handednesses[i][0].categoryName;
    let side=label==='Left'?'Right':'Left'; if($('swap').checked)side=side==='Left'?'Right':'Left';
