@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 
 import pytest
 from fastapi.testclient import TestClient
@@ -44,12 +45,11 @@ def test_token_rejects_get():
     assert client.get("/token").status_code == 405
 
 
-def test_cors_allows_default_dev_origin():
-    r = client.options(
-        "/token",
-        headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "POST"},
-    )
-    assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
+def test_cors_allows_configured_origin():
+    # main.py hace load_dotenv(): usar el origen efectivo para no depender del .env local.
+    origin = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")[0].strip()
+    r = client.options("/token", headers={"Origin": origin, "Access-Control-Request-Method": "POST"})
+    assert r.headers.get("access-control-allow-origin") == origin
 
 
 def test_cors_rejects_unknown_origin():

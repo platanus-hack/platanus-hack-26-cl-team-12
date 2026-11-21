@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // LiveKit simulado: guardamos la última sala para disparar eventos desde el test.
 const lk = vi.hoisted(() => {
+  // call.ts lee la URL al importarse: fijamos el default para no depender del entorno local.
+  delete process.env.NEXT_PUBLIC_API_URL;
   const state: { room: any } = { room: null };
   class Room {
     handlers: Record<string, (...a: unknown[]) => void> = {};

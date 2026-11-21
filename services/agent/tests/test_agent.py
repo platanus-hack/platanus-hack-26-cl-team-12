@@ -110,7 +110,9 @@ def wired(monkeypatch):
         await agent.entrypoint(ctx)
         for p in packets:
             room.handlers["data_received"](p)
-        await asyncio.sleep(0.05)  # deja correr las tareas creadas por el handler
+        # Espera determinista a las tareas creadas por el handler (sin sleeps que dependan del tiempo).
+        pending = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        await asyncio.gather(*pending)
         return FakeSession.instances[0], room, tr
 
     return run
