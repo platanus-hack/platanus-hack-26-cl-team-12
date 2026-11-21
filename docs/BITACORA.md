@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Raimundo / Claude (v1/swagger-api)
+- Hice: Swagger de la API solo para desarrollo: http://localhost:8000/docs (ReDoc en `/redoc`). Endpoints con tags, resúmenes, modelos de respuesta (`/glosses`, `/health`), ejemplos y errores 403/422/501/503 documentados.
+- Decidí: `API_ENV=development|production` (defecto development) y `API_DOCS=1|0` para forzar. **El Dockerfile de la API fija `API_ENV=production`**, así el despliegue no expone el mapa de la API aunque nadie lo configure.
+- Verificado: `pytest` api (10), incluidos tests de Swagger encendido y apagado.
+
 ## 2026-11-21 — Raimundo / Claude (v2/revision-clean-code)
 - Hice: revisión de alertas (GitHub, `pnpm audit`, `pip-audit`, ruff, pytest) y de clean code de todo el repo. Informe con pendientes **por dueño** en `docs/REVISION-CODIGO.md`. Arreglé lo de v2: límites del contrato en `packages/glosses/data/contrato.json` (fuente única web + agente), `fingerspell`/`isLiteralGloss` TS alineados con Python, recorte de textos al contrato, respaldo cuando falla Claude en el turno del cliente, `.env` local respetado, `.env.example` sin duplicadas.
 - Decidí: no tocar carpetas de otros; los hallazgos quedan en el informe.
