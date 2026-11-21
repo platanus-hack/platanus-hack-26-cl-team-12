@@ -75,8 +75,9 @@ export function parseMensaje(raw: string): MensajePuente | null {
   switch (msg.tipo) {
     case "ejecutivo_dice":
       if (!esTexto(msg.texto)) return null;
-      if (msg.simple !== undefined && !esTexto(msg.simple)) return null;
-      return { tipo: "ejecutivo_dice", texto: msg.texto, simple: msg.simple as string | undefined };
+      // `simple` es null/ausente cuando la v2 está apagada (así lo envía la simulación del backend).
+      if (msg.simple != null && !esTexto(msg.simple)) return null;
+      return { tipo: "ejecutivo_dice", texto: msg.texto, simple: msg.simple ?? undefined };
     case "cliente_dice":
       return esTexto(msg.texto) ? { tipo: "cliente_dice", texto: msg.texto } : null;
     case "estado":

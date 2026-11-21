@@ -38,7 +38,7 @@ Tamaño: **S** ≤ 1 h · **M** 2–4 h · **L** medio día o más. Hecho = cump
 | A1 | Proyecto LiveKit Cloud + número Twilio + trunk SIP saliente/entrante | M | Llamas a un celular y entra a una sala |
 | A2 | `POST /llamadas` real (`CreateSIPParticipant`) con `ALLOWED_DESTINATIONS` | M | Suena el celular y su audio llega a la sala |
 | A3 | Despliegue: API + agente (Docker en Render/Fly) y PWA (Vercel desde el repo personal) | M | URL pública con HTTPS (la cámara lo exige) |
-| A4 | Seguridad básica: `/token` con sesión o clave de demo, firmar sala para `/llamadas`, CORS de producción | S | Se cierran los `TODO(auth)` |
+| A4 | Seguridad **antes de desplegar**: `/token` con sesión o clave de demo y límite de tasa por IP/usuario, tope de mensajes por sala antes de llamar a Claude/ElevenLabs (costo), firmar sala para `/llamadas`, CORS de producción | S | Se cierran los `TODO(auth)`; no se despliega sin esto |
 | A5 | CI verde en PRs; secretos solo en variables del proveedor | S | `ci.yml` pasa en `main` |
 | A6 | Entrega: metadata, descripción, logo 1000×1000, guion y ensayo de la demo | M | Archivos del concurso completos |
 
