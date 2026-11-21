@@ -1,0 +1,26 @@
+{
+  "ejecutivo": [
+    "Buenos días, le habla Camila del centro médico Los Aromos, ¿en qué puedo ayudarle?",
+    "Para agendar necesito su RUT y fecha de nacimiento, por favor.",
+    "Tenemos disponibilidad con el doctor Pérez el martes 12 a las 10:30 de la mañana o el jueves 14 a las 16:00 horas.",
+    "Le recuerdo que debe presentarse con 15 minutos de anticipación y con su cédula de identidad vigente.",
+    "Lamentablemente no contamos con cupos esta semana, ¿le acomodaría la próxima?",
+    "El valor de la consulta es de 25 mil pesos, y si es beneficiario de Fonasa puede acceder a un bono.",
+    "¿Desea que le enviemos la confirmación por correo electrónico o prefiere un mensaje de texto?",
+    "No es necesario que venga en ayunas, pero sí debe traer los exámenes que se realizó el mes pasado.",
+    "Si no puede asistir, tiene que cancelar con al menos 24 horas de anticipación para no perder el bono.",
+    "Perfecto, quedó agendada su hora para el viernes 15 a las 9:00 en el segundo piso, box 4. ¿Algo más en lo que pueda ayudarle?"
+  ],
+  "cliente": [
+    "YO QUERER HORA MÉDICO",
+    "hola yo necesitar hora doctor general para mañana",
+    "mi RUT 12.345.678-9 nacimiento 3 mayo 1990",
+    "martes 10:30 bueno",
+    "jueves no poder trabajar",
+    "yo tener Fonasa cuánto pagar",
+    "mensaje texto mejor yo no oír",
+    "yo no entender repetir por favor",
+    "gracias hora viernes 9 confirmar",
+    "yo ser sordo escribir app tú esperar un poco"
+  ]
+}
