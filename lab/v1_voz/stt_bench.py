@@ -11,7 +11,7 @@ import os
 
 KEY = requerir("ELEVENLABS_API_KEY")
 MODELO = os.getenv("ELEVENLABS_STT_MODEL", "scribe_v1")
-AUDIOS = sorted(p for p in (ROOT / "data/eval/audio").iterdir() if p.suffix.lower() in {".m4a", ".mp3", ".wav", ".ogg", ".webm", ".mp4"})
+AUDIOS = sorted(p for p in (ROOT / "data/eval/audio").iterdir() if p.suffix.lower() in {".m4a", ".mp3", ".wav", ".ogg", ".webm", ".mp4", ".opus"})
 FRASES = [l.strip() for l in (Path(__file__).parent / "frases.txt").read_text().splitlines() if l.strip()]
 
 norm = jiwer.Compose([jiwer.ToLowerCase(), jiwer.RemovePunctuation(), jiwer.RemoveMultipleSpaces(), jiwer.Strip()])
