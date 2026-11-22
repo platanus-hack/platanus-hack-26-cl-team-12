@@ -28,6 +28,7 @@ small,.mut{color:#999}.ok{color:#5d8}.bad{color:#f66}.ins{color:#fb4}.fb.sel{bac
  <small>Si no detecta nada, súbela. Si inventa palabras, bájala. (0 = idéntico, 1 = como una palabra cualquiera)</small></p>
  <h3>Prueba guiada <small>(las frases exactas de la demo)</small></h3>
  <p><label><input type="checkbox" id="demo" checked> reconocer solo el vocabulario de la demo (P1–P3)</label></p>
+ <p><label><input type="checkbox" id="pausa"> modo con pausa: bajo las manos después de cada palabra</label></p>
  <p id="fbtn"></p><div class="box"><small>Seña esto, en orden:</small><div id="guion" style="font-size:20px;font-weight:700;margin-top:4px"></div></div>
  <p><button id="tgo" class="go">▶ Iniciar prueba (cuenta 3 s)</button> <button id="tend">■ Terminar</button> <span id="tcnt" class="mut"></span></p>
  <div id="tres"></div><div id="hist" class="mut"></div>
@@ -123,6 +124,12 @@ function guidedStep(){if(!guided||mode!=='idle')return;
 $('gbtn').onclick=()=>{if(guided||mode!=='idle'||running||test)return;guided={q:FLOJAS.flatMap(w=>[w,w,w]),i:0};guidedStep()};
 $('gstop').onclick=()=>{if(guided){guided=null;$('gst').textContent='Detenido';calib()}};
 
+// ── modo con pausa: al bajar las manos se cierra el segmento y se clasifica como palabra aislada ──
+function classifySeg(seg){const PL=pool();if(seg.length<10||!PL.length)return;
+ const q=resample(seg,N_T),best={};for(const s of PL){const d=dtw(q,s.T);if(!(s.label in best)||d<best[s.label])best[s.label]=d}
+ const r=Object.entries(best).sort((a,b)=>a[1]-b[1]);if(r.length<2)return;const [a,b]=r;
+ $('top').textContent=r.slice(0,3).map(x=>x[0]+' '+x[1].toFixed(2)).join(' · ');
+ if(a[1]<b[1]*0.92)emit(a[0],a[1]/b[1]);else st('No estoy seguro ('+a[0]+' vs '+b[0]+'), repite la palabra')}
 // ── reconocimiento continuo: cada EVAL_EVERY frames se compara cada plantilla con el final del buffer ──
 let nf=0,cand=null,lockUntil=0,hist=[],lastEmit='',moved=true;
 const MOV=0.006; // movimiento medio de muñecas por frame (en anchos de hombro) para considerar que se está señando
@@ -149,7 +156,7 @@ function enviar(){if(!pending.length)return;if(!ws||ws.readyState!==1){st('No ha
 $('send').onclick=enviar;
 setInterval(()=>{if($('auto').checked&&pending.length&&performance.now()-lastWord>2500&&!buf.length)enviar()},300);
 let lastW='',lastWt=0;   // la misma palabra no se repite en <2,5 s (una seña larga se detectaba dos veces)
-function emit(l,r){const tn=performance.now();if(l===lastW&&tn-lastWt<2500)return;lastW=l;lastWt=tn;if(test&&test.st==='run')test.det.push(l);else{pending.push(l);lastWord=performance.now();showPend()}out.push(l);$('res').textContent=out.slice(-12).join(' ');st('Detectado: '+l+' (ratio '+r.toFixed(2)+')')}
+function emit(l,r){const tn=performance.now();if(l===lastW&&tn-lastWt<(typeof $==='function'&&$('pausa').checked?900:2500))return;lastW=l;lastWt=tn;if(test&&test.st==='run')test.det.push(l);else{pending.push(l);lastWord=performance.now();showPend()}out.push(l);$('res').textContent=out.slice(-12).join(' ');st('Detectado: '+l+' (ratio '+r.toFixed(2)+')')}
 
 // ── cámara + modelos ──
 const video=$('v'),cv=$('c'),ctx=cv.getContext('2d');
@@ -186,7 +193,7 @@ function terminar(){const T=test;test=null;running=false;$('run').textContent='�
  $('tres').innerHTML=`<div class="box"><b>${selF}: ${H} de ${N} palabras bien (${Math.round(100*H/N)}%)</b> <span class="mut">· ${S} cambiadas · ${D} faltaron · ${I} sobraron</span><br>`+
   ops.map(o=>o.t==='ok'?`<span class="ok">✔ ${o.e}</span>`:o.t==='sub'?`<span class="bad">✗ ${o.e} → dijo ${o.d}</span>`:o.t==='del'?`<span class="bad">✗ ${o.e} (no se detectó)</span>`:`<span class="ins">+ ${o.d} (sobra)</span>`).join(' · ')+'</div>';
  st('Prueba lista. Puedes repetirla.');
- fetch('/api/corrida',{method:'POST',body:JSON.stringify({frase:T.frase,exp:T.exp,det:T.det,H,S,D,I,ts:Date.now(),sens,soloDemo,
+ fetch('/api/corrida',{method:'POST',body:JSON.stringify({frase:T.frase,exp:T.exp,det:T.det,H,S,D,I,ts:Date.now(),sens,soloDemo,pausa:$('pausa').checked,
   frames:T.frames.map(f=>f.map((x,i)=>i<2?x:+x.toFixed(3)))})}).then(loadHist)}
 async function loadHist(){const r=await (await fetch('/api/corridas')).json(),g={};
  for(const x of r){(g[x.frase]=g[x.frase]||[]).push(x)}
@@ -222,7 +229,7 @@ let last=-1;
  if(test&&test.st==='run')test.frames.push([act?1:0,Object.keys(H).length,...feat(P,H)]);
  if(mode==='rec'){if(act){lastAct=now;buf.push(feat(P,H))}else if(buf.length){buf.push(feat(P,H));if(now-lastAct>END_MS)finishRec()}}
  else if(running){
-  if(act){lastAct=now;buf.push(feat(P,H));if(buf.length>WIN*2)buf=buf.slice(-WIN);if(++nf%EVAL_EVERY===0)evalStream(now)}
-  else if(buf.length&&now-lastAct>END_MS){buf=[];cand=null}}
+  if(act){lastAct=now;buf.push(feat(P,H));if(!$('pausa').checked){if(buf.length>WIN*2)buf=buf.slice(-WIN);if(++nf%EVAL_EVERY===0)evalStream(now)}}
+  else if(buf.length&&now-lastAct>($('pausa').checked?450:END_MS)){if($('pausa').checked)classifySeg(buf);buf=[];cand=null}}
 })();
 </script>

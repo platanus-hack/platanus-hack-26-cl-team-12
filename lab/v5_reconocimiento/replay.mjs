@@ -14,7 +14,7 @@ function subDtw(T,B){const n=T.length,m=B.length;let pc=new Float64Array(m+1),pl
   for(let j=1;j<=m;j++){const d=dist(T[i-1],B[j-1]);let bc,bl;if(i===1){bc=0;bl=0}else{bc=pc[j-1];bl=pl[j-1]}
    if(i>1&&pc[j]<bc){bc=pc[j];bl=pl[j]}if(cc[j-1]<bc){bc=cc[j-1];bl=cl[j-1]}cc[j]=d+bc;cl[j]=bl+1}pc=cc;pl=cl}return pc[m]/pl[m]}
 const hasHand=f=>{for(let i=8;i<48;i++)if(f[i]!==0)return true;for(let i=50;i<90;i++)if(f[i]!==0)return true;return false};
-const samples=fs.readdirSync(RECO).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(fs.readFileSync(path.join(RECO,f)))).filter(s=>DEMO.has(s.label)).map(s=>{const fr=s.frames.filter(hasHand);return fr.length<MIN_FR?null:{label:s.label,frames:fr,T:resample(fr,N_T)}}).filter(Boolean);
+const samples=fs.readdirSync(RECO).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(fs.readFileSync(path.join(RECO,f)))).filter(s=>DEMO.has(s.label)&&(!process.argv.includes('--sin-nuevas')||s.src)).map(s=>{const fr=s.frames.filter(hasHand);return fr.length<MIN_FR?null:{label:s.label,frames:fr,T:resample(fr,N_T)}}).filter(Boolean);
 const thr={};for(const l of new Set(samples.map(s=>s.label))){const S=samples.filter(s=>s.label===l),O=samples.filter(s=>s.label!==l),step=Math.max(1,Math.floor(O.length/25)),picks=O.filter((_,i)=>i%step===0).slice(0,25);let c=0,n=0;
  for(const t of S.slice(0,3))for(const o of picks){c+=subDtw(t.T,o.frames.slice(-WIN));n++}thr[l]=n?c/n:1}
 const motion=B=>{const n=Math.min(8,B.length-1);if(n<3)return 0;let t=0;for(let k=B.length-n;k<B.length;k++)for(const i of [4,5,6,7])t+=Math.abs(B[k][i]-B[k-1][i]);return t/(n*4)};

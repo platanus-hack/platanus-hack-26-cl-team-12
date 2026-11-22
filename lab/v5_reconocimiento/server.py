@@ -22,7 +22,7 @@ class H(SimpleHTTPRequestHandler):
         if urlparse(self.path).path == "/api/corridas":
             out = []
             for f in sorted(RUNS.glob("*.json")):
-                d = json.loads(f.read_text()); out.append({k: d.get(k) for k in ("file", "frase", "exp", "det", "H", "S", "D", "I", "ts", "sens", "soloDemo")} | {"file": f.stem})
+                d = json.loads(f.read_text()); out.append({k: d.get(k) for k in ("file", "frase", "exp", "det", "H", "S", "D", "I", "ts", "sens", "soloDemo", "pausa")} | {"file": f.stem})
             return self._json(out)
         if urlparse(self.path).path == "/api/videos":   # tomas del avatar disponibles para importar como plantillas
             return self._json([f.stem for f in sorted(VID.glob("*.webm")) if not f.stem.startswith("FRASE")])
