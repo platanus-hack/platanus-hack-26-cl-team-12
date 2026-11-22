@@ -26,7 +26,7 @@ from .glossary import (
 
 MODELO_DEFECTO = "claude-haiku-5-5"
 # Tope de tokens de salida por tarea. Las glosas necesitan más: con 300 Haiku a veces devolvía vacío (lab/v4_avatar).
-MAX_TOKENS = {"simplificar": 500, "complejizar": 200, "espanol_a_glosas": 1000}
+MAX_TOKENS = {"simplificar": 500, "complejizar": 1024, "espanol_a_glosas": 1000}
 
 
 def modelo() -> str:
@@ -186,6 +186,9 @@ class Translator:
         msg = self.client.messages.create(
             model=self.model,
             max_tokens=MAX_TOKENS["complejizar"],
+            # Reescritura corta: sin pensamiento. En Haiku 5.5 viene activado y gastaba los 200 tokens de antes;
+            # la mitad de las veces la frase salía vacía (se decían las glosas tal cual) o cortada ("Mi hijo se cay").
+            thinking={"type": "disabled"},
             system=self._system("complejizar"),
             messages=[{"role": "user", "content": texto}],
         )

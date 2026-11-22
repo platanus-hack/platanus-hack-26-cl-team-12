@@ -8,6 +8,10 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Martín / Claude (fix/debug) · las señas se decían tal cual (complejizar sin espacio)
+- Hallazgo: `complejizar` (también lo usa `glosas_a_espanol`) tenía `max_tokens=200` y en Claude Haiku 5.5 el pensamiento viene activado: **la mitad de las veces se acababan los tokens pensando** (`stop_reason=max_tokens`) y la frase salía vacía (se decían las glosas tal cual) o cortada ("Mi hijo se cay").
+- Hice: en `complejizar`, `thinking={"type": "disabled"}` (permitido en Haiku 5.5 con el esfuerzo por defecto) y `max_tokens` 1024. Medido con Claude real: 8/8 frases completas (antes 4/8). **Raimundo**: toqué `services/agent/translator/translate.py` (tu carpeta), solo esa llamada; tests del traductor OK.
+
 ## 2026-11-22 — Martín / Claude (fix/debug) · la respuesta del cliente se perdía al interrumpir la espera
 - Hallazgo (con registro detallado, sin datos personales): señas → `glosas_a_espanol` → voz chilena funcionaban. Al apretar Enviar, `calls.update` interrumpe la pausa y **Twilio hace dos consultas seguidas a `/twilio/espera` y descarta la primera**; esa se llevaba la respuesta y nunca sonaba.
 - Hice: la respuesta queda `en_entrega` hasta que Twilio **descarga su audio** (`/twilio/audio/{id}.mp3`); si una consulta se pierde, la siguiente la reentrega. `cliente_dijo` se manda a la app al descargarse el audio (cuando de verdad suena). Registro detallado (`puente.*`, `PUENTE_LOG`).
