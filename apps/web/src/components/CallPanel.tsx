@@ -202,6 +202,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
 
   return (
     <main className="vl">
+      <h1 className="pu-sr">Llamada con {destino?.nombre ?? "la clínica"}</h1>
       {/* Arriba: el ejecutivo, en lengua de señas (avatar) */}
       <section className="vl-tile vl-ejecutivo" aria-label={`Intérprete de ${destino?.corto ?? "la llamada"}`}>
         <div className="vl-avatar">

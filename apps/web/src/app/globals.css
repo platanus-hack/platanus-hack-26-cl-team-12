@@ -238,7 +238,7 @@ main.login { min-height: 100dvh; justify-content: center; gap: var(--space-8); p
 .calif-omitir { font: inherit; border: 0; background: var(--surface); color: var(--fg); font-weight: 600; padding: 8px 16px; border-radius: 999px; cursor: pointer; }
 .calif-cuerpo { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding-top: var(--space-4); }
 .calif-logo { width: 88px; height: 88px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
-.calif h2 { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+.calif h1, .calif h2 { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
 .calif-sub { margin: 0; color: var(--muted); font-size: 0.92rem; }
 .calif-estrellas { display: flex; gap: 4px; margin-top: var(--space-6); }
 .calif-estrella { width: 54px; height: 54px; padding: 3px; border: 0; background: none; color: var(--fg); cursor: pointer; }
@@ -283,8 +283,11 @@ main.login { min-height: 100dvh; justify-content: center; gap: var(--space-8); p
 .carrusel-clinicas .carrusel-item { width: calc((100% - 2 * var(--space-4) - 20px) / 3 + 0px); width: calc((min(100vw, 560px) - 2 * var(--space-4) - 20px) / 3); }
 .carrusel-consejos .carrusel-item { width: 84%; max-width: 360px; }
 .puntitos { display: flex; justify-content: center; gap: 6px; }
-.puntito { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: var(--line-strong); opacity: 0.5; cursor: pointer; transition: width 0.2s, opacity 0.2s; }
-.puntito.on { width: 18px; border-radius: 999px; background: var(--fg); opacity: 1; }
+/* El punto se ve chico, pero la zona para tocarlo mide 24x24 (WCAG 2.5.8). */
+.puntitos { gap: 0; }
+.puntito { position: relative; width: 24px; height: 24px; padding: 0; border: 0; background: none; cursor: pointer; }
+.puntito::before { content: ""; position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; border-radius: 999px; background: var(--line-strong); opacity: 0.5; transform: translate(-50%, -50%); transition: width 0.2s, opacity 0.2s; }
+.puntito.on::before { width: 18px; background: var(--fg); opacity: 1; }
 .puntito:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
 
 /* Clínicas con color */

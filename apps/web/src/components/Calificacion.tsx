@@ -35,7 +35,7 @@ export function Calificacion({ quien, sigla, duracion, onListo }: { quien: strin
           <span className="calif-check" aria-hidden>
             <Icon name="listo" size={34} />
           </span>
-          <h2 id="calif-titulo">Gracias por tu opinión</h2>
+          <h1 id="calif-titulo">Gracias por tu opinión</h1>
           <p className="calif-sub">Nos ayuda a que Puente funcione mejor para todos.</p>
         </div>
       ) : (
@@ -43,7 +43,7 @@ export function Calificacion({ quien, sigla, duracion, onListo }: { quien: strin
           <span className="calif-logo" aria-hidden>
             {sigla}
           </span>
-          <h2 id="calif-titulo">¿Cómo fue tu llamada?</h2>
+          <h1 id="calif-titulo">¿Cómo fue tu llamada?</h1>
           <p className="calif-sub">
             {quien} · {duracion}
           </p>
