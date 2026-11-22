@@ -9,7 +9,7 @@ Las entradas nuevas van **arriba**. Formato:
 ```
 
 ## 2026-11-22 — r.labbevidal / Claude (v4/senas-s3) · fotos de señas desde S3
-- Hice: la web lee las fotos del Diccionario LSCh desde `NEXT_PUBLIC_SENAS_URL` (bucket S3); si falta, usa `/senas` local como antes (`apps/web/src/lib/senas.ts`). El service worker recibe esa URL al registrarse (`/sw.js?senas=…`) y sigue guardando las fotos para usarlas sin internet (VERSION `puente-v3`). `make subir-senas BUCKET=<bucket>` las sube.
+- Hice: la web lee las fotos del Diccionario LSCh desde `NEXT_PUBLIC_SENAS_URL` (bucket S3); si falta, usa `/senas` local como antes (`apps/web/src/lib/senas.ts`). El service worker recibe esa URL al registrarse (`/sw.js?senas=…`) y sigue guardando las fotos para usarlas sin internet (VERSION `puente-v3`). `make senas-push` las sube y `make senas-pull` las baja (combinado con chore/senas-s3).
 - Decidí: fotos con caché larga e inmutable; `manifest.json` sin caché. El bucket necesita lectura pública de `senas/*` y CORS con GET para el origen de la web.
 - Falta: subir las fotos al bucket, configurar CORS y poner `NEXT_PUBLIC_SENAS_URL` en `puente-web` (Render) y redesplegar. Ojo derechos UMCE: el bucket queda público, igual que si la web las sirviera.
 
@@ -211,3 +211,8 @@ Las entradas nuevas van **arriba**. Formato:
 - Decidí: la animación de cada glosa se busca por `lexiconId` en mayúsculas (`hijo-a` → `data/signs/anim/HIJO-A.json`), no por el nombre de la glosa (`HIJO`). Las frases grabadas (`FRASE-*`) no son glosas: solo enseñan transiciones (`ml/learn_transitions.py`).
 - Verificado: pytest del agente (escenario, glosario, traductor: 22 OK) con las glosas nuevas. NO corrido: `pnpm typecheck/test`, ni el agente contra servicios reales. Se activa con `ESCENARIO=urgencia_caida`.
 - Falta / bloqueado: reproductor del avatar en `apps/web` (hoy `SenasFotos`); servir `data/signs/anim` y `transitions.json`; validar las señas con una persona señante de LSCh.
+
+## 2026-11-22 — Claude (chore/senas-s3) · fotos de señas en S3 privado
+- Hice: `make senas-pull` / `make senas-push` (`aws s3 sync` de `apps/web/public/senas/` ↔ `s3://$SENAS_S3_BUCKET/senas/`) y las variables `SENAS_S3_BUCKET`, `AWS_REGION`, `AWS_PROFILE` en `.env.example`.
+- Decidí: bucket PRIVADO (derechos UMCE): cada persona baja las fotos con sus credenciales en vez de correr `extraer_senas.py` con los PDF. **Cambió después:** `senas/*` quedó de lectura pública para que la web desplegada muestre las fotos (ver v4/senas-s3). Sin fotos la app sigue usando el avatar de palitos.
+- Falta: crear el bucket (la sesión de AWS había expirado) y que alguien con las fotos generadas corra `make senas-push`.

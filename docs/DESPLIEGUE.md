@@ -60,7 +60,8 @@ Las fotos del Diccionario LSCh no van en el repo (derechos UMCE), así que la we
 1. Genera las fotos en tu computador (necesita los PDF del Diccionario y su índice):
    `uv run --with pymupdf python -I apps/web/scripts/extraer_senas.py <Diccionario_A-H.pdf> <Diccionario_I-Z.pdf> <indice_LSCh.csv>`
    (deja `apps/web/public/senas/` con `manifest.json`).
-2. Súbelas: `make subir-senas BUCKET=<bucket>` (usa tus credenciales de `aws configure`).
+2. Súbelas: `make senas-push` (bucket de `SENAS_S3_BUCKET` en `.env`; credenciales de `aws configure` o `AWS_PROFILE`).
+   Para bajarlas a tu computador sin los PDF: `make senas-pull`.
 3. En el bucket, lectura pública de `senas/*` (bucket policy) y **CORS** con `GET` para el origen de la web (lo
    necesitan el manifest y el modo sin internet):
    ```json

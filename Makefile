@@ -7,7 +7,7 @@ API   := services/api
 AGENT := services/agent
 
 .PHONY: help doctor env install setup dev dev-all dev-web dev-api dev-agent \
-        test test-api test-agent lint typecheck build check subir-senas docker-build docker-api docker-agent clean nuke
+        test test-api test-agent lint typecheck build check docker-build docker-api docker-agent senas-pull senas-push clean nuke
 
 help: ## Muestra esta ayuda
 	@echo "Uso: make <comando>"; echo
@@ -68,15 +68,6 @@ lint: ## Lint de Python (ruff) en API y agente
 
 check: lint typecheck build test ## Lint + typecheck + build + tests (antes de abrir un PR)
 
-# ───────── Fotos de señas en S3 ─────────
-SENAS_DIR := apps/web/public/senas
-subir-senas: ## Sube las fotos de señas al bucket:  make subir-senas BUCKET=<bucket>  (usa tus credenciales de aws)
-	@test -n "$(BUCKET)" || { echo "Falta BUCKET:  make subir-senas BUCKET=<bucket>"; exit 1; }
-	@test -f $(SENAS_DIR)/manifest.json || { echo "No hay fotos: corre antes apps/web/scripts/extraer_senas.py"; exit 1; }
-	@# Las fotos no cambian (caché larga); el manifest sí (sin caché), para que la web vea las nuevas.
-	aws s3 sync $(SENAS_DIR) s3://$(BUCKET)/senas --exclude manifest.json --cache-control "public, max-age=31536000, immutable"
-	aws s3 cp $(SENAS_DIR)/manifest.json s3://$(BUCKET)/senas/manifest.json --cache-control "no-cache" --content-type application/json
-
 # ───────── Docker (se construye desde la raíz del repo) ─────────
 docker-api: ## Construye la imagen de la API
 	docker build -f $(API)/Dockerfile -t puente-api .
@@ -85,6 +76,26 @@ docker-agent: ## Construye la imagen del agente
 	docker build -f $(AGENT)/Dockerfile -t puente-agent .
 
 docker-build: docker-api docker-agent ## Construye ambas imágenes
+
+# ───────── Fotos de señas LSCh en S3 (no se versionan: derechos UMCE) ─────────
+# El bucket solo deja leer senas/* (la web desplegada las lee de ahí con NEXT_PUBLIC_SENAS_URL); subir pide credenciales.
+# Lee SENAS_S3_BUCKET, AWS_REGION y AWS_PROFILE del .env (o del entorno). Credenciales: `aws login` o `aws configure`.
+SENAS_DIR := apps/web/public/senas
+senas_env = set -a; [ -f .env ] && source <(grep -E '^(SENAS_S3_BUCKET|AWS_REGION|AWS_PROFILE)=.+' .env); set +a; \
+	: "$${SENAS_S3_BUCKET:?Falta SENAS_S3_BUCKET en .env}"
+
+senas-pull: ## Baja las fotos de señas desde S3 a apps/web/public/senas
+	@$(senas_env); aws s3 sync "s3://$$SENAS_S3_BUCKET/senas/" $(SENAS_DIR)/ --only-show-errors && \
+	  echo "ok  $$(ls $(SENAS_DIR) | wc -l) archivos en $(SENAS_DIR)"
+
+senas-push: ## Sube apps/web/public/senas a S3 (después de correr extraer_senas.py)
+	@test -f $(SENAS_DIR)/manifest.json || { echo "No hay $(SENAS_DIR)/manifest.json: corre antes apps/web/scripts/extraer_senas.py"; exit 1; }
+	@# Las fotos no cambian (caché larga e inmutable); el manifest sí (sin caché), para que la web vea las nuevas.
+	@$(senas_env); \
+	  aws s3 sync $(SENAS_DIR)/ "s3://$$SENAS_S3_BUCKET/senas/" --exclude manifest.json --only-show-errors \
+	    --cache-control "public, max-age=31536000, immutable" && \
+	  aws s3 cp $(SENAS_DIR)/manifest.json "s3://$$SENAS_S3_BUCKET/senas/manifest.json" --only-show-errors \
+	    --cache-control "no-cache" --content-type application/json && echo "ok  subidas"
 
 # ───────── Limpieza ─────────
 clean: ## Borra salidas de build y cachés (no toca las dependencias)
