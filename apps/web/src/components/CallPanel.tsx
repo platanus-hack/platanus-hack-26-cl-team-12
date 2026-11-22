@@ -19,7 +19,7 @@ import { AppShell } from "./AppShell";
 import { AvatarVRM } from "./AvatarVRM";
 import { Calificacion } from "./Calificacion";
 import { RECONOCER_SENAS, iniciarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
-import { CamaraPropia, type Lectura } from "./CamaraPropia";
+import { CamaraPropia, msConversionVisible, type Conversion, type Lectura } from "./CamaraPropia";
 import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
 
@@ -55,6 +55,9 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   // Lectura real de señas (NEXT_PUBLIC_RECONOCER_SENAS=1): el <video> de la cámara y las glosas reconocidas en este turno.
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const glosasRef = useRef<string[]>([]);
+  // Tus señas y la frase en que se convirtieron: se mantienen a la vista el tiempo de leerlas aunque el otro lado ya responda.
+  const [conversion, setConversion] = useState<Conversion | null>(null);
+  const timerConv = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [chat, setChat] = useState(false);
   // true desde que el cliente responde hasta que el otro lado vuelve a hablar.
   const [esperando, setEsperando] = useState(false);
@@ -131,6 +134,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   useEffect(() => () => {
     callRef.current?.leave();
     if (timerSub.current) clearTimeout(timerSub.current);
+    if (timerConv.current) clearTimeout(timerConv.current);
   }, []);
 
   function onMessage(msg: MensajePuente) {
@@ -172,6 +176,9 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       case "cliente_dijo":
         // La frase en español en que se convirtió lo que señaste (o escribiste): se ve en tu cámara y en el chat.
         setLectura((l) => (l.estado === "enviado" ? { ...l, convertido: msg.texto } : l));
+        setConversion((c) => (c ? { ...c, frase: msg.texto } : c));
+        if (timerConv.current) clearTimeout(timerConv.current);
+        timerConv.current = setTimeout(() => setConversion(null), msConversionVisible(msg.texto));
         setLines((ls) => {
           const i = ls.map((x) => x.who).lastIndexOf("cliente");
           const previa = i >= 0 ? ls[i] : undefined;
@@ -200,6 +207,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setSeconds(0);
     setAlert(null);
     setLectura({ estado: "esperando" });
+    setConversion(null);
     setChat(false);
     setState("connecting");
     try {
@@ -235,6 +243,11 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     try {
       // Con lectura real de señas se mandan las glosas (el agente las convierte en una frase y la dice); si no, el texto.
       const glosas = RECONOCER_SENAS ? glosasRef.current : [];
+      if (glosas.length) {
+        setConversion({ glosas: texto });
+        if (timerConv.current) clearTimeout(timerConv.current);
+        timerConv.current = setTimeout(() => setConversion(null), 20000); // respaldo si la frase convertida nunca llega
+      }
       await callRef.current.send(glosas.length ? { tipo: "glosas_cliente", glosas, confianza: 1 } : { tipo: "cliente_dice", texto });
       glosasRef.current = [];
     } catch {
@@ -295,7 +308,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       </section>
 
       {/* Abajo: tú, con la cámara que lee tus señas */}
-      <CamaraPropia encendida={camara && state !== "ended"} lectura={lecturaVisible} onVideo={RECONOCER_SENAS ? setVideo : undefined} mostrarTexto={RECONOCER_SENAS} />
+      <CamaraPropia encendida={camara && state !== "ended"} lectura={lecturaVisible} onVideo={RECONOCER_SENAS ? setVideo : undefined} mostrarTexto={RECONOCER_SENAS} conversion={RECONOCER_SENAS ? conversion : null} />
 
       <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
 
