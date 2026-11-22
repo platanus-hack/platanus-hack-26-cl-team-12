@@ -24,6 +24,9 @@ import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
 
 const AVATAR_MS_POR_SENA = 1300; // intérprete dibujado (respaldo): una seña cada 1,3 s
+const ENVIO_AUTO_MS = 3500; // lectura real: sin seña nueva por este tiempo, se envía sola lo que reconoció (NEXT_PUBLIC_ENVIO_AUTOMATICO=0 lo apaga)
+const ENVIO_AUTO = process.env.NEXT_PUBLIC_ENVIO_AUTOMATICO !== "0";
+const SUBTITULO_SIN_AVATAR_MS = 3500; // si el avatar no llega a firmar, el subtítulo se muestra completo pasado este tiempo
 const LECTURA_SIMULADA_MS = 2600; // TODO(v3): lo que "tarda" la cámara en reconocer una frase
 
 const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
@@ -43,6 +46,9 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
   const [frase, setFrase] = useState(0); // sube con cada glosas_para_senar: reinicia el avatar 3D
   const [senando3d, setSenando3d] = useState(false);
+  // Subtítulo del ejecutivo: va apareciendo a medida que el avatar firma (0 a 1). 1 = completo.
+  const [progSub, setProgSub] = useState(1);
+  const timerSub = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sin3d, setSin3d] = useState(false); // el modelo 3D no cargó: se usa el intérprete dibujado
   const [destino, setDestino] = useState<Destino | null>(null);
   const prefs = usePreferencias();
@@ -107,6 +113,14 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     };
   }, [state, camara, video]);
 
+  // Lectura real: cuando ya no llegan señas nuevas, se envía solo lo reconocido (se ve la conversión en pantalla).
+  useEffect(() => {
+    if (!RECONOCER_SENAS || !ENVIO_AUTO || lectura.estado !== "listo") return;
+    const id = setTimeout(() => void decir(lectura.texto), ENVIO_AUTO_MS);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lectura]);
+
   // El chat baja solo al último mensaje.
   useEffect(() => {
     const el = chatRef.current;
@@ -124,7 +138,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   }, [autoLlamar]);
 
   // Cortar la conexión si el usuario cierra la pantalla en medio de una llamada.
-  useEffect(() => () => callRef.current?.leave(), []);
+  useEffect(() => () => {
+    callRef.current?.leave();
+    if (timerSub.current) clearTimeout(timerSub.current);
+  }, []);
 
   function onMessage(msg: MensajePuente) {
     switch (msg.tipo) {
@@ -134,6 +151,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         setEsperando(false);
         setLectura({ estado: "leyendo" });
         glosasRef.current = [];
+        // El subtítulo espera al avatar; si no firma (sin v4 o sin modelo 3D), se muestra completo.
+        setProgSub(0);
+        if (timerSub.current) clearTimeout(timerSub.current);
+        timerSub.current = setTimeout(() => setProgSub((p) => (p === 0 ? 1 : p)), SUBTITULO_SIN_AVATAR_MS);
         // Sin v4 activa no llega glosas_para_senar: el subtítulo igual muestra lo último que dijeron.
         setSenas((s) => ({ glosas: s?.glosas ?? [], actual: s?.actual ?? 0, subtitulo: msg.simple ?? msg.texto }));
         break;
@@ -156,6 +177,16 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       case "glosas_para_senar":
         setSenas({ glosas: msg.glosas, subtitulo: msg.subtitulo, actual: 0 });
         setFrase((f) => f + 1);
+        setProgSub(0);
+        break;
+      case "cliente_dijo":
+        // La frase en español en que se convirtió lo que señaste (o escribiste): se ve en tu cámara y en el chat.
+        setLectura((l) => (l.estado === "enviado" ? { ...l, convertido: msg.texto } : l));
+        setLines((ls) => {
+          const i = ls.map((x) => x.who).lastIndexOf("cliente");
+          const previa = i >= 0 ? ls[i] : undefined;
+          return previa ? ls.map((x, k) => (k === i ? { ...x, text: msg.texto, original: previa.original ?? previa.text } : x)) : ls;
+        });
         break;
     }
   }
@@ -231,6 +262,8 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
 
   const enLlamada = state === "live";
   const subtitulo = senas?.subtitulo ?? (state === "connecting" ? "Llamando…" : "Esperando que te hablen…");
+  // Con el avatar dibujado (respaldo) el avance sale de la seña en curso; con el 3D, de su progreso.
+  const fraccionSub = sin3d ? (senas && senas.glosas.length ? Math.min(1, senas.actual / senas.glosas.length) : 1) : progSub;
   const senando = sin3d ? !!senas && senas.actual < senas.glosas.length : senando3d;
   const listoParaEnviar = enLlamada && lectura.estado === "listo";
   // Mientras responde el otro lado, la cámara solo muestra lo último que enviaste.
@@ -246,7 +279,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
           {sin3d ? (
             <Interprete signing={senando || state === "connecting"} apariencia={prefs.avatar} />
           ) : (
-            <AvatarVRM glosas={senas?.glosas ?? []} frase={frase} velocidad={prefs.velocidad} onSenando={setSenando3d} onFalla={() => setSin3d(true)} />
+            <AvatarVRM glosas={senas?.glosas ?? []} frase={frase} velocidad={prefs.velocidad} onSenando={setSenando3d} onProgreso={setProgSub} onFalla={() => setSin3d(true)} />
           )}
         </div>
         <header className="vl-cabeza">
@@ -266,7 +299,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
           </p>
         ) : (
           <p className="vl-sub vl-sub-ejecutivo" aria-live="polite">
-            {subtitulo}
+            <SubtituloProgresivo texto={subtitulo} fraccion={enLlamada ? fraccionSub : 1} />
           </p>
         )}
       </section>
@@ -332,5 +365,26 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         <Calificacion quien={destino?.nombre ?? "Llamada"} sigla={destino?.sigla ?? "P"} duracion={formatDuration(seconds)} onListo={volver} />
       )}
     </main>
+  );
+}
+
+/** Muestra el texto palabra por palabra según `fraccion` (0 a 1). Las palabras que faltan ocupan su lugar sin verse: el texto no se mueve. */
+function SubtituloProgresivo({ texto, fraccion }: { texto: string; fraccion: number }) {
+  const partes = texto.split(/(\s+)/);
+  const palabras = partes.filter((p) => p.trim()).length;
+  const visibles = fraccion >= 1 ? palabras : fraccion <= 0 ? 0 : Math.ceil(palabras * fraccion);
+  let n = 0;
+  return (
+    <>
+      {partes.map((p, i) => {
+        if (!p.trim()) return p;
+        n += 1;
+        return (
+          <span key={i} style={n <= visibles ? undefined : { opacity: 0 }}>
+            {p}
+          </span>
+        );
+      })}
+    </>
   );
 }

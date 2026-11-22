@@ -98,7 +98,12 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
     async send(msg) {
       // Si el cliente pide que repita, repite; si no, el ejecutivo dice la siguiente línea del guion.
       if (msg.tipo === "cliente_dice") later(ESPERA_RESPUESTA_MS, PIDE_REPETIR.test(msg.texto) ? repetir : siguiente);
-      if (msg.tipo === "glosas_cliente") later(ESPERA_RESPUESTA_MS, siguiente);
+      if (msg.tipo === "glosas_cliente") {
+        // TODO(real-data): en la llamada real la API convierte las glosas con v2 y manda `cliente_dijo`; aquí se simula con la frase del guion.
+        const frase = turno === 0 ? FRASE_INICIAL[opts.guion ?? "general"] : GUION[turno - 1]?.opciones?.[0];
+        if (frase) later(700, () => opts.onMessage({ tipo: "cliente_dijo", texto: frase }));
+        later(ESPERA_RESPUESTA_MS, siguiente);
+      }
     },
     leave() {
       terminada = true;

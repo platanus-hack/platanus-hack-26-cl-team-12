@@ -10,7 +10,7 @@ import { Icon } from "@puente/ui";
 type EstadoCamara = "pidiendo" | "activa" | "apagada" | "sin-permiso";
 
 /** esperando: no te toca. leyendo: mirando tus señas. listo: reconoció una frase (sin mostrarla). enviado: ya se mandó. */
-export type Lectura = { estado: "esperando" } | { estado: "leyendo" } | { estado: "listo"; texto: string } | { estado: "enviado"; texto: string };
+export type Lectura = { estado: "esperando" } | { estado: "leyendo" } | { estado: "listo"; texto: string } | { estado: "enviado"; texto: string; convertido?: string };
 
 export function CamaraPropia({
   encendida,
@@ -96,9 +96,16 @@ export function CamaraPropia({
           <Icon name="listo" size={20} /> {mostrarTexto ? <strong>{lectura.texto}</strong> : "Entendí tus señas. Toca Enviar."}
         </p>
       )}
-      {lectura.estado === "enviado" && (
+      {lectura.estado === "enviado" && !mostrarTexto && (
         <p className="vl-sub vl-sub-yo" aria-live="polite">
           {lectura.texto}
+        </p>
+      )}
+      {lectura.estado === "enviado" && mostrarTexto && (
+        // Lectura real de señas: se ve lo que reconoció y la frase en que se convirtió (lo que se le dice al otro lado).
+        <p className="vl-sub vl-sub-yo" aria-live="polite">
+          <small style={{ display: "block", opacity: 0.7, letterSpacing: "0.04em" }}>{lectura.texto}</small>
+          <span style={{ display: "block" }}>{lectura.convertido ?? "Convirtiendo a frase…"}</span>
         </p>
       )}
     </section>
