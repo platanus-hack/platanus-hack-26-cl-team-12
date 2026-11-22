@@ -8,6 +8,15 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Tomás / Claude (feature/v4-avatar) · avatar VRM que firma + encadenado
+- Hice: avatar VRM en el navegador con webcam (`lab/v4_avatar/live/`), grabación de tomas por glosa (video crudo), extracción de manos con WiLoR, "cocción" a animación del avatar, fusión de tomas (DTW, mediana, suavizado) y encadenado con solape adaptativo (`chain.html`). 8 señas fusionadas (HOLA, GRACIAS, SÍ, NO, PERMISO, MÉDICO, ENFERMO/A, FIEBRE) en `data/signs/anim/`. Docs: `docs/V4-AVATAR.md` y `docs/GUION-GRABACION.md`.
+- Decidí: encadenado **solapado** (Fluidez "alta", 0,45 s): medido en 56 parejas baja la aceleración del empalme de 172× a 1,7× lo normal (`ml/chain_sim.py`); Tomás lo vio y lo aprobó. WiLoR solo offline y fuera del repo (licencia no comercial + MANO).
+- Falta / bloqueado: validar las señas con una persona señante de LSCh; grabar las ~71 glosas restantes, alfabeto manual y números (no están en el diccionario); conectar con la frase del ejecutivo (Haiku → glosas) y con el simulador de llamada; sin push al repo del equipo hasta que Tomás lo pida.
+
+## 2026-11-21 — Claude (data-glosario)
+- Hice: glosario LSCh **A-H** extraído del PDF (UMCE 2009): 1057 entradas en `data/vocab/glosario.jsonl`, las 1057 con foto recortada (`data/signs/img/`, gitignored), más `glosario.md`, `glosario_compacto.txt` (33 KB, cabe entero en un prompt) y README. Todo local con pymupdf, **0 USD de API**; scripts en `data/vocab/scripts/` (`extract.py`, `build.py`), se regenera en segundos.
+- Decidí: el PDF trae texto seleccionable y fotos incrustadas, así que no se necesita visión de Claude. `escenario` (salud 37, banco 19) es heurística por palabras clave: revisar. El diccionario NO describe cómo se hace la seña ni trae categorías por tema: `descripcion_seña` y `categoría` quedan en null (la seña está en la foto).
+- Falta / bloqueado: procesar `Diccionario_LSCh_I-Z.pdf` (mismo script). **Licencia:** los créditos dicen "Prohibida la reproducción total o parcial de los textos, sin expresa autorización de las autoras": decidir si se pushea el texto extraído a un repo público. Sin push ni PR hasta que Tomás confirme.
 ## 2026-11-22 — Rafael / Claude (v4/navegacion-tema) · llamada como videollamada (FaceTime)
 - Decidí (Rafael): la llamada es una **videollamada**: arriba el **avatar del ejecutivo** haciendo señas (reemplaza las fotos del diccionario) con subtítulos grandes; abajo **la cámara del usuario**, que leerá sus señas, con sus subtítulos. En el menú, el editor pasa a "Elegir avatar del intérprete" (es el avatar que muestra la llamada, no el del usuario).
 - Hice: `CamaraPropia` (cámara frontal espejada con `getUserMedia`, aviso si no hay permiso; no graba ni sale del celular). Las respuestas sugeridas simulan responder con señas ("Leyendo tus señas…" y luego el texto). Controles abajo: Conversación (historial del chat en una hoja), Escribir (teclado de respaldo), Cámara y Colgar. Probado en Edge con cámara de prueba a 390×844.
@@ -150,6 +159,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Verificado: `pnpm typecheck` y `pnpm build` OK; `pytest` api (7) y agent (10) OK. No probado con claves reales ni con Docker.
 - Falta / bloqueado: **Tomás y el resto deben aceptar (c) antes de mergear**; (a) y (b) se pueden tomar solos. Quien tenga trabajo abierto en `app/backend` o `app/web` debe rebasar con el mapa del ONBOARDING §3. `/llamadas` (SIP saliente) es stub `TODO(v1)`; `agent.py` no se ha corrido contra LiveKit real; voz chilena (`ELEVENLABS_VOICE_ID`) sin elegir; push bloqueado por permisos en esta sesión.
 
+## 2026-11-21 — Tomás / Claude (lab-v1-v2)
+- Hice: simulación de llamada en el navegador (sin Twilio): `app/backend/main.py` (FastAPI + WebSocket) con páginas `/ejecutivo` (micrófono → Scribe) y `/cliente` (chat). Checkbox v2 activa simplificar/naturalizar. Probado de punta a punta por WebSocket: STT ~0,5 s, LLM ~1 s, TTS ~0,6 s. Prompt de "complejizar" afinado (suena normal, sin agregados). Scribe: 7/10 frases perfectas con audio de WhatsApp.
+- Decidí: simular al ejecutivo en el navegador hasta decidir el upgrade de Twilio (pide cargar saldo).
+- Falta: probar con micrófono real en el navegador, STT en streaming, Twilio real, v3/v4.
+
 ## 2026-11-21 — Tomás / Claude (main)
 - Hice: primera investigación v1→v4 en `data/research/` (5 notas). Hallazgos clave: v1 con Twilio Media Streams o ConversationRelay; v2 son 2 prompts con Haiku; v3 y v4 no tienen modelos para LSCh → vocabulario cerrado (MediaPipe + clasificador propio; clips pregrabados por glosa).
 - Decidí: el glosario LSCh de los PDFs se estructura a JSONL; si cabe en contexto va entero al prompt con caching, sin vectorizar.
@@ -170,3 +184,9 @@ Las entradas nuevas van **arriba**. Formato:
 - Decidí: inbound trunk + dispatch rule individual (salas `call-*`, agente `inbound-agent`). El agente maneja espera, saludo y buzón, en vez de FastAPI.
 - Plan B: si 3 h antes de presentar SIP no conecta, Twilio Media Streams → FastAPI. STT: prueba de 10 min Deepgram vs Scribe. Fuera: Tauri y avatar 3D; agente en LiveKit Cloud.
 - Falta: código (`inbound-agent`, `/webhooks/livekit`, `call.incoming` en `contract.ts`, aviso en `apps/web`).
+
+## 2026-11-22 — Tomás / Claude (feature/v4-senas) · escenario urgencia_caida + glosas del guion 1
+- Hice: escenario `urgencia_caida` (`packages/glosses/data/escenarios/`, con las 6 frases del guion 1 como ejemplos y lista blanca de caché) y **25 glosas nuevas** en `glosses.json` (81 → 106, versión 3) con `data/vocab/build_glosses.py` + `curacion_urgencia_caida.json`. Solo aditivo: los `classifierLabel` existentes no cambian.
+- Decidí: la animación de cada glosa se busca por `lexiconId` en mayúsculas (`hijo-a` → `data/signs/anim/HIJO-A.json`), no por el nombre de la glosa (`HIJO`). Las frases grabadas (`FRASE-*`) no son glosas: solo enseñan transiciones (`ml/learn_transitions.py`).
+- Verificado: pytest del agente (escenario, glosario, traductor: 22 OK) con las glosas nuevas. NO corrido: `pnpm typecheck/test`, ni el agente contra servicios reales. Se activa con `ESCENARIO=urgencia_caida`.
+- Falta / bloqueado: reproductor del avatar en `apps/web` (hoy `SenasFotos`); servir `data/signs/anim` y `transitions.json`; validar las señas con una persona señante de LSCh.

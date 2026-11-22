@@ -1,0 +1,29 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Candidatos VRM</title>
+<style>body{margin:0;background:#1b1d24;color:#eee;font:14px system-ui}h1{font-size:16px;margin:14px 18px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;padding:0 18px 18px}
+.card{background:#262a35;border-radius:12px;overflow:hidden}.card canvas{width:100%;height:300px;display:block}.card div{padding:6px 10px;font-weight:600}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.0.0/lib/three-vrm.module.js"}}</script>
+</head><body><h1>Candidatos (100Avatars, CC0) — dime los números que te gustan</h1><div id="grid"></div>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {VRMLoaderPlugin,VRMUtils} from '@pixiv/three-vrm';
+const list = await (await fetch('models/candidates/list.json')).json();
+const grid=document.getElementById('grid');
+for (const f of list){
+  const card=document.createElement('div');card.className='card';const cv=document.createElement('canvas');card.appendChild(cv);
+  const t=document.createElement('div');t.textContent=f.split('/').pop().replace('.vrm','').replace('_',' · ');card.appendChild(t);grid.appendChild(card);
+  const r=new THREE.WebGLRenderer({canvas:cv,antialias:true});r.setPixelRatio(devicePixelRatio);
+  const sc=new THREE.Scene();sc.background=new THREE.Color('#d9e4f5');
+  sc.add(new THREE.HemisphereLight('#fff','#9aa8c4',1.6));const dl=new THREE.DirectionalLight('#fff',1.5);dl.position.set(1,2,3);sc.add(dl);
+  const cam=new THREE.PerspectiveCamera(28,1,.1,50);cam.position.set(0,1.2,3.4);cam.lookAt(0,1.1,0);
+  const l=new GLTFLoader();l.register(p=>new VRMLoaderPlugin(p));
+  l.load(f,g=>{const vrm=g.userData.vrm;VRMUtils.rotateVRM0&&VRMUtils.rotateVRM0(vrm);sc.add(vrm.scene);
+    const box=new THREE.Box3().setFromObject(vrm.scene),c=box.getCenter(new THREE.Vector3()),h=box.max.y-box.min.y;
+    cam.position.set(0,c.y,h*2.1);cam.lookAt(0,c.y,0);
+    let mx=0;cv.addEventListener('pointermove',e=>{const b=cv.getBoundingClientRect();mx=(e.clientX-b.left)/b.width*2-1});
+    (function loop(){requestAnimationFrame(loop);const w=cv.clientWidth,hh=cv.clientHeight;if(cv.width!==Math.round(w*devicePixelRatio)){r.setSize(w,hh,false);cam.aspect=w/hh;cam.updateProjectionMatrix()}
+      vrm.scene.rotation.y+=(mx*.8-vrm.scene.rotation.y)*.08;vrm.update(0.016);r.render(sc,cam)})();
+  },null,e=>{t.textContent+=' (error)'});
+}
+</script></body></html>

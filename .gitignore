@@ -113,3 +113,12 @@ graphify-out/
 
 # Fotos del Diccionario LSCh (derechos UMCE): se generan con apps/web/scripts/extraer_senas.py, no se versionan.
 apps/web/public/senas/
+
+# animaciones grabadas por glosa (datos propios, livianos): sí se versionan
+!data/signs/anim/
+
+# modelo VRM de prueba (10 MB): descargar, no versionar
+lab/v4_avatar/live/models/*.vrm
+
+# Modelo del avatar 3D: lo baja apps/web/scripts/descargar_avatar.mjs (predev/prebuild)
+apps/web/public/models/

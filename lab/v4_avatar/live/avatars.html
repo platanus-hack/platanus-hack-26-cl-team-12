@@ -1,0 +1,93 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Avatares estilo Memoji</title>
+<style>
+body{margin:0;background:#1b1d24;color:#eee;font:14px system-ui}
+h1{font-size:16px;margin:14px 18px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:0 18px 18px}
+.card{background:#262a35;border-radius:14px;overflow:hidden}
+.card canvas{width:100%;height:340px;display:block}
+.card div{padding:8px 12px;font-weight:600}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+</head><body>
+<h1>Avatares estilo Memoji — dime el número que te gusta (se mueven con el mouse)</h1>
+<div id="grid"></div>
+<script type="module">
+import * as THREE from 'three';
+
+const V = [
+ {n:'1 · Clásico',     skin:'#f2c9a5', hair:'short',  hc:'#3b2a20', shirt:'#4f8cff', eye:'#2a2018'},
+ {n:'2 · Moño',        skin:'#c98f66', hair:'bun',    hc:'#1d1512', shirt:'#ff7a9c', eye:'#2a1a12'},
+ {n:'3 · Rizos',       skin:'#8a5a3c', hair:'curly',  hc:'#17110e', shirt:'#ffb84d', eye:'#1a120d', glasses:'#222'},
+ {n:'4 · Pelo largo',  skin:'#f7d9bf', hair:'long',   hc:'#c9822e', shirt:'#43c59e', eye:'#2f6b8f'},
+ {n:'5 · Gorro',       skin:'#e0ac82', hair:'beanie', hc:'#7a4de8', shirt:'#2d3142', eye:'#2a2018', beard:'#4a3326'},
+ {n:'6 · Pelado lentes',skin:'#b97a52', hair:'bald',  hc:'#000',    shirt:'#e8e8ef', eye:'#1a120d', glasses:'#c0392b', beard:'#1d1512'},
+];
+
+const M = (c,o={}) => new THREE.MeshStandardMaterial({color:c, roughness:.55, metalness:0, ...o});
+const S = (r,m,x=0,y=0,z=0,sx=1,sy=1,sz=1) => { const g=new THREE.Mesh(new THREE.SphereGeometry(r,48,32),m); g.position.set(x,y,z); g.scale.set(sx,sy,sz); return g; };
+
+function avatar(o){
+  const root = new THREE.Group();
+  const skin=M(o.skin,{roughness:.7}), hair=M(o.hc,{roughness:.4}), shirt=M(o.shirt), dark=M(o.eye,{roughness:.2});
+  // cuerpo: torso redondo y brazos
+  const torso = S(.55,shirt,0,-.15,0,1,1.05,.8); root.add(torso);
+  for (const s of [-1,1]){
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(.14,.5,12,24),shirt);
+    arm.position.set(s*.62,-.18,.02); arm.rotation.z = s*.25; root.add(arm);
+    root.add(S(.15,skin,s*.72,-.52,.04)); // mano tipo manopla
+  }
+  root.add(S(.12,skin,0,.42,0,1,.8,1)); // cuello
+  // cabeza grande y redonda
+  const head = new THREE.Group(); head.position.y = 1.05; root.add(head);
+  head.add(S(.78,skin,0,0,0,1,.95,.92));
+  for (const s of [-1,1]) head.add(S(.14,skin,s*.78,-.02,0,.6,1,.8)); // orejas
+  for (const s of [-1,1]){ // ojos: óvalos oscuros con brillo
+    head.add(S(.085,dark,s*.27,.0,.69,1,1.35,.6));
+    head.add(S(.025,M('#fff',{emissive:'#fff'}),s*.255,.05,.74));
+    const brow = new THREE.Mesh(new THREE.CapsuleGeometry(.025,.14,6,12),hair);
+    brow.position.set(s*.27,.2,.7); brow.rotation.z = Math.PI/2 + s*.12; head.add(brow);
+    head.add(S(.09,M('#ff9a9a',{transparent:true,opacity:.35}),s*.46,-.2,.6,1,.7,.3)); // cachetes
+  }
+  head.add(S(.05,skin.clone(),0,-.1,.77,1,.8,.8)); // nariz
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(.13,.022,12,32,Math.PI),M('#7a2f2f'));
+  mouth.position.set(0,-.3,.7); mouth.rotation.z = Math.PI; mouth.scale.set(1,.8,1); head.add(mouth);
+
+  // pelo
+  const cap = (r=.82)=>{ const g=new THREE.Mesh(new THREE.SphereGeometry(r,48,32,0,Math.PI*2,0,Math.PI*.46),hair); g.position.set(0,.04,-.04); g.scale.set(1,.98,.96); return g; };
+  if (o.hair==='short'){ const c=cap(); head.add(c); head.add(S(.4,hair,.1,.66,.45,1.2,.5,.8)); }
+  if (o.hair==='bun'){ head.add(cap()); head.add(S(.3,hair,0,.98,-.1)); }
+  if (o.hair==='curly'){ for(let i=0;i<26;i++){ const a=i/26*Math.PI*2, ring=i%2?.62:.4;
+      head.add(S(.2,hair,Math.sin(a)*ring*1.1,.52+Math.cos(i*1.7)*.07+(i%2?0:.15),Math.cos(a)*ring*.9-.1)); }
+      head.add(cap(.8)); head.add(S(.3,hair,0,.85,0)); }
+  if (o.hair==='long'){ head.add(cap()); const back=S(.8,hair,0,-.25,-.28,1,1.15,.55); head.add(back);
+      for(const s of [-1,1]) head.add(S(.2,hair,s*.74,-.4,.05,.7,2,.7)); head.add(S(.45,hair,-.15,.62,.5,1.4,.45,.8)); }
+  if (o.hair==='beanie'){ const b=new THREE.Mesh(new THREE.SphereGeometry(.84,48,32,0,Math.PI*2,0,Math.PI*.42),hair); b.position.y=.1; head.add(b);
+      const r=new THREE.Mesh(new THREE.TorusGeometry(.8,.1,16,48),M('#5b34c4')); r.rotation.x=Math.PI/2; r.position.y=.31; r.scale.set(1,.95,1); head.add(r);
+      head.add(S(.12,M('#fff'),0,.95,0)); }
+  if (o.beard){ const bm=M(o.beard,{roughness:.8}); const b=new THREE.Mesh(new THREE.SphereGeometry(.74,40,28,0,Math.PI*2,Math.PI*.58,Math.PI*.42),bm); b.position.set(0,-.02,.05); b.scale.set(1.01,.95,.95); head.add(b); }
+  if (o.glasses){ const gm=M(o.glasses,{roughness:.3});
+    for(const s of [-1,1]){ const t=new THREE.Mesh(new THREE.TorusGeometry(.2,.026,12,40),gm); t.position.set(s*.27,.0,.7); head.add(t); }
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.1,8),gm); br.rotation.z=Math.PI/2; br.position.set(0,.02,.72); head.add(br); }
+  root.userData.head = head;
+  return root;
+}
+
+const grid = document.getElementById('grid');
+for (const o of V){
+  const card=document.createElement('div'); card.className='card';
+  const cv=document.createElement('canvas'); card.appendChild(cv);
+  const t=document.createElement('div'); t.textContent=o.n; card.appendChild(t); grid.appendChild(card);
+  const r=new THREE.WebGLRenderer({canvas:cv,antialias:true}); r.setPixelRatio(devicePixelRatio);
+  const sc=new THREE.Scene(); sc.background=new THREE.Color('#d9e4f5');
+  sc.add(new THREE.HemisphereLight('#ffffff','#9aa8c4',1.5));
+  const dl=new THREE.DirectionalLight('#fff',2); dl.position.set(2,3,4); sc.add(dl);
+  const cam=new THREE.PerspectiveCamera(30,1,.1,50); cam.position.set(0,.75,5.6); cam.lookAt(0,.6,0);
+  const av=avatar(o); sc.add(av);
+  let mx=0,my=0; cv.addEventListener('pointermove',e=>{const b=cv.getBoundingClientRect(); mx=(e.clientX-b.left)/b.width*2-1; my=(e.clientY-b.top)/b.height*2-1;});
+  cv.addEventListener('pointerleave',()=>{mx=0;my=0});
+  (function loop(t){ requestAnimationFrame(loop);
+    const w=cv.clientWidth,h=cv.clientHeight; if(cv.width!==w*devicePixelRatio){r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+    av.rotation.y += (mx*.6-av.rotation.y)*.08; av.userData.head.rotation.x += (my*.3-av.userData.head.rotation.x)*.08;
+    av.position.y = Math.sin(t/700)*.015; r.render(sc,cam); })(0);
+}
+</script></body></html>

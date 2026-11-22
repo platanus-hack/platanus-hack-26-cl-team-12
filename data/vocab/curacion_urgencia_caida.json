@@ -1,0 +1,145 @@
+{
+ "_comment": "Curación del escenario urgencia_caida (guion 1): la lee data/vocab/build_glosses.py junto a escenario_urgencia_caida.json (las palabras del guion sin las frases). Las glosas que ya existen (HOLA, TENER…) no se tocan.",
+ "glosa": {},
+ "es": {
+  "ambulancia": [
+   "ambulancia"
+  ],
+  "hijo-a": [
+   "hijo",
+   "hija"
+  ],
+  "caer-persona": [
+   "caerse",
+   "se cayó",
+   "caída"
+  ],
+  "codo": [
+   "codo"
+  ],
+  "hueso": [
+   "hueso"
+  ],
+  "romper": [
+   "romper",
+   "quebrar",
+   "quebrarse",
+   "fractura"
+  ],
+  "despertar-se": [
+   "despertar",
+   "consciente",
+   "despierto"
+  ],
+  "respirar": [
+   "respirar",
+   "respira"
+  ],
+  "bien": [
+   "bien",
+   "normal"
+  ],
+  "pero": [
+   "pero"
+  ],
+  "brazo": [
+   "brazo"
+  ],
+  "apoyar": [
+   "apoyar",
+   "apoyarse"
+  ],
+  "hinchado-a": [
+   "hinchado",
+   "inflamado"
+  ],
+  "entender": [
+   "entender",
+   "entendido",
+   "comprendo"
+  ],
+  "sangre": [
+   "sangre",
+   "sangrado",
+   "sangra"
+  ],
+  "mano": [
+   "mano"
+  ],
+  "palido-a": [
+   "pálido",
+   "pálida"
+  ],
+  "frio": [
+   "frío",
+   "fría"
+  ],
+  "poco-a": [
+   "poco",
+   "un poco"
+  ],
+  "urgente": [
+   "urgente",
+   "urgencia"
+  ],
+  "solicitud": [
+   "solicitud",
+   "pedido"
+  ],
+  "anotar": [
+   "anotar",
+   "registrar",
+   "registrado"
+  ],
+  "senora": [
+   "señora"
+  ],
+  "camino": [
+   "camino",
+   "en camino"
+  ],
+  "quieto-a": [
+   "quieto",
+   "sin mover",
+   "no mover"
+  ]
+ },
+ "categorias": {
+  "salud": [
+   "ambulancia",
+   "codo",
+   "hueso",
+   "brazo",
+   "mano",
+   "sangre",
+   "hinchado-a",
+   "palido-a",
+   "frio",
+   "urgente",
+   "quieto-a"
+  ],
+  "verbo": [
+   "caer-persona",
+   "romper",
+   "despertar-se",
+   "respirar",
+   "apoyar",
+   "entender",
+   "anotar"
+  ],
+  "respuesta": [
+   "bien"
+  ],
+  "otro": [
+   "pero",
+   "poco-a",
+   "camino",
+   "solicitud",
+   "senora",
+   "hijo-a"
+  ]
+ },
+ "non_manual": {
+  "pregunta": "cejas fruncidas (pregunta abierta)"
+ }
+}
