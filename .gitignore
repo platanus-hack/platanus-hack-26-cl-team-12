@@ -119,3 +119,6 @@ apps/web/public/senas/
 
 # modelo VRM de prueba (10 MB): descargar, no versionar
 lab/v4_avatar/live/models/*.vrm
+
+# Modelo del avatar 3D: lo baja apps/web/scripts/descargar_avatar.mjs (predev/prebuild)
+apps/web/public/models/
