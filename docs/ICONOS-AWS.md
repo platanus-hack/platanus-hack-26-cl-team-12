@@ -53,8 +53,9 @@ Equivalencias aproximadas (no están probadas; verifica disponibilidad y precios
 
 ![Puente en AWS](diagramas/arquitectura/04-puente-en-aws.png)
 
-[`04-puente-en-aws.png`](diagramas/arquitectura/04-puente-en-aws.png) (3840×2160, para slides) y su fuente
+[`04-puente-en-aws.png`](diagramas/arquitectura/04-puente-en-aws.png) (3840×2160, fondo negro, para slides) y su fuente
 [`04-puente-en-aws.svg`](diagramas/arquitectura/04-puente-en-aws.svg) (íconos incrustados: se abre en draw.io, Figma o el navegador).
+Versión con fondo claro: [`04-puente-en-aws-claro.png`](diagramas/arquitectura/04-puente-en-aws-claro.png).
 Es una **propuesta**: la API pasa a ECS Fargate detrás de WAF y ALB, la PWA a S3 + CloudFront, y Twilio, Claude y ElevenLabs
 quedan como servicios externos. Los logos de Twilio, Anthropic y ElevenLabs vienen de Iconify (`logos`, `simple-icons`).
 
