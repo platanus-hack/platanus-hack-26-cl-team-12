@@ -12,14 +12,14 @@ import {
 } from "@puente/ui";
 import { LIMITES, type MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
-import { joinMockCall } from "@/lib/mockCall";
+import { joinMockCall, type EventoVoz } from "@/lib/mockCall";
 import { URGENCIAS, type Destino } from "@/lib/contactos";
 import { usePreferencias } from "@/lib/preferencias";
 import { AppShell } from "./AppShell";
 import { AvatarVRM } from "./AvatarVRM";
 import { Calificacion } from "./Calificacion";
 import { RECONOCER_SENAS, iniciarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
-import { CamaraPropia, type Conversion, type Lectura } from "./CamaraPropia";
+import { CamaraPropia, type Conversion, type Lectura, type Voz } from "./CamaraPropia";
 import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
 
@@ -60,6 +60,8 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   // Tus señas y la frase en que se convirtieron: se mantienen a la vista el tiempo de leerlas aunque el otro lado ya responda.
   const [conversion, setConversion] = useState<Conversion | null>(null);
   const timerConv = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Llamada simulada: seguimiento de la voz, para que la frase convertida salga exactamente a la par del audio.
+  const [voz, setVoz] = useState<Voz | null>(null);
   // ?debug en la dirección: muestra qué glosas consideró el reconocedor en cada seña (para ensayar).
   const [debug, setDebug] = useState<string | null>(null);
   const debugActivo = useRef(false);
@@ -99,19 +101,29 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     return () => clearTimeout(id);
   }, [state, esperando, camara, lectura.estado, opciones]);
 
+  // Una glosa reconocida (por la cámara) se suma a las de este turno. Solo usa refs y setters: es seguro llamarla desde cualquier efecto.
+  function registrarGlosa(g: string) {
+    if (esperandoRef.current) return;
+    if (glosasRef.current.length === 0) setConversion(null); // empezó una respuesta nueva: la conversión anterior ya se leyó
+    glosasRef.current = [...glosasRef.current, g];
+    setLectura({ estado: "listo", texto: glosasRef.current.join(" ") });
+    setAlert(null);
+  }
+
+  // ?debug: window.__senas(["HOLA", ...]) simula señas reconocidas sin cámara (para ensayar y probar el flujo).
+  useEffect(() => {
+    if (!debugActivo.current) return;
+    (window as unknown as { __senas?: (g: string[]) => void }).__senas = (g) => g.forEach(registrarGlosa);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Lectura real: MediaPipe + @puente/signs reconocen cada seña (con pausa entre señas) y se acumulan como glosas del turno.
   useEffect(() => {
     if (!RECONOCER_SENAS || state !== "live" || !camara || !video) return;
     let rec: Reconocedor | null = null;
     let cancelado = false;
     iniciarReconocedor(video, {
-      onGlosa: (g) => {
-        if (esperandoRef.current) return;
-        if (glosasRef.current.length === 0) setConversion(null); // empezó una respuesta nueva: la conversión anterior ya se leyó
-        glosasRef.current = [...glosasRef.current, g];
-        setLectura({ estado: "listo", texto: glosasRef.current.join(" ") });
-        setAlert(null);
-      },
+      onGlosa: registrarGlosa,
       onDuda: (a, b) => setAlert({ message: `No se distingue: ${a} o ${b}. Repite la seña.`, tone: "info" }),
       onError: (e) => console.error("reconocimiento de señas", e),
       onRanking: (r) => debugActivo.current && setDebug(r.map((x) => `${x.gloss} ${x.dist.toFixed(2)}`).join(" · ")),
@@ -187,6 +199,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         // La frase en español en que se convirtió lo que señaste (o escribiste): se ve en tu cámara y en el chat.
         setLectura((l) => (l.estado === "enviado" ? { ...l, convertido: msg.texto } : l));
         setConversion((c) => (c ? { ...c, frase: msg.texto } : c));
+        setVoz({ inicio: null, charIndex: null, terminado: false });
         if (timerConv.current) clearTimeout(timerConv.current);
         timerConv.current = setTimeout(() => setConversion(null), CONVERSION_MAX_MS);
         setLines((ls) => {
@@ -207,6 +220,13 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setAlert({ message: "Se cortó la conexión con Puente. Revisa tu internet y vuelve a llamar.", tone: "error" });
   }
 
+  function eventoVoz(e: EventoVoz) {
+    if (e.tipo === "inicio") setVoz({ inicio: performance.now(), charIndex: null, terminado: false });
+    else if (e.tipo === "palabra") setVoz((v) => (v ? { ...v, charIndex: e.charIndex } : v));
+    else setVoz((v) => (v ? { ...v, terminado: true } : v));
+    if (e.tipo === "fin" && debugActivo.current) setDebug(`voz: duró ${e.ms} ms`);
+  }
+
   async function llamar(d: Destino) {
     setDestino(d);
     destinoRef.current = d;
@@ -221,7 +241,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setChat(false);
     setState("connecting");
     try {
-      const handle = mock ? await joinMockCall({ onMessage, guion: d.guion }) : await joinCall({ onMessage, onDesconectado });
+      const handle = mock ? await joinMockCall({ onMessage, guion: d.guion, onVoz: eventoVoz }) : await joinCall({ onMessage, onDesconectado });
       callRef.current = handle;
       setCall(handle);
     } catch (e) {
@@ -318,7 +338,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       </section>
 
       {/* Abajo: tú, con la cámara que lee tus señas */}
-      <CamaraPropia encendida={camara && state !== "ended"} lectura={lecturaVisible} onVideo={RECONOCER_SENAS ? setVideo : undefined} mostrarTexto={RECONOCER_SENAS} conversion={RECONOCER_SENAS ? conversion : null} />
+      <CamaraPropia encendida={camara && state !== "ended"} lectura={lecturaVisible} onVideo={RECONOCER_SENAS ? setVideo : undefined} mostrarTexto={RECONOCER_SENAS} conversion={RECONOCER_SENAS ? conversion : null} voz={voz} />
 
       <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
       {debug && (

@@ -8,6 +8,9 @@ import type { MensajePuente } from "@puente/glosses";
 import type { CallHandle } from "./call";
 import { msVoz } from "./voz";
 
+/** Lo que va pasando con la voz que simula lo que oye el hospital: cuándo parte, qué palabra dice (índice del carácter) y cuándo termina. */
+export type EventoVoz = { tipo: "inicio" } | { tipo: "palabra"; charIndex: number } | { tipo: "fin"; ms: number };
+
 export type TipoGuion = "urgencia" | "general";
 
 interface Turno {
@@ -67,7 +70,12 @@ const GLOSAS_ESPERADAS: string[][] = [
 const ESPERA_RESPUESTA_MS = 2000; // lo que "tarda" el ejecutivo en contestar
 const PIDE_REPETIR = /repit|otra vez|no entend/i;
 
-export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void; guion?: TipoGuion }): Promise<CallHandle> {
+export async function joinMockCall(opts: {
+  onMessage: (m: MensajePuente) => void;
+  guion?: TipoGuion;
+  /** Eventos de la voz simulada, para mostrar el texto exactamente a la par del audio. */
+  onVoz?: (e: EventoVoz) => void;
+}): Promise<CallHandle> {
   const GUION = GUIONES[opts.guion ?? "general"];
   const timers: ReturnType<typeof setTimeout>[] = [];
   let turno = 0;
@@ -81,6 +89,10 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(texto);
     u.lang = "es-CL";
+    const t0 = performance.now();
+    u.onstart = () => opts.onVoz?.({ tipo: "inicio" });
+    u.onboundary = (e) => opts.onVoz?.({ tipo: "palabra", charIndex: e.charIndex });
+    u.onend = () => opts.onVoz?.({ tipo: "fin", ms: Math.round(performance.now() - t0) });
     speechSynthesis.speak(u);
   }
 
