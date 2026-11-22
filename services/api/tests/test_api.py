@@ -88,6 +88,66 @@ def test_llamada_crea_la_llamada_en_twilio(monkeypatch):
     assert llamadas == [("+56911111111", "https://abc.ngrok-free.app")]
 
 
+def _twilio_listo(monkeypatch):
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56911111111")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"):
+        monkeypatch.setenv(k, "x")
+
+
+def test_llamada_503_dice_que_variable_falta(monkeypatch):
+    _twilio_listo(monkeypatch)
+    monkeypatch.delenv("TWILIO_PHONE_NUMBER")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "http://sin-https")
+    r = client.post("/llamadas", json={"numero": "+56911111111"})
+    assert r.status_code == 503
+    assert "TWILIO_PHONE_NUMBER" in r.json()["detail"] and "PUBLIC_BASE_URL" in r.json()["detail"]
+    assert "TWILIO_ACCOUNT_SID" not in r.json()["detail"]
+
+
+def test_llamada_variables_con_espacios_se_limpian(monkeypatch):
+    import app.main as m
+
+    _twilio_listo(monkeypatch)
+    monkeypatch.setenv("PUBLIC_BASE_URL", "  https://abc.ngrok-free.app/\n")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "   ")  # pegado vacío en el panel = falta
+    assert client.post("/llamadas", json={"numero": "+56911111111"}).status_code == 503
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC1\n")
+    usadas = []
+    monkeypatch.setattr(m, "llamar_con_twilio", lambda n, b: usadas.append(b) or ("CA1", "queued"))
+    assert client.post("/llamadas", json={"numero": "+56911111111"}).status_code == 200
+    assert usadas == ["https://abc.ngrok-free.app"]
+    assert m.env("TWILIO_ACCOUNT_SID") == "AC1"
+
+
+def test_llamada_rechazada_por_twilio_da_502_con_el_codigo(monkeypatch):
+    import app.main as m
+
+    _twilio_listo(monkeypatch)
+
+    class TwilioRestException(Exception):
+        code = 21219  # trial: número no verificado
+
+    def rechaza(numero, base):
+        raise TwilioRestException("no verificado")
+
+    monkeypatch.setattr(m, "llamar_con_twilio", rechaza)
+    r = client.post("/llamadas", json={"numero": "+56911111111"})
+    assert r.status_code == 502 and "21219" in r.json()["detail"]
+
+
+def test_diagnostico_dice_que_falta_sin_valores(monkeypatch):
+    _twilio_listo(monkeypatch)
+    monkeypatch.delenv("NUMERO_DEMO", raising=False)
+    r = client.get("/llamadas/diagnostico").json()
+    assert r["lista"] is True and r["faltan"] == [] and r["numero_demo"] is True
+    monkeypatch.delenv("TWILIO_AUTH_TOKEN")
+    monkeypatch.setenv("NUMERO_DEMO", "+56999999999")  # no está en ALLOWED_DESTINATIONS
+    r = client.get("/llamadas/diagnostico").json()
+    assert r["lista"] is False and "TWILIO_AUTH_TOKEN" in r["faltan"] and r["numero_demo"] is False
+    assert "x" not in str(r["faltan"])  # nunca valores
+
+
 
 class FakeTraductor:
     async def simplificar(self, texto):

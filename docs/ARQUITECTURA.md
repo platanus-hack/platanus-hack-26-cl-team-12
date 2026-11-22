@@ -475,7 +475,7 @@ Todas están en [`.env.example`](../.env.example), que es la documentación comp
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | api | Secretos |
 | `ALLOWED_DESTINATIONS` | api | Números E.164 permitidos, separados por coma |
 | `CORS_ORIGINS` | api | Por defecto `http://localhost:3000`; en producción, la URL de la PWA, **nunca `*`** |
-| `PUBLIC_BASE_URL` | — | Heredada del scaffold original (URL pública del backend para webhooks de Twilio); hoy ningún código la lee |
+| `PUBLIC_BASE_URL` | — | **Obligatoria para llamar.** URL pública `https://` de la API (ngrok o Render); Twilio la usa para los webhooks `/twilio/*` y para validar la firma. Sin ella `POST /llamadas` da 503 |
 | `GLOSSES_PATH` | api, agent | Opcional: otra ruta al `glosses.json` |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | web, api | Públicas |
 | `SUPABASE_SERVICE_ROLE_KEY` | api | **Solo backend** |

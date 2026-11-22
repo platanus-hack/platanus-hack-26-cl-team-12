@@ -302,3 +302,9 @@ Las entradas nuevas van **arriba**. Formato:
 - Decidí: correr contra el export estático de producción y no contra `next dev`, que falla con recargas concurrentes (`Unexpected end of JSON input`). El proyecto `real` corre con `workers: 1` porque la API tiene una sola sala global y dos tests en paralelo reciben los mensajes del otro.
 - Verificado: 48/48 con `--repeat-each=3` y 16/16 en modo CI (`CI=1`).
 - Falta: un e2e de la caída de conexión (`onDesconectado`). Cuando haya varias salas en la API, quitar `workers: 1`.
+
+## 2026-11-22 — Claude (fix/llamada-twilio) · "Twilio no configurado" al llamar
+- Hice: `POST /llamadas` ahora dice qué variable falta (`falta TWILIO_PHONE_NUMBER, PUBLIC_BASE_URL (con https://)`). Si Twilio rechaza la llamada, responde 502 con el código (21219, 21215…); antes era un 500 sin CORS y la app veía "Failed to fetch". Agregué `GET /llamadas/diagnostico?token=`, que lista lo que falta sin mostrar valores. Las variables `TWILIO_*` y `PUBLIC_BASE_URL` se limpian de espacios y saltos de línea (`config.env`). La PWA ya no dice "revisa tu internet" cuando el error es del servidor (`ErrorServidor`).
+- Decidí: `PUBLIC_BASE_URL` no era "reservada": es obligatoria. Corregí `.env.example` y `ARQUITECTURA.md`, y agregué la tabla de variables del plan C en `DESPLIEGUE.md` §8.
+- Verificado: pytest de la API 81/81 y ruff OK; `call.test.ts` 6/6; `pnpm typecheck` OK. NO corrido: e2e de Playwright (cambié el texto esperado en `llamada-api.spec.ts`) ni una llamada real.
+- Falta: cargar `TWILIO_ACCOUNT_SID`, `TWILIO_PHONE_NUMBER` y `TWILIO_AUTH_TOKEN` en Render (`puente-api`) y revisar con `/llamadas/diagnostico`.

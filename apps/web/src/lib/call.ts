@@ -5,6 +5,17 @@
 // (LiveKit se descartó: el equipo decidió no usarlo.)
 import { parseMensaje, type MensajePuente } from "@puente/glosses";
 
+/** El servidor respondió, pero no pudo llamar (falta configurar Twilio, Twilio rechazó el número…). No es tu internet. */
+export class ErrorServidor extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ErrorServidor";
+  }
+}
+
 export interface CallHandle {
   send(msg: MensajePuente): Promise<void>;
   leave(): void;
@@ -68,7 +79,10 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ destino }),
           });
-          if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { detail?: string }).detail ?? `error ${r.status}`);
+          if (!r.ok) {
+            const detail = ((await r.json().catch(() => ({}))) as { detail?: string }).detail;
+            throw new ErrorServidor(detail ?? `error ${r.status}`, r.status);
+          }
           sid = ((await r.json().catch(() => ({}))) as { sid?: string }).sid ?? null;
         } catch (e) {
           colgo = true;
