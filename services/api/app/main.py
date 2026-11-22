@@ -98,13 +98,13 @@ app = FastAPI(
     redoc_url="/redoc" if _docs else None,
     openapi_url="/openapi.json" if _docs else None,
 )
+PWA_RENDER = "https://puente-web.onrender.com"
 app.add_middleware(
     CORSMiddleware,
     # En producción: CORS_ORIGINS=https://<tu-pwa>.vercel.app (lista separada por comas).
-    allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")],
-    # La PWA desplegada en Render siempre puede llamar a la API, aunque CORS_ORIGINS del panel no la incluya
-    # (pasó en la demo: el servicio real es puente-api-oww9 y su CORS_ORIGINS no tenía puente-web).
-    allow_origin_regex=r"https://puente-web(-[a-z0-9]+)?\.onrender\.com",
+    # La PWA desplegada siempre puede llamar a la API, aunque CORS_ORIGINS del panel no la incluya (pasó en la demo).
+    # Origen exacto, sin comodines: en onrender.com cualquiera puede crear un "puente-web-xyz".
+    allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")] + [PWA_RENDER],
     allow_methods=["*"],
     allow_headers=["*"],
 )
