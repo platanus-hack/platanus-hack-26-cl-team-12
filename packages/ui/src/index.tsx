@@ -14,4 +14,7 @@ export { GlossChip, type GlossState } from "./components/GlossChip";
 export { SignCamera, type SignCameraProps } from "./components/SignCamera";
 export { SignAvatar, type SignAvatarProps } from "./components/SignAvatar";
 export { IncomingCall, type IncomingCallProps } from "./components/IncomingCall";
+export {
+  Interprete, Retrato, APARIENCIA_POR_DEFECTO, TONOS_PIEL, COLORES_PELO, COLORES_OJOS, COLORES_ROPA, type Apariencia,
+} from "./components/Interprete";
 export { default as tokens } from "./tokens.json";

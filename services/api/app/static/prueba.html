@@ -23,10 +23,15 @@
   button { font:inherit; padding:12px 16px; border-radius:10px; border:0; background:var(--cl); color:#fff; cursor:pointer; }
   .rapidas { display:flex; gap:8px; width:100%; }
   .rapidas button { flex:1; background:var(--ej); color:var(--fg); }
+  .llamar { border-top:0; border-bottom:1px solid #8883; flex-wrap:nowrap; }
 </style>
 </head>
 <body>
 <header><strong>Puente</strong><span id="estado">Conectando…</span></header>
+<form id="llamar" class="llamar">
+  <input id="numero" type="tel" inputmode="tel" autocomplete="off" placeholder="+569…" aria-label="Número del ejecutivo (E.164)">
+  <button>📞 Llamar</button>
+</form>
 <main id="chat" aria-live="polite"></main>
 <form id="f">
   <div class="rapidas">
@@ -64,6 +69,16 @@ const enviar = (texto) => {
   agregar("cl", texto);
 };
 document.getElementById("f").onsubmit = (e) => { e.preventDefault(); const i = document.getElementById("t"); enviar(i.value); i.value = ""; };
+const numero = document.getElementById("numero");
+try { numero.value = localStorage.getItem("puente-numero") || ""; } catch {}
+document.getElementById("llamar").onsubmit = async (e) => {
+  e.preventDefault();
+  try { localStorage.setItem("puente-numero", numero.value.trim()); } catch {}
+  agregar("sis", "Llamando a " + numero.value.trim() + "…");
+  const r = await fetch("/llamadas", { method: "POST", headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ numero: numero.value.trim() }) });
+  if (!r.ok) agregar("sis", "No se pudo llamar: " + ((await r.json().catch(() => ({}))).detail || r.status));
+};
 document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => enviar(b.dataset.t));
 </script>
 </body>

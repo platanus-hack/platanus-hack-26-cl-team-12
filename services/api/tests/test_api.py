@@ -68,8 +68,23 @@ def test_llamada_blocks_numbers_outside_allowlist(monkeypatch):
     monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56911111111")
     r = client.post("/llamadas", json={"room": "x", "numero": "+56922222222"})
     assert r.status_code == 403
+    monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
     r = client.post("/llamadas", json={"room": "x", "numero": "+56911111111"})
-    assert r.status_code == 501  # permitido, pero la llamada SIP sigue como TODO(v1)
+    assert r.status_code == 503  # permitido, pero Twilio no está configurado
+
+
+def test_llamada_crea_la_llamada_en_twilio(monkeypatch):
+    import app.main as m
+
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56911111111")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"):
+        monkeypatch.setenv(k, "x")
+    llamadas = []
+    monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: llamadas.append((numero, base)) or ("CA1", "queued"))
+    r = client.post("/llamadas", json={"numero": "+56911111111"})  # sin room: el plan C no la usa
+    assert r.status_code == 200 and r.json() == {"sid": "CA1", "estado": "queued"}
+    assert llamadas == [("+56911111111", "https://abc.ngrok-free.app")]
 
 
 
@@ -262,3 +277,10 @@ def test_swagger_apagado_en_produccion(monkeypatch):
     assert _app_con_env(monkeypatch, API_DOCS="0").get("/docs").status_code == 404
     # `API_DOCS=` vacío (como viene en .env.example) no apaga Swagger en desarrollo
     assert _app_con_env(monkeypatch, API_DOCS="").get("/docs").status_code == 200
+
+
+def test_logs_no_guardan_lo_que_se_dice(sala_falsa, caplog):
+    """seguridad-datos-cl: la conversación puede traer RUT o datos de salud; no va a los logs."""
+    caplog.set_level("DEBUG")
+    client.post("/twilio/turno", data={"SpeechResult": "mi RUT es 11.111.111-1", "Confidence": "0.9"})
+    assert "11.111.111-1" not in caplog.text

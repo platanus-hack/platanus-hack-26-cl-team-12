@@ -15,7 +15,7 @@ interface Turno {
   opciones?: string[]; // respuestas rápidas sugeridas (contrato: ejecutivo_dice.opciones, máx. 4)
 }
 
-// Guion de la demo (Rafael, 21-11-2026): caída de un niño. Habla primero la persona sorda; su primera frase
+// Guion de la demo (Rafael, 21-11-2026): un papá sordo llama porque su hijo se cayó. Habla primero la persona sorda; su primera frase
 // la ofrece la app (Destino.frasesIniciales). Las `opciones` son las frases del guion para tocarlas en la demo.
 // Ojo: el agente real limita cada opción a 40 caracteres (contrato); acá son más largas porque es un guion fijo.
 const GUION: Turno[] = [
@@ -32,7 +32,7 @@ const GUION: Turno[] = [
     opciones: ["Hay un poco de sangre, pero el brazo está normal. Necesito un traslado urgente."],
   },
   {
-    texto: "Registramos la solicitud de ambulancia. Tenemos su dirección señora, vamos en camino. Mientras llega, no mueva el brazo ni el codo de su hijo.",
+    texto: "Registramos la solicitud de ambulancia. Tenemos su dirección, señor, vamos en camino. Mientras llega, no mueva el brazo ni el codo de su hijo.",
     simple: "La ambulancia va en camino.\nYa tenemos su dirección.\nNo mueva el brazo ni el codo de su hijo.",
     glosas: ["AMBULANCIA", "VENIR", "URGENTE", "DOMICILIO", "TEXTO:brazo", "NO"],
     opciones: ["Gracias", "Repita, por favor"],

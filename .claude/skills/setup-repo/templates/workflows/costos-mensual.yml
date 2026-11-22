@@ -1,0 +1,33 @@
+# Abre un issue mensual para revisar consumo y límites de las herramientas (docs/COSTOS.md).
+name: costos-mensual
+on:
+  schedule:
+    - cron: "0 13 1 * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  issue:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "type:costos" -R "${{ github.repository }}" --color 5319e7 --force
+          gh issue create -R "${{ github.repository }}" \
+            --title "💸 Revisión mensual de costos $(date +%Y-%m)" \
+            --label "type:costos" \
+            --body "$(cat <<'BODY'
+          Revisar cada fila de `docs/COSTOS.md` y actualizar la columna "Última verificación".
+
+          - [ ] Minutos de GitHub Actions usados vs. límite (Settings → Billing / `gh api /users/OWNER/settings/billing/usage`)
+          - [ ] Hosting front: uso de ancho de banda / builds
+          - [ ] Hosting back: horas de instancia / sleeps
+          - [ ] Base de datos: almacenamiento y pausas por inactividad
+          - [ ] APIs de IA / terceros: consumo de tokens y alertas de gasto configuradas
+          - [ ] ¿Algún proveedor cambió su plan gratuito? (revisar páginas oficiales de pricing)
+          - [ ] ¿Algún servicio nuevo sin registrar?
+          BODY
+          )"

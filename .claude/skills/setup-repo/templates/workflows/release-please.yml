@@ -1,0 +1,22 @@
+# Versionamiento automático: al llegar commits convencionales a main,
+# abre/actualiza un PR de release con CHANGELOG; al mergearlo crea tag vX.Y.Z y GitHub Release.
+name: release-please
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        with:
+          # Token PAT o GitHub App (gratis). Los PRs creados con GITHUB_TOKEN NO disparan CI:
+          # con rulesets, el PR de release quedaría sin checks y no se podría mergear.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          release-type: simple   # node | python | simple, según el repo
+          target-branch: main

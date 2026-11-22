@@ -22,8 +22,8 @@ services:
       - key: API_ENV
         value: production
       - key: CORS_ORIGINS
-        # PWA + WebView de Capacitor en Android (origen https://localhost). Nunca "*".
-        value: https://puente-web.onrender.com,https://localhost
+        # PWA + WebView de Capacitor: Android (https://localhost) e iOS (capacitor://localhost). Nunca "*".
+        value: https://puente-web.onrender.com,https://localhost,capacitor://localhost
       - key: LIVEKIT_URL
         sync: false
       - key: LIVEKIT_API_KEY
@@ -36,6 +36,11 @@ services:
       - key: PUBLIC_BASE_URL
         value: https://puente-api.onrender.com
       - key: ANTHROPIC_API_KEY
+        sync: false
+      # POST /llamadas crea la llamada con la API de Twilio (sin ellas responde 503).
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
         sync: false
       # Auth mínima (A4): firma de Twilio en los POST y token del WebSocket /twilio/cliente.
       - key: TWILIO_AUTH_TOKEN

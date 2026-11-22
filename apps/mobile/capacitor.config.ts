@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   webDir: "../web/out",
   // Android: permisos de cámara y micrófono en android/app/src/main/AndroidManifest.xml (versionado).
   // El WebView sirve la app desde https://localhost: ese origen está en CORS_ORIGINS (render.yaml).
-  // TODO: iOS (Info.plist) cuando se haga `cap add ios`; por ahora en iPhone se usa la PWA.
+  // iOS: proyecto en ios/ (Swift Package Manager, sin CocoaPods); permisos en ios/App/App/Info.plist (versionado).
 };
 
 export default config;
