@@ -36,8 +36,11 @@ SALUDO = (
 # escenario (los mismos que recibe Deepgram en el agente) más algunos que solo le hacen falta a Twilio.
 _PISTAS_TWILIO = ["hora", "hora médica", "médico", "doctor", "previsión", "copago", "dígito verificador"]
 PISTAS = ", ".join(dict.fromkeys([*load_escenario().stt_keyterms, *_PISTAS_TWILIO]))
-PAUSA_LARGA_S = 50  # si el cliente no respondió en la espera larga: silencio largo, que se interrumpe al responder
-AVISO_CADA = 1  # en cada vuelta (~1 min) se le avisa al ejecutivo que el cliente sigue respondiendo
+# Si el cliente no respondió en la espera larga, Twilio recibe UNA secuencia de (silencio + aviso) que dura hasta
+# ~9 min: se espera hasta que el cliente aprieta Enviar, y ahí Sala la interrumpe (calls.update). Una sola consulta:
+# el trial corta tras ~10 consultas por llamada y a los 10 minutos.
+SILENCIO_S = 20  # silencio entre avisos "la persona sigue respondiendo"
+VUELTAS = 26  # ~26 × (20 s + ~3 s de aviso) ≈ 9 min
 
 
 def espera_larga_s() -> float:
@@ -167,11 +170,11 @@ async def espera(request: Request) -> Response:
         n = int(request.query_params.get("n", "0")) + 1
     except ValueError:
         n = 1
-    aviso = await hablar(base, "La persona sigue respondiendo, espere por favor.") if n % AVISO_CADA == 0 else ""
-    # Una sola consulta cubre ~1 minuto de espera (el trial corta tras ~10 consultas por llamada). Si el cliente
-    # responde durante la pausa, Sala la interrumpe con la API de Twilio y la respuesta suena al tiro.
+    aviso = await hablar(base, "La persona sigue respondiendo, espere por favor.")
+    # Espera hasta que el cliente aprieta Enviar: Sala corta esta secuencia con la API de Twilio y la respuesta
+    # suena al tiro. Si no se pudiera interrumpir, al terminar vuelve a /twilio/espera, que ya tiene la respuesta.
     sala.en_pausa_larga = True
-    return twiml(f'{aviso}<Pause length="{PAUSA_LARGA_S}"/>' + ir_a(base, f"/twilio/espera?n={n}"))
+    return twiml(f'<Pause length="{SILENCIO_S}"/>{aviso}' * VUELTAS + ir_a(base, f"/twilio/espera?n={n}"))
 
 
 @router.get("/audio/{audio_id}.mp3")

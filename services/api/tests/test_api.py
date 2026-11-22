@@ -506,7 +506,7 @@ def test_responder_durante_la_pausa_larga_la_interrumpe(sala_falsa, monkeypatch)
     monkeypatch.setenv("TWILIO_ESPERA_S", "0")
     client.post("/twilio/voz", data={"CallSid": "CA_en_curso"})
     r = client.post("/twilio/espera?n=0")
-    assert '<Pause length="50"/>' in r.text and sala_falsa.en_pausa_larga
+    assert r.text.count('<Pause length="20"/>') >= 20 and sala_falsa.en_pausa_larga  # ~9 min en una sola consulta
     with client.websocket_connect("/twilio/cliente") as pwa:
         pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
         pwa.send_json({"tipo": "ping"})
