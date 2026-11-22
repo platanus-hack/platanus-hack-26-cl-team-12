@@ -129,3 +129,7 @@ data/signs-video
 
 # Animaciones del avatar copiadas desde data/signs/anim (apps/web/scripts/copiar_animaciones.mjs)
 apps/web/public/anim/
+
+# ───────── Tests e2e (Playwright) ─────────
+e2e/test-results/
+e2e/playwright-report/

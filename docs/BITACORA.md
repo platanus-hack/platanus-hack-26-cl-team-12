@@ -246,3 +246,9 @@ Las entradas nuevas van **arriba**. Formato:
 - Hice: `make senas-pull` / `make senas-push` (`aws s3 sync` de `apps/web/public/senas/` ↔ `s3://$SENAS_S3_BUCKET/senas/`) y las variables `SENAS_S3_BUCKET`, `AWS_REGION`, `AWS_PROFILE` en `.env.example`.
 - Decidí: bucket PRIVADO (derechos UMCE): cada persona baja las fotos con sus credenciales en vez de correr `extraer_senas.py` con los PDF. **Cambió después:** `senas/*` quedó de lectura pública para que la web desplegada muestre las fotos (ver v4/senas-s3). Sin fotos la app sigue usando el avatar de palitos.
 - Falta: crear el bucket (la sesión de AWS había expirado) y que alguien con las fotos generadas corra `make senas-push`.
+
+## 2026-11-22 — Claude (chore/tests-e2e) · tests e2e con Playwright
+- Hice: paquete `e2e/` (Playwright, Chromium en perfil Pixel 7 con cámara falsa), con 16 tests. `mock`: login, pestañas, buscador, tema, el guion completo de la ambulancia (chat, señas + Enviar, "Repita"), colgar, calificación y `?llamar=urgencias`. `real`: la PWA contra la API real por `WS /twilio/cliente`. El test hace de Twilio con webhooks firmados, y `e2e/api_e2e.py` reemplaza Twilio y Claude por falsos deterministas. Agregué `make test-e2e`, `make e2e-install`, `make test-e2e-ui` y el job `e2e` en la CI.
+- Decidí: correr contra el export estático de producción y no contra `next dev`, que falla con recargas concurrentes (`Unexpected end of JSON input`). El proyecto `real` corre con `workers: 1` porque la API tiene una sola sala global y dos tests en paralelo reciben los mensajes del otro.
+- Verificado: 48/48 con `--repeat-each=3` y 16/16 en modo CI (`CI=1`).
+- Falta: un e2e de la caída de conexión (`onDesconectado`). Cuando haya varias salas en la API, quitar `workers: 1`.

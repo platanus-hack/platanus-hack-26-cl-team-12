@@ -7,7 +7,7 @@ API   := services/api
 AGENT := services/agent
 
 .PHONY: help doctor env install setup dev dev-all dev-web dev-api dev-agent \
-        test test-api test-agent lint typecheck build check docker-build docker-api docker-agent senas-pull senas-push clean nuke
+        test test-api test-agent e2e-install test-e2e test-e2e-ui lint typecheck build check docker-build docker-api docker-agent senas-pull senas-push clean nuke
 
 help: ## Muestra esta ayuda
 	@echo "Uso: make <comando>"; echo
@@ -61,6 +61,15 @@ test-agent: ## Tests del agente y del traductor
 	uv --directory $(AGENT) run pytest -q
 
 test: test-api test-agent ## Todos los tests de Python
+
+e2e-install: ## Instala el Chromium de Playwright (una vez, para los e2e)
+	pnpm --filter @puente/e2e exec playwright install --with-deps chromium
+
+test-e2e: ## Tests e2e: la PWA en Chromium, simulada (?mock=1) y contra la API real (Twilio y Claude falsos)
+	pnpm --filter @puente/e2e test
+
+test-e2e-ui: ## Tests e2e en modo interactivo (next dev, para escribir tests nuevos)
+	E2E_DEV=1 pnpm --filter @puente/e2e exec playwright test --ui
 
 lint: ## Lint de Python (ruff) en API y agente
 	uv --directory $(API) run ruff check .
