@@ -68,7 +68,8 @@ export function AvatarVRM({
       callbacks.current.onFalla?.();
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Rendimiento: resolución moderada (en el celular no se nota) y se dibuja solo cuando hace falta (ver despertar).
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     const scene = new THREE.Scene();
     scene.add(new THREE.HemisphereLight(0xffffff, 0x667788, 1.6));
     const luz = new THREE.DirectionalLight(0xffffff, 1.4);
@@ -81,6 +82,7 @@ export function AvatarVRM({
       renderer.setSize(r.width, r.height, false);
       cam.aspect = r.width / r.height;
       cam.updateProjectionMatrix();
+      despertar(600);
     };
     const obs = new ResizeObserver(ajustar);
     obs.observe(canvas);
@@ -145,6 +147,7 @@ export function AvatarVRM({
         });
         linea = { items, total: items[items.length - 1]!.e, factor };
         t0 = performance.now();
+        despertar((linea.total + 0.6) * 1000);
       },
     };
 
@@ -169,13 +172,30 @@ export function AvatarVRM({
         cam.position.set(0, cabeza.y - 0.14, 2.6);
         cam.lookAt(0, cabeza.y - 0.26, 0);
         ajustar();
+        despertar(1500); // deja que el pelo (física del modelo) se acomode
         if (pendiente) void motor.current?.reproducir(...pendiente);
       })
       .catch(() => vivo && callbacks.current.onFalla?.());
 
+    // Bucle de dibujo bajo demanda: corre mientras el avatar hace señas (o se acomoda) y después se detiene.
+    // Antes dibujaba 60 veces por segundo siempre, aunque estuviera quieto, y eso ponía lento el computador.
+    let corriendo = false;
+    let hasta = 0;
+    function despertar(ms: number) {
+      hasta = Math.max(hasta, performance.now() + ms);
+      if (!corriendo && vivo) {
+        corriendo = true;
+        reloj.getDelta();
+        raf = requestAnimationFrame(dibujar);
+      }
+    }
     const dibujar = () => {
+      if (performance.now() > hasta || document.hidden) {
+        corriendo = false;
+        return;
+      }
       raf = requestAnimationFrame(dibujar);
-      const dt = reloj.getDelta();
+      const dt = Math.min(reloj.getDelta(), 0.1);
       if (vrm && linea) {
         const t = (performance.now() - t0) / 1000;
         const act = linea.items.filter((it) => t >= it.s && t <= it.e);
@@ -198,7 +218,6 @@ export function AvatarVRM({
       vrm?.update(dt);
       renderer.render(scene, cam);
     };
-    dibujar();
 
     return () => {
       vivo = false;

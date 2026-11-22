@@ -1,16 +1,17 @@
 "use client";
 
-// Al terminar la llamada: pantalla completa para calificarla (estilo de apps de movilidad).
+// Al terminar la llamada: pantalla completa para calificar a Puente (el avatar, los subtítulos, la lectura de señas),
+// no a la institución a la que llamaste.
 // Estrellas grandes en el color del texto, etiquetas rápidas según la nota y comentario opcional.
 // TODO(real-data): enviar la calificación al backend (hoy solo se muestra el agradecimiento).
 import { useState } from "react";
-import { Icon } from "@puente/ui";
+import { Icon, Logo } from "@puente/ui";
 
 const TEXTOS = ["Toca para calificar", "Muy mala", "Mala", "Regular", "Buena", "Excelente"];
-const BIEN = ["Señas claras", "Texto fácil de entender", "Respondieron rápido", "Me entendieron bien"];
-const MEJORAR = ["Señas confusas", "Texto difícil", "Muy lento", "No me entendieron", "Se cortó"];
+const BIEN = ["El avatar se entendió", "Subtítulos claros", "Leyó bien mis señas", "Fue rápido", "Me entendieron bien"];
+const MEJORAR = ["No entendí las señas", "Leyó mal mis señas", "Subtítulos difíciles", "Muy lento", "Se cortó"];
 
-export function Calificacion({ quien, sigla, duracion, onListo }: { quien: string; sigla: string; duracion: string; onListo: () => void }) {
+export function Calificacion({ quien, duracion, onListo }: { quien: string; sigla?: string; duracion: string; onListo: () => void }) {
   const [nota, setNota] = useState(0);
   const [etiquetas, setEtiquetas] = useState<string[]>([]);
   const [comentario, setComentario] = useState("");
@@ -36,16 +37,16 @@ export function Calificacion({ quien, sigla, duracion, onListo }: { quien: strin
             <Icon name="listo" size={34} />
           </span>
           <h1 id="calif-titulo">Gracias por tu opinión</h1>
-          <p className="calif-sub">Nos ayuda a que Puente funcione mejor para todos.</p>
+          <p className="calif-sub">Nos ayuda a que Puente funcione mejor para todas las personas sordas.</p>
         </div>
       ) : (
         <div className="calif-cuerpo">
           <span className="calif-logo" aria-hidden>
-            {sigla}
+            <Logo variant="mark" size={34} />
           </span>
-          <h1 id="calif-titulo">¿Cómo fue tu llamada?</h1>
+          <h1 id="calif-titulo">¿Cómo te fue con Puente?</h1>
           <p className="calif-sub">
-            {quien} · {duracion}
+            Llamada con {quien} · {duracion}
           </p>
 
           <div className="calif-estrellas" role="radiogroup" aria-label="Calificación de la llamada">

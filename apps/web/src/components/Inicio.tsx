@@ -1,12 +1,14 @@
 "use client";
 
 // Pestaña Inicio. Puente es comunicación por teléfono para personas sordas en general (banco, salud, trámites).
+//   0. Tu ubicación (chica) y Pedir una ambulancia, destacado en rojo (es lo más urgente).
 //   1. Contactos frecuentes (carrusel con puntitos).
 //   2. ¿Qué necesitas hacer? (acciones rápidas: ejecutivo del banco, hora médica, trámite, ambulancia).
 //   3. Consejos para tus llamadas (carrusel).
 //   4. Cómo funciona.
 import { Icon, type IconName } from "@puente/ui";
-import { ACCIONES, FRECUENTES, type Destino } from "@/lib/contactos";
+import { ACCIONES, FRECUENTES, URGENCIAS, type Destino } from "@/lib/contactos";
+import { cambiarPreferencias, usePreferencias } from "@/lib/preferencias";
 import { Carrusel } from "./Carrusel";
 import { IlustracionDatos, IlustracionDerechos, IlustracionRepetir } from "./Ilustraciones";
 import { PERFIL } from "./MenuPerfil";
@@ -27,10 +29,33 @@ const PASOS: { icon: IconName; titulo: string; texto: string }[] = [
 
 export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
   const nombre = PERFIL.nombre.split(" ")[0];
+  const p = usePreferencias();
   return (
     <div className="seccion">
       <h1 className="titulo-seccion">Hola, {nombre}</h1>
-      <p className="lede">¿A quién quieres llamar hoy?</p>
+
+      {/* Ubicación, en chico: se comparte al pedir una ambulancia */}
+      <button
+        type="button"
+        className="ubic-chica"
+        aria-pressed={p.compartirUbicacion}
+        onClick={() => cambiarPreferencias({ compartirUbicacion: !p.compartirUbicacion })}
+      >
+        <Icon name="ubicacion" size={16} />
+        <span className="ubic-dir">{PERFIL.direccion}</span>
+        <span className={p.compartirUbicacion ? "ubic-estado on" : "ubic-estado"}>{p.compartirUbicacion ? "Compartiendo" : "No compartida"}</span>
+      </button>
+
+      {/* Lo más urgente, en rojo */}
+      <button type="button" className="sos" onClick={() => onLlamar(URGENCIAS)}>
+        <span className="sos-ico" aria-hidden>
+          <Icon name="emergencia" size={30} />
+        </span>
+        <span className="sos-txt">
+          <strong>Pedir una ambulancia</strong>
+          <span>{URGENCIAS.nombre} · comparte tu ubicación</span>
+        </span>
+      </button>
 
       <section aria-labelledby="t-frecuentes" className="bloque-u">
         <div className="bloque-cabeza">

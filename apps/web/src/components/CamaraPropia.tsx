@@ -29,7 +29,7 @@ export function CamaraPropia({ encendida, lectura }: { encendida: boolean; lectu
       return;
     }
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } }, audio: false })
+      .getUserMedia({ video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 }, frameRate: { ideal: 24 } }, audio: false })
       .then((s) => {
         if (!vivo) {
           s.getTracks().forEach((t) => t.stop());

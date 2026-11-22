@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Rafael / Claude (v4/avatar-3d-app-general) · última iteración antes del PR
+- Decidí (Rafael): sin pestaña Emergencias (se cubre en el inicio). Inicio con la ubicación en chico y **"Pedir una ambulancia" destacado en rojo**. Solo la llamada de ambulancia tiene guion completo (es la que se prueba); las demás son un ejemplo corto. **Logo nuevo** (guiones celestes que pasan a ondas de sonido amarillas). La calificación es sobre Puente (avatar, subtítulos, lectura de señas), no sobre la clínica.
+- Hice: lo anterior; íconos PNG de la PWA regenerados con el logo nuevo. **Rendimiento**: el avatar 3D dibuja solo mientras hace señas (antes 60 cuadros por segundo siempre), resolución 1,5× máx. y cámara a 480×640 y 24 fps. 45 tests OK.
+- Nota: `next dev` es pesado por diseño; para probar la app usar `pnpm --filter @puente/web preview` (versión compilada, mucho más liviana).
+
 ## 2026-11-22 — Rafael / Claude (v4/avatar-3d-app-general) · avatar 3D de Tomás, señas con Enviar y app general
 - Decidí (Rafael): Puente es comunicación para personas sordas **en general** (banco, salud, trámites, personas), no solo salud. En la videollamada no se muestran las respuestas a decir: la cámara lee las señas, se toca **Enviar** y lo enviado aparece como subtítulo; las sugerencias quedan solo en el **modo chat**. El avatar se reemplazará más adelante por el que entrena el equipo.
 - Hice: **avatar 3D de Tomás** en la videollamada (`AvatarVRM`: modelo VRM + animaciones de `data/signs/anim`, encadenadas con solape; versión simplificada de `chain.html`). `scripts/copiar_animaciones.mjs` copia las animaciones a `public/anim` en predev/prebuild (no versionado). Si el 3D no carga, queda el intérprete dibujado. El service worker guarda el modelo y las animaciones (v2). Guiones simulados por tipo: urgencia (con las glosas grabadas), banco, hora médica y general. **Inicio**: contactos frecuentes (10, carrusel), "¿Qué necesitas hacer?" (ejecutivo del banco, agendar hora, trámite, ambulancia), consejos para tus llamadas. Pestañas: **Inicio · Contactos · Historial · Emergencias**. Contactos con buscador; Emergencias recibe ubicación y "Avisar a mis contactos". 45 tests OK, build OK; capturas a 390×844 (el avatar hace DESPERTAR, RESPIRAR, BIEN).

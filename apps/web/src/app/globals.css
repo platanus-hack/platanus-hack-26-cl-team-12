@@ -427,3 +427,16 @@ main.vl .pu-alert { position: absolute; top: 12px; left: 12px; right: 12px; z-in
 .vl-yo.listo { box-shadow: inset 0 0 0 3px #34c759; }
 .vl-sub.listo { display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(21, 128, 61, 0.88); font-size: 1.05rem; }
 .vl-chat { max-height: 38dvh; overflow-y: auto; margin-bottom: 10px; }
+
+/* ---------- Inicio: ubicación chica y ambulancia destacada ---------- */
+.ubic-chica { font: inherit; display: flex; align-items: center; gap: 8px; width: 100%; margin-top: -4px; padding: 8px 12px; border: 0; border-radius: 12px; background: var(--surface); color: var(--muted); font-size: 0.82rem; text-align: left; cursor: pointer; }
+.ubic-chica svg { color: #3b82f6; flex: none; }
+.ubic-dir { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg); }
+.ubic-estado { flex: none; font-weight: 700; font-size: 0.74rem; }
+.ubic-estado.on { color: var(--live); }
+.ubic-chica:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.acciones { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.accion { padding: 12px; gap: 8px; }
+.accion-txt strong { font-size: 0.86rem; }
+.accion-txt span { font-size: 0.74rem; }
+.calif-logo { width: 96px; }

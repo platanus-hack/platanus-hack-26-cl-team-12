@@ -1,13 +1,13 @@
 // Llamada simulada (?mock=1): reemplaza al servidor (services/api) para probar la app sin backend.
 // Se comporta igual que joinCall (misma interfaz CallHandle y mismos mensajes del contrato),
 // así que la pantalla no sabe si la llamada es real o de mentira.
-// Hay un guion por tipo de llamada. Las glosas del de urgencia son las que tienen animación del avatar 3D
-// (data/signs/anim, grabadas por Tomás); en los otros se usan las que existen y el resto se omite.
+// Solo la llamada de ambulancia (la que se prueba en la demo) tiene guion completo, con las glosas que tienen
+// animación del avatar 3D (data/signs/anim, grabadas por Tomás). Las demás son un ejemplo corto.
 // TODO(real-data): las glosas las genera el agente (espanol_a_glosas) en la llamada real.
 import type { MensajePuente } from "@puente/glosses";
 import type { CallHandle } from "./call";
 
-export type TipoGuion = "urgencia" | "banco" | "hora" | "general";
+export type TipoGuion = "urgencia" | "general";
 
 interface Turno {
   texto: string; // lo que "dice" el ejecutivo, tal cual
@@ -19,8 +19,6 @@ interface Turno {
 /** Lo primero que la persona dice en cada tipo de llamada (en ?mock=1 habla primero el cliente). */
 export const FRASE_INICIAL: Record<TipoGuion, string> = {
   urgencia: "Hola, necesito una ambulancia. Mi hijo se cayó y se quebró el codo.",
-  banco: "Hola, quiero bloquear mi tarjeta porque la perdí.",
-  hora: "Hola, quiero pedir una hora con medicina general.",
   general: "Hola, necesito hacer una consulta.",
 };
 
@@ -46,62 +44,15 @@ const GUIONES: Record<TipoGuion, Turno[]> = {
       opciones: ["Gracias", "Repita, por favor"],
     },
   ],
-  banco: [
-    {
-      texto: "Buenas tardes, le habla Matías. Para ayudarle necesito validar su identidad. ¿Me indica su RUT?",
-      simple: "Hola. Para ayudarle,\n¿cuál es su RUT?",
-      glosas: ["HOLA", "NECESITAR", "ENTENDER"],
-      opciones: ["Mi RUT es 12.345.678-9"],
-    },
-    {
-      texto: "Gracias. Ya bloqueamos su tarjeta terminada en 4321. ¿Desea que le enviemos una nueva a su domicilio?",
-      simple: "Ya bloqueamos su tarjeta.\n¿Le enviamos una nueva a su casa?",
-      glosas: ["BIEN", "DOMICILIO", "VENIR"],
-      opciones: ["Sí, por favor", "No, gracias"],
-    },
-    {
-      texto: "Perfecto, la tarjeta nueva llegará en cinco días hábiles. ¿Hay algo más en que le pueda ayudar?",
-      simple: "La tarjeta nueva llega en 5 días.\n¿Necesita algo más?",
-      glosas: ["BIEN", "ESPERAR", "NECESITAR"],
-      opciones: ["No, eso es todo. Gracias"],
-    },
-    { texto: "Gracias a usted, que tenga buena tarde.", simple: "Gracias.\nQue le vaya bien.", glosas: ["GRACIAS"] },
-  ],
-  hora: [
-    {
-      texto: "Claro. Tengo disponibilidad con medicina general el lunes 24 a las diez de la mañana. ¿Le acomoda?",
-      simple: "Hay hora el lunes 24 a las 10:00.\n¿Le sirve?",
-      glosas: ["MEDICO", "TENER", "BIEN"],
-      opciones: ["Sí, me sirve", "¿Tiene algo más tarde?"],
-    },
-    {
-      texto: "Listo, quedó reservada. ¿Me confirma su RUT para dejarla a su nombre?",
-      simple: "Listo.\n¿Cuál es su RUT?",
-      glosas: ["BIEN", "NECESITAR"],
-      opciones: ["Mi RUT es 12.345.678-9"],
-    },
-    {
-      texto: "Perfecto, su hora quedó confirmada. Recuerde llegar quince minutos antes con su carnet.",
-      simple: "Su hora quedó lista.\nLlegue 15 minutos antes con su carnet.",
-      glosas: ["BIEN", "IR", "ESPERAR"],
-      opciones: ["Gracias"],
-    },
-    { texto: "Que tenga un buen día.", simple: "Que le vaya bien.", glosas: ["GRACIAS"] },
-  ],
+  // Las demás llamadas (banco, clínica, trámites) son de ejemplo y cortas: la demo prueba la de ambulancia.
   general: [
     {
       texto: "Hola, buenas tardes. ¿En qué le puedo ayudar?",
       simple: "Hola.\n¿En qué le ayudo?",
       glosas: ["HOLA", "NECESITAR"],
-      opciones: ["Quiero saber el estado de mi trámite"],
+      opciones: ["Necesito hacer una consulta"],
     },
-    {
-      texto: "Claro. Su trámite está en revisión y estará listo el viernes. Le llegará un correo cuando esté disponible.",
-      simple: "Su trámite está en revisión.\nEstará listo el viernes.",
-      glosas: ["ESPERAR", "BIEN"],
-      opciones: ["Gracias", "Repita, por favor"],
-    },
-    { texto: "Gracias a usted, que tenga buen día.", simple: "Gracias.\nQue le vaya bien.", glosas: ["GRACIAS"] },
+    { texto: "Gracias por llamar. Esta llamada es un ejemplo.", simple: "Gracias.\nEsta llamada es un ejemplo.", glosas: ["GRACIAS"] },
   ],
 };
 

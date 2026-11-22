@@ -25,8 +25,8 @@ const d = (id: string, nombre: string, corto: string, motivo: string, sigla: str
 
 /** Contactos frecuentes (carrusel del inicio y pestaña Contactos). */
 export const FRECUENTES: Destino[] = [
-  d("banco", "Mi ejecutivo del banco", "Banco", "Tarjetas, transferencias", "BA", 0, "banco"),
-  d("clinica", "Clínica Santa María", "Clínica", "Horas médicas", "SM", 1, "hora"),
+  d("banco", "Mi ejecutivo del banco", "Banco", "Tarjetas, transferencias", "BA", 0, "general"),
+  d("clinica", "Clínica Santa María", "Clínica", "Horas médicas", "SM", 1, "general"),
   d("fonasa", "Fonasa", "Fonasa", "Bonos y beneficios", "FO", 2, "general"),
   d("registro", "Registro Civil", "Registro Civil", "Trámites y certificados", "RC", 3, "general"),
   d("isapre", "Mi isapre", "Isapre", "Reembolsos", "IS", 4, "general"),
@@ -41,10 +41,9 @@ export const FRECUENTES: Destino[] = [
 export const URGENCIAS: Destino = d("urgencias", "Urgencias Clínica Santa María", "Urgencias", "Pedir una ambulancia", "SM", 1, "urgencia");
 export const SAMU: Destino = d("samu", "SAMU (ambulancia)", "SAMU", "Pedir una ambulancia", "131", 0, "urgencia");
 
-/** Acciones rápidas del inicio ("¿Qué necesitas hacer?"). */
+/** Acciones rápidas del inicio ("¿Qué necesitas hacer?"). La ambulancia va aparte, destacada en rojo. */
 export const ACCIONES: { icon: IconName; titulo: string; detalle: string; destino: Destino; tono: number }[] = [
   { icon: "llamar", titulo: "Llamar a mi ejecutivo", detalle: "Banco", destino: FRECUENTES[0]!, tono: 0 },
-  { icon: "historial", titulo: "Agendar una hora", detalle: "Clínica Santa María", destino: FRECUENTES[1]!, tono: 1 },
+  { icon: "historial", titulo: "Agendar una hora", detalle: "Clínica", destino: FRECUENTES[1]!, tono: 1 },
   { icon: "subtitulos", titulo: "Hacer un trámite", detalle: "Registro Civil", destino: FRECUENTES[3]!, tono: 3 },
-  { icon: "emergencia", titulo: "Pedir una ambulancia", detalle: "Urgencias", destino: URGENCIAS, tono: 5 },
 ];

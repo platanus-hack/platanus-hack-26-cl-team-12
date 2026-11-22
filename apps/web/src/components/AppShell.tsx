@@ -4,24 +4,22 @@
 //   arriba a la izquierda   foto de perfil (abre el menú, que sale desde la izquierda)
 //   arriba al centro        logo
 //   arriba a la derecha     "Instalar app" (si Android lo permite) y botón de tema claro/oscuro
-//   abajo                   Inicio · Contactos · Historial · Emergencias
+//   abajo                   Inicio · Contactos · Historial (las emergencias están en el inicio)
 import { useCallback, useState, type ReactNode } from "react";
 import { Icon, Logo, type IconName } from "@puente/ui";
 import { cambiarPreferencias, usePreferencias } from "@/lib/preferencias";
 import { BotonInstalar } from "./AppInstalable";
-import { Emergencias } from "./Emergencias";
 import { Historial } from "./Historial";
 import { Inicio } from "./Inicio";
 import { Contactos } from "./Contactos";
 import type { Destino } from "@/lib/contactos";
 import { FotoPerfil, MenuPerfil } from "./MenuPerfil";
 
-type Pestana = "inicio" | "contactos" | "historial" | "emergencias";
+type Pestana = "inicio" | "contactos" | "historial";
 const PESTANAS: { id: Pestana; icon: IconName; label: string }[] = [
   { id: "inicio", icon: "inicio", label: "Inicio" },
   { id: "contactos", icon: "avatar", label: "Contactos" },
   { id: "historial", icon: "historial", label: "Historial" },
-  { id: "emergencias", icon: "emergencia", label: "Emergencias" },
 ];
 
 export function AppShell({ onLlamar, aviso }: { onLlamar: (d: Destino) => void; aviso?: ReactNode }) {
@@ -67,7 +65,6 @@ export function AppShell({ onLlamar, aviso }: { onLlamar: (d: Destino) => void; 
         {pestana === "inicio" && <Inicio onLlamar={onLlamar} />}
         {pestana === "contactos" && <Contactos onLlamar={onLlamar} onAbrirPerfil={abrirPerfil} />}
         {pestana === "historial" && <Historial />}
-        {pestana === "emergencias" && <Emergencias onLlamar={onLlamar} onAbrirPerfil={abrirPerfil} />}
       </main>
 
       <nav className="tabbar" aria-label="Secciones">
