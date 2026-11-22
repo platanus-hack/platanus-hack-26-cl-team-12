@@ -15,6 +15,12 @@ Las entradas nuevas van **arriba**. Formato:
 - **Probado en el Samsung Galaxy A33 5G de Rafael:** se instala, abre a pantalla completa y la llamada simulada funciona en modo avión. Cómo: platform-tools de Android, `adb devices` (acá sí aparece el aviso de permiso; con edge://inspect no aparecía) y `adb reverse tcp:3001 tcp:3001`, luego Chrome en `localhost:3001/?mock=1`.
 - Falta: probar en iPhone. Capacitor solo si sobra tiempo.
 
+## 2026-11-21 18:20 — Raimundo / Claude (rama chore/tests-ci)
+- Hice: tests para todas las secciones. JS con Vitest (config única en la raíz, `pnpm test`): `glosses` (contrato `parseMensaje` + integridad del diccionario vs schema), `signs` (reconocedor), `avatar` (`ClipSignPlayer`), `ui` (render accesible), `apps/web` (`joinCall` con LiveKit simulado, incluye anti suplantación `SOLO_AGENTE`). Python: `services/api/tests/test_api_extra.py` (CORS, TTL, E.164, allowlist) y `services/agent/tests/test_agent.py` + `test_glossary.py` (cableado de `agent.py` sin red). CI corre `pnpm test` en el job `web`.
+- Decidí: tests en `<paquete>/test/` (fuera de `src`, no afectan typecheck ni build). Para `ui` se usa `react-dom/server`, sin jsdom.
+- Ojo: `Float32Array` guarda 0.7 como 0.69999998, así que una probabilidad "exactamente" `MIN_CONFIDENCE` se rechaza en `@puente/signs`.
+- Verificado: 39 tests JS, 24 api, 24 agent, todos OK localmente.
+
 ## 2026-11-21 — Rafael / Claude (v4/reproductor-senas) · D5 con fotos del diccionario
 - Hice: `apps/web/scripts/extraer_senas.py` saca del Diccionario LSCh (los 2 PDF + `indice_LSCh.csv`) las fotos de cada seña del vocabulario (81 de hora médica) + las del guion de urgencia (AMBULANCIA, HIJO, SANGRE, RESPIRAR, PÁLIDO, FRÍO, URGENTE…): 91 señas, ~120 fotos, ~1 MB, en `apps/web/public/senas/` con `manifest.json`. Elige la variante numerada según `lexiconId` (gracias-1, poder-2). Reproductor `SenasFotos` en la ventana del intérprete: alterna las 2 o 3 fotos de cada seña (750 ms por foto, 250 ms entre señas), `TEXTO:` y glosas sin foto como palabra grande, y deja una franja para el subtítulo para no tapar las manos. Sin fotos en el computador, sigue el intérprete dibujado.
 - Decidí: las fotos **no se versionan** (derechos UMCE): `apps/web/public/senas/` en `.gitignore`; cada uno las genera con el script (necesita PyMuPDF y los PDF).
