@@ -284,3 +284,18 @@ def test_logs_no_guardan_lo_que_se_dice(sala_falsa, caplog):
     caplog.set_level("DEBUG")
     client.post("/twilio/turno", data={"SpeechResult": "mi RUT es 11.111.111-1", "Confidence": "0.9"})
     assert "11.111.111-1" not in caplog.text
+
+
+
+def test_llamada_sin_numero_usa_el_telefono_de_la_demo(monkeypatch):
+    import app.main as m
+
+    monkeypatch.setenv("NUMERO_DEMO", "+56911111111")
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56911111111")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"):
+        monkeypatch.setenv(k, "x")
+    llamadas = []
+    monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: llamadas.append(numero) or ("CA1", "queued"))
+    assert client.post("/llamadas", json={"destino": "clinica"}).status_code == 200
+    assert llamadas == ["+56911111111"]

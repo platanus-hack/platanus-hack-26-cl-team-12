@@ -14,6 +14,8 @@ export interface CallOpts {
   onMessage: (m: MensajePuente) => void;
   /** Se cortó la conexión sin que el usuario colgara (internet, servidor caído). */
   onDesconectado?: () => void;
+  /** Contacto elegido: la API llama por teléfono (POST /llamadas) cuando el canal ya está abierto. */
+  destino?: string;
 }
 
 const ESPERA_CONEXION_MS = 8000;
@@ -29,7 +31,7 @@ function apiUrl(): string {
   throw new Error("la app no tiene configurado el servidor (NEXT_PUBLIC_API_URL)");
 }
 
-export function joinCall({ onMessage, onDesconectado }: CallOpts): Promise<CallHandle> {
+export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Promise<CallHandle> {
   // A4: la API exige `?token=CLIENTE_WS_TOKEN` cuando está configurado. Es una clave de demo compartida (queda en el
   // navegador), no un secreto de usuario. TODO(real-data): token por sesión cuando haya login real.
   const token = process.env.NEXT_PUBLIC_CLIENTE_WS_TOKEN?.trim();
@@ -42,8 +44,24 @@ export function joinCall({ onMessage, onDesconectado }: CallOpts): Promise<CallH
       reject(new Error("el servidor no responde"));
     }, ESPERA_CONEXION_MS);
 
-    ws.onopen = () => {
+    ws.onopen = async () => {
       clearTimeout(plazo);
+      // Con el canal abierto (para no perder el `estado` inicial), la API hace sonar el teléfono del ejecutivo.
+      if (destino) {
+        try {
+          const r = await fetch(apiUrl() + "/llamadas", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ destino }),
+          });
+          if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { detail?: string }).detail ?? `error ${r.status}`);
+        } catch (e) {
+          colgo = true;
+          ws.close();
+          reject(e instanceof Error ? e : new Error("no se pudo llamar"));
+          return;
+        }
+      }
       resolve({
         async send(msg) {
           if (ws.readyState !== WebSocket.OPEN) throw new Error("sin conexión");

@@ -18,4 +18,6 @@ La carpeta `android/` ya está generada y versionada (permisos de cámara y micr
 4. iPhone por cable, con **Modo desarrollador** activo (*Ajustes → Privacidad y seguridad*). Elígelo arriba en Xcode y aprieta ▶.
 5. La primera vez, en el iPhone: *Ajustes → General → VPN y gestión de dispositivos* → confiar en tu certificado.
 
+Notas de iOS 27 / Xcode 27: la app usa `SceneDelegate` (Apple exige UIScene), el mínimo es iOS 15 y Capacitor está fijado en 6.2.2 (`capacitor-swift-pm` no publicó la 6.2.3). Si Xcode ofrece "Update to recommended settings", cancela.
+
 Con Apple ID gratis la app deja de abrir a los 7 días: se reinstala con ▶. La URL de la API se hornea en el build (`NEXT_PUBLIC_API_URL`).
