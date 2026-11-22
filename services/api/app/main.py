@@ -266,11 +266,14 @@ async def crear_llamada(req: LlamadaRequest, token: str | None = None) -> Llamad
         raise HTTPException(403, "Token inválido")
     # Demo: los contactos de la app no tienen teléfono; todos llaman al teléfono de la demo (NUMERO_DEMO).
     # TODO(real-data): cada contacto con su número real.
-    numero = (req.numero or os.getenv("NUMERO_DEMO", "")).strip()
-    if not E164.fullmatch(numero):
-        raise HTTPException(422, "El número debe estar en formato E.164 (+56...)")
     # Anti fraude telefónico: solo se puede llamar a números de una lista explícita (los de la demo).
     permitidos = {n.strip() for n in os.getenv("ALLOWED_DESTINATIONS", "").split(",") if n.strip()}
+    numero = (req.numero or os.getenv("NUMERO_DEMO", "")).strip()
+    if not numero and len(permitidos) == 1:
+        # Sin NUMERO_DEMO (pasó en el deploy): si hay un único número permitido, es el de la demo.
+        numero = next(iter(permitidos))
+    if not E164.fullmatch(numero):
+        raise HTTPException(422, "El número debe estar en formato E.164 (+56...)")
     if numero not in permitidos:
         raise HTTPException(403, "Número no permitido (ALLOWED_DESTINATIONS)")
     base = os.getenv("PUBLIC_BASE_URL", "").split("#")[0].strip().rstrip("/")
