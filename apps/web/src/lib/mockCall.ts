@@ -1,4 +1,4 @@
-// Llamada simulada (?mock=1): reemplaza a LiveKit + el agente para probar la app sin backend.
+// Llamada simulada (?mock=1): reemplaza al servidor (services/api) para probar la app sin backend.
 // Se comporta igual que joinCall (misma interfaz CallHandle y mismos mensajes del contrato),
 // así que la pantalla no sabe si la llamada es real o de mentira.
 // Escenario de la demo: la persona sorda llama a urgencias porque su hijo se cayó y se quebró el codo.
