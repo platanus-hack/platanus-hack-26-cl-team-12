@@ -32,26 +32,17 @@ export function useManifestSenas(): ManifestSenas | null {
 
 interface Props {
   manifest: ManifestSenas;
+  /** Para reiniciar la secuencia con una frase nueva, quien lo usa cambia la `key` del componente. */
   glosas: string[];
-  /** Cambia con cada frase nueva (aunque las glosas se repitan) para reiniciar la secuencia. */
-  frase: number;
   onSenando?: (senando: boolean) => void;
-  /** Preferencia del menú: multiplica los tiempos. */
-  velocidad?: "lenta" | "normal" | "rapida";
 }
 
-const FACTOR = { lenta: 1.6, normal: 1, rapida: 0.65 } as const;
-
-export function SenasFotos({ manifest, glosas, frase, onSenando, velocidad = "normal" }: Props) {
-  const f = FACTOR[velocidad];
+export function SenasFotos({ manifest, glosas, onSenando }: Props) {
   const [paso, setPaso] = useState({ i: 0, foto: 0, pausa: false });
-
-  useEffect(() => {
-    setPaso({ i: 0, foto: 0, pausa: false });
-  }, [frase]);
+  const fotosDe = (g?: string) => (g && !isLiteralGloss(g) ? manifest[g] ?? [] : []);
 
   const glosa = glosas[paso.i];
-  const fotos = glosa && !isLiteralGloss(glosa) ? manifest[glosa] ?? [] : [];
+  const fotos = fotosDe(glosa);
   const terminado = paso.i >= glosas.length;
 
   useEffect(() => {
@@ -61,20 +52,20 @@ export function SenasFotos({ manifest, glosas, frase, onSenando, velocidad = "no
   useEffect(() => {
     if (terminado) return;
     if (paso.pausa) {
-      const id = setTimeout(() => setPaso((p) => ({ i: p.i + 1, foto: 0, pausa: false })), MS_PAUSA * f);
+      const id = setTimeout(() => setPaso((p) => ({ i: p.i + 1, foto: 0, pausa: false })), MS_PAUSA);
       return () => clearTimeout(id);
     }
     const hayOtraFoto = paso.foto < fotos.length - 1;
     const id = setTimeout(
       () => setPaso((p) => (hayOtraFoto ? { ...p, foto: p.foto + 1 } : { ...p, pausa: true })),
-      (fotos.length ? MS_POR_FOTO : MS_PALABRA) * f,
+      fotos.length ? MS_POR_FOTO : MS_PALABRA,
     );
     return () => clearTimeout(id);
-  }, [paso, fotos.length, terminado, f]);
+  }, [paso, fotos.length, terminado]);
 
   // Al terminar se queda en la última foto de la última seña.
   const visible = terminado ? glosas[glosas.length - 1] : glosa;
-  const fotosVisibles = visible && !isLiteralGloss(visible) ? manifest[visible] ?? [] : [];
+  const fotosVisibles = fotosDe(visible);
   const archivo = terminado ? fotosVisibles[fotosVisibles.length - 1] : fotosVisibles[paso.foto];
 
   if (!visible) {

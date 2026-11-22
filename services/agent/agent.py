@@ -16,10 +16,11 @@ import os
 
 import anthropic
 from dotenv import load_dotenv
-from guard import parse_cliente_message
 from livekit import agents, rtc
 from livekit.agents import NOT_GIVEN, Agent, AgentSession, StopResponse, llm
 from livekit.plugins import deepgram, elevenlabs, silero
+
+from guard import parse_cliente_message
 from pipeline import turno_cliente, turno_ejecutivo
 from store import abrir_store
 from translator import Translator, load_escenario, load_glossary
@@ -51,10 +52,17 @@ async def publish(room: rtc.Room, msg: dict) -> None:
     await room.local_participant.publish_data(json.dumps(msg, ensure_ascii=False), reliable=True)
 
 
+def prewarm(proc: agents.JobProcess) -> None:
+    """Una vez por proceso (no por llamada): el VAD, el diccionario y el escenario no cambian entre llamadas."""
+    proc.userdata["vad"] = silero.VAD.load()
+    proc.userdata["glossary"] = load_glossary()
+    proc.userdata["escenario"] = load_escenario()
+
+
 async def entrypoint(ctx: agents.JobContext):
     await ctx.connect()
-    escenario = load_escenario()
-    translator = Translator(anthropic.Anthropic(), load_glossary(), escenario, store=abrir_store())
+    escenario = ctx.proc.userdata["escenario"]
+    translator = Translator(anthropic.Anthropic(), ctx.proc.userdata["glossary"], escenario, store=abrir_store())
     voz_actual = elegir_voz()
 
     tts = elevenlabs.TTS(
@@ -74,7 +82,7 @@ async def entrypoint(ctx: agents.JobContext):
             keyterm=escenario.stt_keyterms or NOT_GIVEN,  # términos del escenario (RUT, Fonasa, box…)
         ),
         tts=tts,
-        vad=silero.VAD.load(),
+        vad=ctx.proc.userdata["vad"],
     )
 
     tareas: set[asyncio.Task] = set()
@@ -108,4 +116,4 @@ async def entrypoint(ctx: agents.JobContext):
 
 
 if __name__ == "__main__":
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
+    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm))

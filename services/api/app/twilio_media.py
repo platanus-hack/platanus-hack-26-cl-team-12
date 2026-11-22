@@ -5,7 +5,7 @@ Turno del cliente:    /twilio/espera repite una pausa hasta que el cliente respo
 
 Probado en el trial de Twilio (ver BITACORA): <Say> y <Gather speech> funcionan; Media Streams y SIP no.
 `/twilio/media` (audio en vivo, plan B) queda solo para cuando se pague el upgrade.
-TODO(auth): validar la firma `X-Twilio-Signature` en todos los POST antes de desplegar (A4).
+Todos los POST validan `X-Twilio-Signature` con TWILIO_AUTH_TOKEN (A4); sin token configurado no se valida (dev).
 """
 
 import asyncio
@@ -14,21 +14,24 @@ import logging
 import os
 from xml.sax.saxutils import escape, quoteattr
 
-from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 
+from app.config import es_produccion
 from app.llamada import sala
+from app.traductor import load_escenario
 
 log = logging.getLogger("puente.twilio")
-router = APIRouter(prefix="/twilio")
 
 IDIOMA = 'language="es-MX"'
 SALUDO = (
     "Hola. Le habla Puente, un servicio de interpretación para una persona sorda. "
     "Hable después de este mensaje y espere unos segundos la respuesta."
 )
-# Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol").
-PISTAS = "RUT, Fonasa, Isapre, hora, hora médica, médico, doctor, consulta, agendar, previsión, bono, copago, rut, dígito verificador"
+# Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol"): los términos del
+# escenario (los mismos que recibe Deepgram en el agente) más algunos que solo le hacen falta a Twilio.
+_PISTAS_TWILIO = ["hora", "hora médica", "médico", "doctor", "previsión", "copago", "dígito verificador"]
+PISTAS = ", ".join(dict.fromkeys([*load_escenario().stt_keyterms, *_PISTAS_TWILIO]))
 ESPERA_S = 2  # segundos entre revisiones de la respuesta del cliente
 AVISO_CADA = 10  # cada ~20 s de espera se le avisa al ejecutivo que el cliente sigue escribiendo
 _tareas: set[asyncio.Task] = set()
@@ -37,6 +40,29 @@ _tareas: set[asyncio.Task] = set()
 def public_base(request: Request) -> str:
     """URL pública de la API (túnel ngrok o deploy). Twilio necesita direcciones absolutas."""
     return os.getenv("PUBLIC_BASE_URL", "").split("#")[0].strip().rstrip("/") or str(request.base_url).rstrip("/")
+
+
+async def verificar_firma(request: Request) -> None:
+    """Rechaza POST que no vengan de Twilio. La URL firmada es la pública (ngrok/Render), no la interna."""
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
+    if not auth_token:
+        if es_produccion():  # fallar cerrado: sin token no hay cómo saber que el POST viene de Twilio
+            log.error("TWILIO_AUTH_TOKEN vacío en producción: se rechazan los POST a /twilio/*")
+            raise HTTPException(503, "TWILIO_AUTH_TOKEN no configurado")
+        log.warning("TWILIO_AUTH_TOKEN vacío: no se valida X-Twilio-Signature (solo para desarrollo)")
+        return
+    from twilio.request_validator import RequestValidator
+
+    url = public_base(request) + request.url.path + (f"?{request.url.query}" if request.url.query else "")
+    params = dict(await request.form())
+    firma = request.headers.get("X-Twilio-Signature", "")
+    if not RequestValidator(auth_token).validate(url, params, firma):
+        log.warning("Firma de Twilio inválida para %s", url)
+        raise HTTPException(403, "Firma de Twilio inválida")
+
+
+router = APIRouter(prefix="/twilio")
+FIRMADO = [Depends(verificar_firma)]  # solo en los POST: en un router afectaría también al WebSocket /media
 
 
 def twiml(cuerpo: str) -> Response:
@@ -59,7 +85,7 @@ def escuchar(base: str, antes: str = "") -> str:
     )
 
 
-@router.post("/voz")
+@router.post("/voz", dependencies=FIRMADO)
 async def voz(request: Request) -> Response:
     """TwiML inicial cuando el ejecutivo contesta. `?modo=stream` usa audio en vivo (requiere cuenta pagada)."""
     if request.query_params.get("modo") == "stream":
@@ -70,12 +96,12 @@ async def voz(request: Request) -> Response:
     return twiml(escuchar(public_base(request), decir(SALUDO)))
 
 
-@router.post("/escuchar")
+@router.post("/escuchar", dependencies=FIRMADO)
 async def escuchar_de_nuevo(request: Request) -> Response:
     return twiml(escuchar(public_base(request)))
 
 
-@router.post("/turno")
+@router.post("/turno", dependencies=FIRMADO)
 async def turno(request: Request) -> Response:
     """Llega lo que dijo el ejecutivo, transcrito por Twilio. Se traduce en segundo plano y se espera al cliente."""
     form = await request.form()
@@ -90,7 +116,7 @@ async def turno(request: Request) -> Response:
     return twiml(decir("Un momento, por favor.") + ir_a(base, "/twilio/espera?n=0"))
 
 
-@router.post("/espera")
+@router.post("/espera", dependencies=FIRMADO)
 async def espera(request: Request) -> Response:
     """Mientras el cliente escribe: pausa corta y vuelve a revisar. Cuando hay respuesta, se dice y se escucha."""
     base = public_base(request)
@@ -106,7 +132,7 @@ async def espera(request: Request) -> Response:
     return twiml(f'{aviso}<Pause length="{ESPERA_S}"/>' + ir_a(base, f"/twilio/espera?n={n}"))
 
 
-@router.post("/estado")
+@router.post("/estado", dependencies=FIRMADO)
 async def estado(request: Request) -> Response:
     """statusCallback de Twilio: avisa a la PWA cuando la llamada termina."""
     form = await request.form()

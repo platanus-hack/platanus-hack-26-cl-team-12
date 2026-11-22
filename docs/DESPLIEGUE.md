@@ -1,7 +1,56 @@
 # Despliegue paso a paso
 
-> Quién despliega: **Raimundo**, desde su repo personal. Contexto y decisiones: [`ARQUITECTURA.md`](ARQUITECTURA.md) §3 y [ADR-0011](adr/0011-despliegue-vercel-y-contenedores.md).
->
+> Quién despliega: **Raimundo**, desde su espejo personal `rlabbev/puente`.
+> **Camino principal (desde 2026-11-21): Render + CD de GitHub Actions + APK Android.** La infra vive en este repo:
+> [`render.yaml`](../render.yaml), [`.github/workflows/cd.yml`](../.github/workflows/cd.yml) y `apps/mobile/android/`.
+> Lo de Vercel + Fly.io (más abajo) queda como alternativa.
+
+## Render + CD (camino principal)
+
+| Pieza | Servicio Render | URL |
+|---|---|---|
+| PWA (`apps/web`) | `puente-web` (static) | `https://puente-web.onrender.com` |
+| API (`services/api`) | `puente-api` (web, Docker, plan free) | `https://puente-api.onrender.com` |
+| Agente (`services/agent`) | `puente-agent` (worker, Docker, plan **starter**: los workers no tienen plan gratis) | sin URL |
+| Android | APK de debug | Releases del espejo |
+| iPhone | sin TestFlight: la PWA desde Safari → Compartir → **Agregar a inicio** | |
+
+Flujo: `git push` (doble push) → CI en el espejo → si pasa en `main`, `cd.yml` llama los **Deploy Hooks** de Render
+con el commit exacto (`ref=<sha>`), espera `/health` y publica la APK como Release. Auto-deploy de Render apagado
+(`autoDeployTrigger: "off"`): solo despliega lo que pasó el CI.
+
+### Primera vez (una sola vez)
+1. **Espejo:** `gh repo create rlabbev/puente --private` y doble push en tu clon (ver §1 más abajo). `git push origin main`.
+2. **Render:** New → **Blueprint** → conecta `rlabbev/puente` → Render lee `render.yaml` y pide los secretos
+   (`sync: false`): LiveKit (URL, key, secret), Anthropic, Deepgram, ElevenLabs y `ALLOWED_DESTINATIONS`. Apply.
+3. **Deploy Hooks:** en cada servicio → Settings → Deploy Hook → copiar y guardar en el espejo:
+   ```bash
+   gh secret set RENDER_DEPLOY_HOOK_API   --repo rlabbev/puente   # pega la URL cuando la pida
+   gh secret set RENDER_DEPLOY_HOOK_AGENT --repo rlabbev/puente
+   gh secret set RENDER_DEPLOY_HOOK_WEB   --repo rlabbev/puente
+   ```
+4. Si Render no te dio los nombres `puente-*` (ya tomados), corrige las URLs en `render.yaml` (`CORS_ORIGINS`,
+   `PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`) y define la variable del espejo:
+   `gh variable set PUBLIC_API_URL --repo rlabbev/puente --body https://<tu-api>.onrender.com`.
+5. Lanzar a mano la primera vez: `gh workflow run CD --repo rlabbev/puente` y seguir con `gh run watch --repo rlabbev/puente`.
+
+### APK Android
+- Descargar: `gh release download --repo rlabbev/puente --pattern '*.apk'` (o desde Releases en el celular, con sesión de GitHub).
+- Instalar: abrir el `.apk` en el Android y permitir "instalar apps desconocidas". La app pide cámara y micrófono.
+- Solo APK, sin desplegar: `gh workflow run CD --repo rlabbev/puente -f deploy=false`.
+- El WebView sirve la app desde `https://localhost`; por eso ese origen está en `CORS_ORIGINS`.
+
+### Cuidado
+- **A4:** `/token` y `/twilio/*` siguen sin auth ni límite de tasa. No compartas las URLs fuera del equipo.
+- La API en plan free **se duerme** (~1 min en despertar): ábrela antes de la demo o súbela a *starter* en `render.yaml`.
+  Los webhooks de Twilio (plan C) fallan si la API está dormida.
+- Las fotos de señas (`apps/web/public/senas/`) no se versionan (derechos UMCE): la web desplegada muestra el intérprete dibujado.
+- La región es `ohio` (Render no tiene Sudamérica); no se puede cambiar después de crear el servicio.
+
+---
+
+# Alternativa: Vercel + Fly.io (plan anterior)
+
 > **Estado honesto:** nada de esto se ha ejecutado todavía. No había Docker, ni cuentas ni claves en el equipo donde se escribió.
 > Los comandos salen de la documentación oficial (links al final) y de nuestros archivos, pero el primer despliegue
 > hay que tratarlo como una prueba. Donde algo es incierto lo digo.

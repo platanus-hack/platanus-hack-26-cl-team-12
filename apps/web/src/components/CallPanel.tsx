@@ -9,7 +9,7 @@ import {
   Composer, Icon, Interprete, QuickReplies, Subtitles, VisualAlert, DEFAULT_REPLIES, formatDuration,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
-import type { MensajePuente } from "@puente/glosses";
+import { LIMITES, type MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
 import { URGENCIAS, type Destino } from "./Inicio";
@@ -245,7 +245,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       {/* Teclado (por si no puedes hacer señas) */}
       {enLlamada && panel === "teclado" && (
         <div className="vl-hoja">
-          <Composer compact onSend={decir} placeholder="Escribe un mensaje" />
+          <Composer compact onSend={decir} placeholder="Escribe un mensaje" maxLength={LIMITES.max_texto} />
         </div>
       )}
 

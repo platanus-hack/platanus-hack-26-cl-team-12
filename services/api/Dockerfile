@@ -11,8 +11,8 @@ RUN useradd --create-home --uid 10001 puente
 WORKDIR /app
 COPY --from=build /app/services/api/.venv /app/services/api/.venv
 COPY packages/glosses/data /app/packages/glosses/data
-# Prompts de simplificar/complejizar (B). TODO(v2): moverlos a services/agent/translator/.
-COPY lab/v2_simplificar/prompts.py /app/lab/v2_simplificar/prompts.py
+# Traductor compartido con el agente (prompts, glosario y escenario: una sola fuente). Ver app/traductor.py.
+COPY services/agent/translator /app/services/agent/translator
 COPY services/api /app/services/api
 # API_ENV=production apaga Swagger (/docs, /redoc, /openapi.json) en el contenedor desplegado.
 ENV PATH="/app/services/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1 API_ENV=production

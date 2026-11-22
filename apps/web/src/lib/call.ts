@@ -39,7 +39,10 @@ export function joinCall(opts: CallOpts): Promise<CallHandle> {
 
 /** Plan C: WebSocket con la API. La API manda `estado`, `ejecutivo_dice`; la app manda `cliente_dice`. */
 function joinTwilio({ onMessage, onDesconectado }: CallOpts): Promise<CallHandle> {
-  const ws = new WebSocket(apiUrl().replace(/^http/, "ws") + "/twilio/cliente");
+  // A4: la API exige `?token=CLIENTE_WS_TOKEN` cuando está configurado. Es una clave de demo compartida (queda en el
+  // navegador), no un secreto de usuario. TODO(real-data): token por sesión cuando haya login real.
+  const token = process.env.NEXT_PUBLIC_CLIENTE_WS_TOKEN?.trim();
+  const ws = new WebSocket(apiUrl().replace(/^http/, "ws") + "/twilio/cliente" + (token ? `?token=${encodeURIComponent(token)}` : ""));
   let colgo = false;
 
   return new Promise((resolve, reject) => {
