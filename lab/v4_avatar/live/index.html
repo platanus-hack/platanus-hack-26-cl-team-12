@@ -47,15 +47,25 @@ h1{font-size:15px;margin:0 0 8px}
  <div id="stage"><canvas id="c"></canvas><div class="fps" id="fps"></div><div id="st">Cargando…</div></div>
  <div id="side">
   <h1>Grabar seña</h1>
+  <div style="background:#262b34;border-radius:8px;padding:6px;margin-bottom:6px">
+   <div style="display:flex;gap:6px;align-items:center"><b style="font-size:12px">Frase:</b><select id="frSel" style="flex:1;min-width:0;padding:6px;border-radius:6px"></select></div>
+   <label style="font-size:12px;color:#9aa;display:block;margin-top:4px"><input type="checkbox" id="frAuto" checked> Automático: pasar a la siguiente frase al completar 3 tomas</label>
+  </div>
   <input id="glosa" placeholder="GLOSA (ej: HOLA)" style="width:100%;box-sizing:border-box;padding:7px;border-radius:6px;border:0;margin-bottom:6px;text-transform:uppercase">
   <div style="display:flex;gap:6px;margin-bottom:6px">
-   <select id="dur" style="flex:1;padding:6px;border-radius:6px"><option value="1">1 s</option><option value="1.5">1,5 s</option><option value="2">2 s</option><option value="3" selected>3 s</option><option value="4">4 s</option></select>
+   <select id="dur" style="flex:1;padding:6px;border-radius:6px"><option value="1">1 s</option><option value="1.5">1,5 s</option><option value="2">2 s</option><option value="3" selected>3 s</option><option value="4">4 s</option><option value="6">6 s</option><option value="8">8 s</option><option value="10">10 s</option><option value="12">12 s</option><option value="15">15 s</option><option value="20">20 s</option></select>
    <button id="recBtn" class="btn" style="flex:2;background:#c0392b">● Grabar seña (cuenta 3)</button>
   </div>
   <button class="btn" id="vidBtn" style="width:100%;margin-bottom:6px;background:#6a4c93">🎥 Grabar VIDEO crudo (para WiLoR)</button>
+  <button class="btn" id="delBtn" style="width:100%;margin-bottom:6px;background:#7a3b3b">🗑 Borrar última toma de esta seña</button>
   <div id="clipBox" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:6px">
    <button class="btn" id="playBtn">▶ Ver</button><label style="margin:0 6px"><input type="checkbox" id="loopP"> repetir</label>
    <button class="btn" id="saveBtn" style="background:#2a6f5e">💾 Guardar</button><button class="btn" id="discBtn">✕</button>
+  </div>
+  <div id="ckBox" style="background:#262b34;border-radius:10px;padding:8px;margin-bottom:10px">
+   <div style="display:flex;justify-content:space-between;align-items:baseline"><b>✅ Checklist guion 1</b><span id="ckSum" style="color:#9fd;font-size:12px"></span></div>
+   <div style="height:6px;background:#3a4150;border-radius:4px;margin:6px 0"><div id="ckBar" style="height:6px;width:0;background:#2a6f5e;border-radius:4px"></div></div>
+   <div id="ckList" style="max-height:46vh;overflow:auto;font-size:12.5px"></div>
   </div>
   <h1 style="margin-top:12px">Biblioteca</h1>
   <div id="lib" style="display:flex;gap:6px;flex-wrap:wrap;color:#999">—</div>
@@ -181,22 +191,57 @@ $('saveBtn').onclick=async()=>{if(!clip)return;
  catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(clip)]));a.download=clip.glosa+'.json';a.click();st('Servidor no disponible: descargué el JSON ('+e.message+')')}};
 // ---- guía: lista cerrada con foto del diccionario
 let ESC=[],gi=0,done=new Set();
+const RK0={'seña':0,'fuera-del-diccionario':1,'frase':2},cmp=(a,b)=>a.localeCompare(b,'es',{sensitivity:'base'});
+// palabras en orden alfabético (con tildes bien); las frases se quedan en el orden de la conversación
+const sortEsc=l=>l.map((e,i)=>[e,i]).sort((a,b)=>(RK0[a[0].tipo]??0)-(RK0[b[0].tipo]??0)||(a[0].tipo==='frase'?a[1]-b[1]:cmp(a[0].glosa,b[0].glosa))).map(x=>x[0]);
 const key=e=>e.id.toUpperCase();
-function showGuide(i){if(!ESC.length)return;gi=(i+ESC.length)%ESC.length;const e=ESC[gi];
- $('gTitle').textContent=`${e.glosa}  (${gi+1}/${ESC.length})${done.has(key(e))?' ✔':''}`;
+function showGuide(i){if(!ESC.length)return;gi=(i+ESC.length)%ESC.length;const e=ESC[gi];renderCk();
+ $('gTitle').textContent=`${e.glosa}  (${gi+1}/${ESC.length})${isDone(e)?' ✔':stTxt(e)}`;
  $('gImg').src='/img/'+e.id+'.png';$('gImg').alt=e.glosa;
- $('gMean').textContent=(e.definicion||e.significa||'').slice(0,160);
+ $('gMean').textContent=e.tipo==='frase'?(e.significa||''):(e.definicion||e.significa||'').slice(0,160);
+ $('frSel').value=e.tipo==='frase'?String(gi):'';
+ if(e.tipo==='frase'){const n=((e.significa||'').split('→')[1]||'').trim().split(/[\s/]+/).filter(Boolean).length,need=n*1.1+2;  // ~1,1 s por glosa + margen
+  const D=$('dur');[...D.options].forEach(o=>o.dataset.av&&o.remove());
+  if(e.duracion_avatar){const o=document.createElement('option');o.value=e.duracion_avatar;o.dataset.av=1;o.textContent=e.duracion_avatar.toString().replace('.',',')+' s (= avatar)';D.insertBefore(o,D.firstChild);D.value=o.value}
+  else{const o=[...D.options].find(o=>+o.value>=need)||D.options[D.options.length-1];D.value=o.value}}
+ else [...$('dur').options].forEach(o=>o.dataset.av&&o.remove());
  $('gDesc').style.display=e.descripcion?'block':'none';$('gDesc').textContent=e.descripcion||'';
  $('glosa').value=key(e);
  const q=encodeURIComponent(e.glosa.toLowerCase().replace(/-/g,' ').replace(/\/.*$/,''));
  $('lSts').href='https://spreadthesign.com/es.cl/search/?q='+q;
  $('lYt').href='https://www.youtube.com/results?search_query='+encodeURIComponent('lengua de señas chilena '+decodeURIComponent(q));
  [...$('gChips').children].forEach((c,k)=>c.style.outline=k===gi?'2px solid #fff':'none')}
-function renderChips(){const el=$('gChips');el.innerHTML='';ESC.forEach((e,k)=>{const b=document.createElement('button');b.className='btn';
- b.style.cssText='padding:3px 7px;font-size:11px;background:'+(done.has(key(e))?'#2a6f5e':'#3a4150');b.textContent=e.glosa;b.onclick=()=>showGuide(k);el.appendChild(b)});showGuide(gi)}
+const isDone=e=>e.estado?e.estado.anim:done.has(key(e));
+const stTxt=e=>{const s=e.estado;return s&&s.tomas?` · ${s.tomas}/3 tomas${s.wilor?' · WiLoR '+s.wilor:''}${s.baked?' · bake '+s.baked:''}`:''};
+const chipBg=e=>isDone(e)?'#2a6f5e':(e.estado&&e.estado.tomas>=3)?'#8a6d1a':(e.estado&&e.estado.tomas>0)?'#2f5d8a':'#3a4150';
+$('delBtn').onclick=async()=>{const g=$('glosa').value.trim().toUpperCase();if(!g)return;
+ if(!confirm('¿Borrar la última toma de '+g+'? (queda en data/signs/_papelera)'))return;
+ try{const r=await fetch('/api/borrar-ultima?name='+encodeURIComponent(g),{method:'POST'});const j=await r.json();
+  st(j.ok?'Borrada la toma '+j.toma+' de '+g+' (quedan '+j.quedan+')':(j.error||'error'));refreshEsc()}catch(e){st('No se pudo borrar: '+e)}};
+const refreshEsc=(adv)=>fetch('/api/escenario').then(r=>r.json()).then(l=>{const cur=ESC[gi]&&ESC[gi].id;ESC=sortEsc(l);const ci=ESC.findIndex(e=>e.id===cur);if(ci>=0)gi=ci;renderChips();
+ if(adv&&$('frAuto').checked&&ESC[gi]&&ESC[gi].tipo==='frase'&&ESC[gi].estado&&ESC[gi].estado.tomas>=3){
+  const n=ESC.findIndex((e,k)=>e.tipo==='frase'&&k!==gi&&(e.estado?e.estado.tomas:0)<3&&!isDone(e));
+  if(n>=0){showGuide(n);st('Frase completa ✔ → siguiente: '+ESC[n].glosa)}else st('¡Todas las frases tienen 3 tomas!')}}).catch(()=>{});
+function renderCk(){const L=$('ckList');if(!L||!ESC.length||!ESC[0].estado)return;
+ const done_=ESC.filter(isDone).length,t3=ESC.filter(e=>!isDone(e)&&e.estado.tomas>=3).length;
+ $('ckSum').textContent=`${done_} fusionadas · ${t3} con 3 tomas · ${ESC.length} en total`;$('ckBar').style.width=(100*(done_+t3*0.6)/ESC.length)+'%';
+ L.innerHTML='';let last='';const RK={'seña':0,'fuera-del-diccionario':1,'frase':2};
+ [...ESC.keys()].sort((a,b)=>(RK[ESC[a].tipo]??0)-(RK[ESC[b].tipo]??0)||a-b).forEach(k=>{const e=ESC[k],s=e.estado,tipo=e.tipo||'';
+  if(tipo!==last){last=tipo;const t=document.createElement('div');t.style.cssText='margin:8px 0 2px;color:#8aa;font-weight:700';
+   t.textContent={'seña':'Señas del diccionario','fuera-del-diccionario':'Partes del cuerpo (se señalan)','frase':'Frases de corrido'}[tipo]||tipo;L.appendChild(t)}
+  const r=document.createElement('div');r.style.cssText='display:flex;gap:6px;padding:3px 4px;border-radius:5px;cursor:pointer;align-items:center'+(k===gi?';background:#3a4150':'');
+  const ic=isDone(e)?'✔':s.tomas>=3?'🟡':s.tomas>0?'🔵':'☐';
+  r.innerHTML=`<span style="width:18px">${ic}</span><span style="flex:1">${e.glosa}</span><span style="color:#9aa">${isDone(e)?'lista':s.tomas?s.tomas+'/3 tomas'+(s.wilor?' · W'+s.wilor:'')+(s.baked?' · B'+s.baked:''):''}</span>`;
+  r.onclick=()=>showGuide(k);L.appendChild(r)})}
+function fillFr(){const f=$('frSel'),v=f.value;f.innerHTML='<option value="">— elegir frase —</option>';
+ ESC.forEach((e,k)=>{if(e.tipo!=='frase')return;const o=document.createElement('option');o.value=k;
+  o.textContent=(isDone(e)?'✔ ':e.estado&&e.estado.tomas?`(${e.estado.tomas}/3) `:'')+e.glosa+' · '+(e.significa||'').split('  →')[0];f.appendChild(o)});f.value=v}
+$('frSel').onchange=e=>{if(e.target.value!=='')showGuide(+e.target.value)};
+function renderChips(){renderCk();fillFr();const el=$('gChips');el.innerHTML='';ESC.forEach((e,k)=>{const b=document.createElement('button');b.className='btn';
+ b.style.cssText='padding:3px 7px;font-size:11px;background:'+chipBg(e);b.textContent=e.glosa+(e.estado&&e.estado.tomas&&!isDone(e)?' '+e.estado.tomas+'/3':'');b.onclick=()=>showGuide(k);el.appendChild(b)});showGuide(gi)}
 $('prevG').onclick=()=>showGuide(gi-1);$('nextG').onclick=()=>showGuide(gi+1);
-fetch('/api/escenario').then(r=>r.json()).then(l=>{ESC=l;renderChips()}).catch(()=>{});
-async function loadLib(){try{const l=await (await fetch('/api/anims')).json();done=new Set(l);if(ESC.length)renderChips();const el=$('lib');el.innerHTML=l.length?'':'—';
+fetch('/api/escenario').then(r=>r.json()).then(l=>{ESC=sortEsc(l);renderChips()}).catch(()=>{});
+async function loadLib(){try{const l=await (await fetch('/api/anims')).json();l.sort(cmp);done=new Set(l);if(ESC.length)renderChips();const el=$('lib');el.innerHTML=l.length?'':'—';
  for(const g of l){const b=document.createElement('button');b.className='btn';b.textContent=g;
   b.onclick=async()=>{const c=await (await fetch('/anim/'+g+'.json')).json();$('glosa').value=g;playClip(c);$('clipBox').style.display='flex';st('Reproduciendo '+g)};el.appendChild(b)}}catch(e){}}
 loadLib();
@@ -224,7 +269,7 @@ $('vidBtn').onclick=async()=>{const g=nm()||'PRUEBA';
  const rec=new MediaRecorder(video.srcObject,{mimeType:mt,videoBitsPerSecond:10e6}),chunks=[];
  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
  rec.onstop=async()=>{const blob=new Blob(chunks,{type:'video/webm'});
-  try{const r=await fetch('/api/video?name='+encodeURIComponent(g),{method:'POST',body:blob});const j=await r.json();st('Toma '+j.toma+' guardada ✔ ('+Math.round(j.bytes/1024)+' KB). Graba otra para tener varias.')}
+  try{const r=await fetch('/api/video?name='+encodeURIComponent(g),{method:'POST',body:blob});const j=await r.json();st('Toma '+j.toma+' guardada ✔ ('+Math.round(j.bytes/1024)+' KB). Graba otra para tener varias.');refreshEsc(true)}
   catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=g+'.webm';a.click();st('Servidor no disponible: descargué el video')}};
  rec.start();const t0=performance.now(),iv=setInterval(()=>st('● VIDEO '+((performance.now()-t0)/1000).toFixed(1)+' s'),100);
  setTimeout(()=>{rec.stop();clearInterval(iv)},(+$('dur').value)*1000)};

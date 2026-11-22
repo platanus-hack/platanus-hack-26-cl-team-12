@@ -29,6 +29,11 @@ label{display:block;margin:8px 0}
  <div id="stage"><canvas id="c"></canvas><div id="sub"></div></div>
  <div id="side">
   <h1>Encadenar señas</h1>
+  <div style="background:#262b34;border-radius:8px;padding:8px;margin-bottom:8px">
+   <div style="display:flex;gap:6px;align-items:center"><b style="font-size:13px">Frase:</b><select id="frase" style="flex:1;min-width:0"></select></div>
+   <div id="fraseTxt" style="color:#cde;font-size:13px;margin:6px 0 2px"></div>
+   <label style="margin:0;font-size:12px;color:#9aa"><input type="checkbox" id="auto"> Automático: al terminar, seguir con la siguiente frase</label>
+  </div>
   <input type="text" id="seq" value="HOLA PERMISO MEDICO ENFERMO-A FIEBRE SI NO GRACIAS" placeholder="GLOSAS separadas por espacio">
   <div id="chips">—</div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -59,7 +64,10 @@ const cam=new THREE.PerspectiveCamera(28,1,0.1,20);cam.position.set(0,1.25,1.9);
 const resize=()=>{const r=canvas.parentElement.getBoundingClientRect();renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix()};
 addEventListener('resize',resize);resize();
 const loader=new GLTFLoader();loader.register(p=>new VRMLoaderPlugin(p));
-const vrm=(await loader.loadAsync('models/avatar.vrm')).userData.vrm;scene.add(vrm.scene);
+const AV=new URLSearchParams(location.search).get('avatar')||'avatar.vrm';
+const vrm=AV.endsWith('.glb')?await (await import('./glbavatar.js')).loadGlbAvatar('models/'+AV):(await loader.loadAsync('models/'+AV)).userData.vrm;scene.add(vrm.scene);
+{const hp=vrm.humanoid.getNormalizedBoneNode('head').getWorldPosition(new THREE.Vector3());   // encuadre según la altura de la cabeza
+ cam.position.set(0,hp.y-0.2,1.9);cam.lookAt(0,hp.y-0.28,0)}
 const rig=createRig(vrm,cam),bone=rig.bone;   // createRig deja los brazos en reposo
 const BONES=[];for(const s of['left','right']){BONES.push(s+'UpperArm',s+'LowerArm',s+'Hand');
  for(const f of['Thumb','Index','Middle','Ring','Little'])for(const j of(f==='Thumb'?['Metacarpal','Proximal','Distal']:['Proximal','Intermediate','Distal']))BONES.push(s+f+j)}
@@ -71,9 +79,24 @@ async function clip(n){if(!cache[n]){const c=await (await fetch('/anim/'+n+'.jso
  if(JSON.stringify(c.bones)!==JSON.stringify(BONES))throw new Error(n+': huesos distintos');cache[n]=c}return cache[n]}
 const pose=(c,i)=>BONES.map((_,k)=>new THREE.Quaternion().fromArray(c.frames[i].q,k*4));
 function resolve(tok){tok=tok.toUpperCase();return AVAIL.includes(tok)?tok:AVAIL.find(a=>a.startsWith(tok+'-')||a.startsWith(tok))||null}
-async function loadAvail(){AVAIL=await (await fetch('/api/anims')).json();const el=$('chips');el.innerHTML=AVAIL.length?'':'—';
+async function loadAvail(){AVAIL=(await (await fetch('/api/anims')).json()).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));const el=$('chips');el.innerHTML=AVAIL.length?'':'—';
  for(const a of AVAIL){const b=document.createElement('button');b.textContent=a;b.onclick=()=>{const i=$('seq');i.value=(i.value.trim()+' '+a).trim()};el.appendChild(b)}}
 await loadAvail();
+const TR=await (await fetch('/api/transiciones')).json().catch(()=>({pares:{}}));
+
+// ---- selector de frases (del guion): elige una y se carga y reproduce sola
+let FR=[];
+try{FR=(await (await fetch('/api/escenario')).json()).filter(e=>e.tipo==='frase')}catch(e){}
+const frTxt=e=>(e.significa||'').split('→');
+FR.forEach((e,k)=>{const o=document.createElement('option');o.value=k;o.textContent=e.glosa+' · '+frTxt(e)[0].trim();$('frase').appendChild(o)});
+if(!FR.length)$('frase').innerHTML='<option>(sin frases en el guion)</option>';
+function pickFrase(k,play=true){const e=FR[k];if(!e)return;$('frase').value=k;
+ const g=(frTxt(e)[1]||'').replace(/\//g,' ').trim();
+ $('fraseTxt').textContent=frTxt(e)[0].trim();
+ $('seq').value=g;   // siempre palabra por palabra; la frase grabada solo aporta las transiciones (TR)
+ if(play)start()}
+$('frase').onchange=ev=>pickFrase(+ev.target.value);
+if(FR.length){$('frase').selectedIndex=0;$('fraseTxt').textContent=frTxt(FR[0])[0].trim()}
 
 // ---- línea de tiempo con co-articulación: las señas se SOLAPAN. Mientras una termina, la siguiente ya empieza,
 // y se mezclan las dos poses (ambas en movimiento), así no hay frenazo entre palabras.
@@ -87,10 +110,24 @@ function dist(qa,qb){let m=0;for(const k of ARMS){const d=2*Math.acos(Math.min(1
 function sample(c,lt){lt=Math.max(0,Math.min(c.duration,lt));const F=c.frames;let i=0;while(i<F.length-2&&F[i+1].t<lt)i++;
  const a=F[i],b=F[Math.min(i+1,F.length-1)],al=b.t>a.t?Math.min(1,Math.max(0,(lt-a.t)/(b.t-a.t))):0;
  return BONES.map((_,k)=>new THREE.Quaternion().fromArray(a.q,k*4).slerp(new THREE.Quaternion().fromArray(b.q,k*4),al))}
+// ---- transiciones aprendidas de las frases: si el par A→B se grabó de corrido, el empalme usa ese movimiento real
+const lq=(a,k)=>new THREE.Quaternion().fromArray(a,k*4);
+function runs(rs,noBridge){const out=[];let cur=[];rs.forEach((n,i)=>{cur.push(n);const nx=rs[i+1];
+  if(!(nx&&!noBridge&&TR.pares[n+'>'+nx])){out.push(cur);cur=[]}});return out}
+function mergeRun(run){if(run.length===1)return cache[run[0]];
+ const K=6,fr=[],lab=[];   // K cuadros para fundir el empalme (corrige el desfase entre toma suelta y frase)
+ const push=(qs,l,fade)=>{if(fade&&fr.length){const last=fr[fr.length-1];qs=qs.map((q,i)=>i<K?last.map((lq_,k)=>q[k].clone().slerp(lq_,1-(i+1)/(K+1))):q)}
+  qs.forEach(q=>{fr.push(q);lab.push(l)})};
+ run.forEach((n,i)=>{const c=cache[n],pr=i>0&&TR.pares[run[i-1]+'>'+n],nx=i<run.length-1&&TR.pares[n+'>'+run[i+1]];
+  const a=pr?pr.tB:0;let b=nx?nx.tA:c.frames.length-1;if(b<=a+3)b=c.frames.length-1;
+  if(pr){const br=pr.q.map(row=>BONES.map((_,k)=>lq(row,k)));push(br,run[i-1]+'→'+n,true)}
+  push(c.frames.slice(a,b+1).map(f=>BONES.map((_,k)=>lq(f.q,k))),n,i>0)});
+ return {glosa:run.join('+'),duration:(fr.length-1)/30,labels:lab,frames:fr.map((qs,i)=>({t:i/30,q:qs.flatMap(q=>q.toArray())}))}}
 async function build(){
  const speed=+$('speed').value,maxOV=+$('tr').value,toRest=$('rest').checked;
  const names=$('seq').value.trim().split(/\s+/).filter(Boolean),list=[],miss=[];
- for(const w of names){const n=resolve(w);if(n)list.push(await clip(n));else miss.push(w)}
+ const rs=[];for(const w of names){const n=resolve(w);if(n){rs.push(n);await clip(n)}else miss.push(w)}
+ for(const run of runs(rs,toRest))list.push(mergeRun(run));
  if(miss.length)msg('Sin animación aún: '+miss.join(', ')+' (se omiten)');
  if(!list.length)return null;
  const seq=[restClip(0.3)];list.forEach((c,i)=>{seq.push(c);if(toRest&&i<list.length-1)seq.push(restClip(0.25))});seq.push(restClip(0.6));
@@ -112,13 +149,15 @@ function apply(T,t){
   const pa=pose(A),pb=pose(B);P=pa.map((q,k)=>q.slerp(pb[k],w));label=(w>0.5?B:A).c.glosa||(w>0.5?A:B).c.glosa}
  else if(act.length===1){P=pose(act[0]);label=act[0].c.glosa}
  else P=REST;
+ const act1=act.length?act[act.length-1]:null;if(act1&&act1.c.labels){const lt=Math.min(act1.c.labels.length-1,Math.max(0,Math.round((t-act1.s)*T.speed*30)));label=act1.c.labels[lt]}
  $('sub').textContent=label;BONES.forEach((b,k)=>bone(b).quaternion.copy(P[k]))}
 async function start(){T=await build();if(!T)return;t0=performance.now();playing=true;msg('Reproduciendo '+T.total.toFixed(1)+' s')}
 $('play').onclick=start;
 $('stop').onclick=()=>{playing=false;$('sub').textContent='';BONES.forEach((b,k)=>bone(b).quaternion.copy(REST[k]));msg('Detenido')};
+{const pl=new URLSearchParams(location.search).get('play');if(pl){$('seq').value=pl.replace(/,/g,' ');start().then(()=>{const at=new URLSearchParams(location.search).get('at');if(at&&T){playing=false;apply(T,+at)}})}}
 msg(AVAIL.length?'Listo. '+AVAIL.length+' señas con animación.':'Aún no hay animaciones guardadas en data/signs/anim.');
 const clock=new THREE.Clock();
 (function loop(){requestAnimationFrame(loop);
- if(playing&&T){const t=(performance.now()-t0)/1000;if(t>=T.total-0.001){if($('loop').checked)t0=performance.now();else{playing=false;$('sub').textContent='';msg('Fin')}}else apply(T,t)}
+ if(playing&&T){const t=(performance.now()-t0)/1000;if(t>=T.total-0.001){if($('loop').checked)t0=performance.now();else{playing=false;$('sub').textContent='';msg('Fin');const k=+$('frase').value;if($('auto').checked&&FR[k+1])setTimeout(()=>{if(!playing&&$('auto').checked)pickFrase(k+1)},1500)}}else apply(T,t)}
  vrm.update(clock.getDelta());renderer.render(scene,cam)})();
 </script></body></html>

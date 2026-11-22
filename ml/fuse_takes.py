@@ -20,7 +20,7 @@ def load(path):
     return c['bones'], q
 
 
-def trim(q, bones, thr=0.12, margin=3, k=6):
+def trim(q, bones, thr=0.12, margin=3, k=6, tail=0):
     """Recorta las pausas del inicio y del final: el inicio mientras la pose no se aleje de la del primer cuadro,
     el final mientras no se acerque a la del último. Mide los k huesos que más se mueven (brazos, muñeca o dedos)."""
     def dist(ref):
@@ -28,7 +28,7 @@ def trim(q, bones, thr=0.12, margin=3, k=6):
         return np.sort(ang, 1)[:, -k:].mean(1)
     a_ = np.where(dist(q[0]) > thr)[0]; b_ = np.where(dist(q[-1]) > thr)[0]
     if len(a_) == 0 or len(b_) == 0: return q
-    lo, hi = max(0, a_[0] - margin), min(len(q), b_[-1] + margin + 1)
+    lo, hi = max(0, a_[0] - margin), min(len(q), b_[-1] + margin + 1 + tail)
     return q[lo:hi] if hi - lo >= 12 else q
 
 
@@ -62,6 +62,8 @@ def smooth(q, sigma=1.5):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('glosa'); ap.add_argument('--takes', nargs='*', type=int)
     ap.add_argument('--sigma', type=float, default=1.5)
+    ap.add_argument('--tail', type=int, default=0, help='cuadros extra que se conservan al final (si la seña se corta antes)')
+    ap.add_argument('--slow', type=float, default=1.0, help='estira la animación en el tiempo (1.4 = 40%% más lenta)')
     a = ap.parse_args()
     files = sorted((ROOT / 'data/signs/baked').glob(f'{a.glosa}__*.json'))
     if a.takes: files = [f for f in files if int(f.stem.split('__')[1]) in a.takes]
@@ -69,7 +71,7 @@ def main():
     bones, _ = load(files[0])
     w = np.array([3.0 if b.endswith(('UpperArm', 'LowerArm')) else 2.0 if b.endswith('Hand') else 1.0 for b in bones])
     # los primeros cuadros de cada toma cocida son el avatar convergiendo desde el reposo (artefacto): se descartan
-    takes = [trim(load(f)[1][WARMUP:], bones) for f in files]
+    takes = [trim(load(f)[1][WARMUP:], bones, tail=a.tail) for f in files]
     for f, t in zip(files, takes): print(f'{f.stem}: {len(t)} cuadros útiles ({len(t)/30:.2f} s)')
     n = len(takes)
     M = np.zeros((n, n)); paths = {}
@@ -95,6 +97,11 @@ def main():
     fused = sum(wi * x for wi, x in zip(wts, acc)) / sum(wts)
     fused /= np.linalg.norm(fused, axis=-1, keepdims=True)
     fused = smooth(fused, a.sigma)
+    if a.slow != 1.0:  # remuestrea a más/menos cuadros: interpolación lineal de cuaterniones (mismo signo) + normalizar
+        T = len(fused); m = max(2, int(round((T - 1) * a.slow)) + 1); x = np.linspace(0, T - 1, m)
+        i0 = np.floor(x).astype(int); i1 = np.minimum(i0 + 1, T - 1); fr = (x - i0)[:, None, None]
+        b = fused[i1] * np.sign(np.sum(fused[i0] * fused[i1], -1, keepdims=True) + 1e-12)
+        fused = (1 - fr) * fused[i0] + fr * b; fused /= np.linalg.norm(fused, axis=-1, keepdims=True)
     out = dict(glosa=a.glosa.upper(), fps=30, duration=round((len(fused) - 1) / 30, 3), bones=bones,
                fuente=dict(tomas=used, mediana=files[med].stem),
                frames=[dict(t=round(i / 30, 3), q=np.round(f.reshape(-1), 4).tolist()) for i, f in enumerate(fused)])
