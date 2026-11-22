@@ -22,7 +22,7 @@ on:
         default: true
 
 permissions:
-  contents: write # crear el Release con la APK
+  contents: read
 
 concurrency:
   group: cd-${{ github.repository }}
@@ -79,11 +79,13 @@ jobs:
       github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write # crear el Release con la APK
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.SHA }}
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -93,7 +95,8 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: gradle
-      - uses: android-actions/setup-android@v3
+      # El SDK de Android ya viene en ubuntu-latest ($ANDROID_HOME); setup-android@v3 falla con el sdkmanager actual.
+      - run: echo "sdk.dir=$ANDROID_HOME" > apps/mobile/android/local.properties
 
       - run: pnpm install --frozen-lockfile
       - name: Build web (con la URL pública de la API)
