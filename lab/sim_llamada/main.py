@@ -1,6 +1,6 @@
 """Puente — simulación de llamada en el navegador (sin Twilio).
 Ejecutivo (pestaña /ejecutivo, micrófono) <-> backend <-> Cliente (pestaña /cliente, chat).
-Correr:  cd app/backend && uvicorn main:app --reload --port 8000
+Correr:  cd lab/sim_llamada && uvicorn main:app --reload --port 8000
 TODO(real-data): cambiar la entrada de audio del ejecutivo por Twilio Media Streams."""
 import asyncio, base64, json, os, sys, time
 from pathlib import Path

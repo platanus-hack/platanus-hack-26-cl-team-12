@@ -1,30 +1,17 @@
-// Componentes accesibles compartidos (WCAG 2.2 AA; avisos visuales en vez de sonoros).
+// @puente/ui — componentes por defecto de Puente (WCAG 2.2 AA; avisos visuales en vez de sonoros).
+// Estilos: importa "@puente/ui/src/styles/tokens.css" y luego "@puente/ui/src/styles/components.css".
+// Guía de uso: packages/ui/README.md (es el mismo contenido del artefacto "Puente Design System").
 
-export interface SubtitleLine {
-  id: string;
-  who: "ejecutivo" | "cliente";
-  text: string;
-}
-
-/** Subtítulos en vivo. `aria-live` hace que los lectores de pantalla anuncien cada línea nueva. */
-export function Subtitles({ lines }: { lines: SubtitleLine[] }) {
-  return (
-    <ol aria-live="polite" aria-label="Subtítulos de la llamada" className="puente-subtitles">
-      {lines.map((l) => (
-        <li key={l.id} data-who={l.who}>
-          <strong>{l.who === "ejecutivo" ? "Ejecutivo" : "Tú"}:</strong> {l.text}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/** Aviso visual grande (reemplaza tonos y timbres de llamada). */
-export function VisualAlert({ message }: { message: string | null }) {
-  if (!message) return null;
-  return (
-    <div role="alert" className="puente-alert">
-      {message}
-    </div>
-  );
-}
+export { Logo } from "./components/Logo";
+export { Icon, iconNames, type IconName } from "./components/Icon";
+export { Button, type ButtonProps } from "./components/Button";
+export { CallStatus, formatDuration, type CallState } from "./components/CallStatus";
+export { VisualAlert, type AlertTone } from "./components/VisualAlert";
+export { Subtitles, type SubtitleLine } from "./components/Subtitles";
+export { QuickReplies, DEFAULT_REPLIES } from "./components/QuickReplies";
+export { Composer, type ComposerProps } from "./components/Composer";
+export { GlossChip, type GlossState } from "./components/GlossChip";
+export { SignCamera, type SignCameraProps } from "./components/SignCamera";
+export { SignAvatar, type SignAvatarProps } from "./components/SignAvatar";
+export { IncomingCall, type IncomingCallProps } from "./components/IncomingCall";
+export { default as tokens } from "./tokens.json";

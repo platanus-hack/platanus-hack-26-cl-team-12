@@ -22,7 +22,8 @@
 | Telefonía real (Twilio + LiveKit SIP) | ⬜ Plan (`services/agent/telefonia/README.md`) |
 | **Base de datos (Supabase)** | ⬜ **Plan: no hay proyecto ni migraciones.** Hoy el diccionario es un JSON |
 | Despliegue (Vercel, Render o Fly.io) | ⬜ Plan: nada está desplegado |
-| `apps/desktop` (Tauri) | ⬜ Solo documentado |
+| `apps/desktop` (Tauri) | ✂️ Fuera de la demo |
+| Llamada entrante (inbound trunk + dispatch rule individual) | ⬜ Plan (§1.3); plan B con hora límite (§1.7) |
 
 ---
 
@@ -31,13 +32,13 @@
 ### 1.1 Vista general
 
 ```mermaid
-graph TD
+graph LR
     subgraph Persona sorda
         PWA["PWA (apps/web)<br/>Capacitor en móvil"]
         Cam["Cámara"] --> MP["MediaPipe<br/>puntos clave (packages/signs)"]
         MP --> Clf["Clasificador ONNX<br/>señas → glosas"]
         Clf --> PWA
-        PWA --> Player["Reproductor de señas<br/>clips → avatar (packages/avatar)"]
+        PWA --> Player["Reproductor de señas<br/>clips por glosa (avatar 3D fuera de la demo)"]
     end
 
     subgraph Ejecutivo
@@ -51,10 +52,10 @@ graph TD
     Twilio["Twilio<br/>número + trunk SIP"]
 
     subgraph Backend["Backend Python"]
-        API["services/api (FastAPI)<br/>/token · /llamadas · /glosses"]
-        Agent["services/agent<br/>LiveKit Agents"]
+        API["services/api (FastAPI)<br/>/token · /llamadas · /glosses<br/>/webhooks/livekit"]
+        Agent["services/agent · inbound-agent<br/>(hospedado en LiveKit Cloud)"]
         Trad["translator/<br/>Claude (Haiku)"]
-        STT["STT Deepgram"]
+        STT["STT Deepgram o Scribe<br/>(se elige con datos, §1.7)"]
         TTS["TTS ElevenLabs"]
     end
 
@@ -63,7 +64,10 @@ graph TD
     Tel <--> Twilio <--> Room
     PWA -- "data channel + token" --> Room
     PWA -- "POST /token" --> API
-    API -- "SIP saliente" --> Room
+    API -- "SIP saliente (cuando tú llamas)" --> Room
+    Twilio -- "SIP entrante → sala call-*<br/>(cuando te llaman)" --> Room
+    Room -- "webhook participant_joined" --> API
+    API -- "call.incoming<br/>(Supabase Realtime)" --> PWA
     Room <--> Agent
     Agent --> STT --> Trad
     Agent --> Trad --> TTS --> Room
@@ -71,6 +75,10 @@ graph TD
     Agent --> DB
     PWA --> DB
 ```
+
+> **Imágenes PNG** de los diagramas de este documento (para slides): [vista general](diagramas/arquitectura/01-vista-general.png),
+> [modelo de base de datos](diagramas/arquitectura/02-modelo-base-de-datos.png) y [despliegue](diagramas/arquitectura/03-despliegue.png).
+> Los 14 diagramas UML están en [`UML.md`](UML.md). Si cambias un diagrama, hay que regenerar su imagen.
 
 ### 1.2 Componentes por carpeta
 
@@ -106,6 +114,65 @@ traductor lo vuelve una frase natural y cortés (`complejizar`, pendiente en `ag
 `emitir_glosas`), valida cada una contra el diccionario, deletrea lo que no existe y publica `glosas_para_senar`
 con un subtítulo. La PWA reproduce los clips en orden.
 
+**Llamada entrante (te llaman a ti).** Sigue el ejemplo de llamadas entrantes de la documentación de LiveKit:
+- **Inbound trunk** para el número de Twilio y **dispatch rule individual**: cada llamada crea **su propia sala** con
+  prefijo `call-` y despacha al agente `inbound-agent` (el worker se registra con `agent_name="inbound-agent"`:
+  despacho explícito, no entra a otras salas).
+- **Número → usuario:** cuando entra el participante SIP, LiveKit manda el webhook `participant_joined` a
+  `services/api` con el número llamado (atributo `sip.trunkPhoneNumber`). La tabla `phone_numbers` de Supabase (§2.2)
+  dice a qué usuario hacer sonar.
+- **Aviso a la app:** la API publica `call.incoming {room, from}` en el canal Realtime del usuario. La PWA muestra el
+  aviso visual (pantalla, vibración, "Te llaman") y, al tocar **Contestar**, pide `POST /token {room}` y entra a la
+  sala. La API solo entrega token para una sala `call-*` si está asignada a ese usuario.
+- **El agente maneja la espera:** reproduce el mensaje de espera, el saludo cuando contestas y, si nadie contesta en
+  `RING_TIMEOUT_S` (30 s), el **buzón**: transcribe el mensaje y lo deja como texto (no se guarda audio, ADR-0010).
+  Esto **reemplaza la lógica de espera que habíamos diseñado en FastAPI**; la API queda solo con webhook y tokens.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Ej as Ejecutivo (teléfono)
+    participant Tw as Twilio
+    participant LK as LiveKit Cloud (SIP + Agents)
+    participant Ag as inbound-agent
+    participant API as services/api
+    participant SB as Supabase
+    participant PWA as PWA (persona sorda)
+
+    Ej->>Tw: Llama al número de Puente
+    Tw->>LK: INVITE (inbound trunk)
+    LK->>LK: Dispatch rule individual → sala call-xyz
+    LK-->>Ag: Despacha inbound-agent a la sala
+    Ag-->>Ej: TTS espera: "Conectando con una persona sorda, un momento"
+    LK->>API: Webhook participant_joined (call-xyz, número llamado)
+    API->>SB: phone_numbers: número llamado → usuario
+    API->>SB: Realtime: call.incoming {room, from}
+    SB-->>PWA: call.incoming
+    PWA->>PWA: Aviso visual: pantalla + vibración "Te llaman"
+    alt Contesta antes de RING_TIMEOUT_S
+        PWA->>API: POST /token {room: call-xyz}
+        API-->>PWA: token (role=cliente, sin audio)
+        PWA->>LK: Entra a la sala
+        Ag-->>Ej: TTS saludo
+        Ag-->>PWA: estado: llamada_iniciada
+        loop Conversación (v1–v4)
+            Ej->>Ag: voz → STT → traductor
+            Ag-->>PWA: ejecutivo_dice / glosas_para_senar
+            PWA->>Ag: cliente_dice / glosas_cliente
+            Ag-->>Ej: traductor → TTS
+        end
+        Ej->>Tw: Cuelga
+        Ag-->>PWA: estado: llamada_terminada
+    else Nadie contesta
+        Ag-->>Ej: TTS buzón: "Deje su mensaje"
+        Ej->>Ag: voz → STT
+        Ag->>SB: Mensaje como texto para el usuario
+    end
+```
+
+**Límite del MVP:** la PWA debe estar abierta (suscrita a Realtime). Con la app cerrada se necesita push +
+CallKit/ConnectionService (ADR-0007, fuera del MVP).
+
 ### 1.4 Contrato de mensajes (data channel de LiveKit)
 
 Definido en `packages/glosses/src/contract.ts` (TS) y validado en `services/agent/guard.py` (Python).
@@ -117,6 +184,9 @@ Definido en `packages/glosses/src/contract.ts` (TS) y validado en `services/agen
 | `estado` | agente | PWA | `valor`: `llamada_iniciada` \| `llamada_terminada` |
 | `glosas_cliente` | PWA | agente | `glosas[]` (≤ 30), `confianza` |
 | `glosas_para_senar` | agente | PWA | `glosas[]`, `subtitulo` |
+
+El aviso `call.incoming` **no** va por data channel (la PWA todavía no está en la sala): va por Supabase Realtime
+con `{tipo: "call.incoming", room, from}`. `TODO(v1)`: agregarlo a `contract.ts`.
 
 ### 1.5 Glosas
 
@@ -137,9 +207,34 @@ No se reordenan los `classifierLabel` sin reentrenar el modelo.
 | Validación de tipos, glosas conocidas y topes de tamaño antes de llegar al LLM o al TTS | `guard.py`, `contract.ts` |
 | Llamadas salientes solo a una lista de números permitidos | `ALLOWED_DESTINATIONS` |
 | El video no sale del dispositivo; no se graba audio ni video | ADR-0010 |
+| `/token` para salas `call-*` solo si la sala está asignada al usuario que la pide | `services/api` `/token` |
+| Webhook de LiveKit verificado con su firma (`WebhookReceiver`) | `services/api` `/webhooks/livekit` |
 
 **Pendiente antes de desplegar:** exigir sesión en `/token`, límite de tasa por IP y usuario, tope de mensajes por sala
 (costo de Claude y ElevenLabs) y firmar la sala para `/llamadas` (requerimiento A4 del plan).
+
+### 1.7 Decisiones para la demo
+
+**Plan B con hora límite.** Si **3 horas antes de presentar** la llamada SIP no conecta de punta a punta
+(teléfono → Twilio → LiveKit → agente → PWA), cambiamos a **Twilio Media Streams directo a FastAPI**: Twilio abre un
+WebSocket a `services/api` (`/twilio/media`, audio μ-law 8 kHz), FastAPI hace STT → traductor → TTS y le habla a la PWA
+por WebSocket. Es menos elegante, pero tiene menos piezas que puedan fallar. El traductor con Claude
+(`services/agent/translator/`) y el contrato de glosas sirven igual.
+
+```mermaid
+graph LR
+    Tel["Teléfono"] <--> Tw["Twilio<br/>Media Streams"]
+    Tw <-->|"WebSocket μ-law 8 kHz"| API["services/api<br/>/twilio/media"]
+    API --> STT["STT"] --> Trad["translator/ (Claude)"] --> TTS["TTS"] --> API
+    API <-->|"WebSocket (mismo contrato)"| PWA["PWA"]
+```
+
+**STT elegido con datos.** Prueba de 10 minutos entre **Deepgram** y **ElevenLabs Scribe** con audio telefónico
+chileno (8 kHz, `data/eval/`); nos quedamos con el que transcriba mejor (WER, nombres propios, números, RUT).
+
+**Recortes.** Fuera de la demo: `apps/desktop` (Tauri) y el avatar 3D (queda `ClipSignPlayer` con clips). Si se puede,
+el agente se hospeda **directo en LiveKit Cloud** (LiveKit Cloud Agents): una plataforma menos. Render o Fly.io quedan
+solo para la API.
 
 ---
 
@@ -158,6 +253,7 @@ preferencias y archivos.
 erDiagram
     auth_users ||--|| profiles : "1 a 1"
     profiles ||--o{ call_transcripts : "tiene"
+    profiles ||--o{ phone_numbers : "recibe llamadas en"
     glosses {
         bigint id PK
         text gloss UK "MÉDICO"
@@ -176,6 +272,11 @@ erDiagram
         text display_name
         text role "sordo | oyente"
         jsonb prefs
+    }
+    phone_numbers {
+        text e164 PK "+56..."
+        uuid user_id FK
+        boolean active
     }
     call_transcripts {
         uuid id PK
@@ -225,7 +326,15 @@ create table call_transcripts (
   expires_at timestamptz not null default now() + interval '30 days'
 );
 
+-- Número de Twilio → usuario al que hay que hacer sonar (llamadas entrantes).
+create table phone_numbers (
+  e164    text primary key check (e164 ~ '^\+[1-9][0-9]{7,14}$'),
+  user_id uuid not null references profiles(id) on delete cascade,
+  active  boolean not null default true
+);
+
 alter table glosses          enable row level security;
+alter table phone_numbers    enable row level security;
 alter table profiles         enable row level security;
 alter table call_transcripts enable row level security;
 
@@ -233,6 +342,8 @@ alter table call_transcripts enable row level security;
 create policy glosses_read on glosses for select using (true);
 -- Cada persona ve y edita solo lo suyo.
 create policy profiles_own on profiles for all using (auth.uid() = id) with check (auth.uid() = id);
+-- Cada persona ve sus números; solo el backend (service role) los asigna.
+create policy phone_numbers_own on phone_numbers for select using (auth.uid() = user_id);
 create policy transcripts_own on call_transcripts for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
@@ -266,18 +377,18 @@ El dataset de entrenamiento (puntos clave grabados con consentimiento) **no** va
 | **LiveKit Cloud** | Salas WebRTC, SIP y hosting del agente | Gratuito | ⬜ Proyecto por crear |
 | **Twilio** | Número y trunk SIP hacia LiveKit | Cuenta trial: solo llama a números verificados | ⬜ Por configurar |
 | **Anthropic** | Traductor (`claude-haiku-5-5`) | De pago por uso | Clave en `.env` |
-| **Deepgram** | STT en streaming (español) | Créditos de prueba | Candidato; falta benchmark con audio chileno |
+| **Deepgram** / **ElevenLabs Scribe** | STT en streaming (español) | Créditos de prueba | Se elige con prueba de 10 min con audio telefónico chileno (§1.7) |
 | **ElevenLabs** | TTS con voz chilena | Cuota limitada | Falta elegir `ELEVENLABS_VOICE_ID` |
 | **Supabase** | Postgres, Storage, Auth | Gratuito (pausa por inactividad) | ⬜ Plan |
 | **Vercel** | Hosting de la PWA | Gratuito | ⬜ Desde un repo personal (ver abajo) |
-| **Render o Fly.io** | Contenedores de API y agente | Gratuito o barato | ⬜ Fly.io tiene región Santiago (`scl`) |
+| **Render o Fly.io** | Contenedor de la API (el agente va a LiveKit Cloud si se puede) | Gratuito o barato | ⬜ Fly.io tiene región Santiago (`scl`) |
 
 ### 3.2 Ambientes
 
 | Ambiente | Qué corre | Cómo |
 |---|---|---|
 | Local | Todo, con LiveKit Cloud real o mocks | Ver 3.5 |
-| Demo / producción | PWA en Vercel; API y agente en contenedores | Ver 3.3 |
+| Demo / producción | PWA en Vercel; API en contenedor; agente en LiveKit Cloud | Ver 3.3 |
 
 No hay un ambiente de staging.
 
@@ -287,17 +398,21 @@ No hay un ambiente de staging.
 graph LR
     Dev["Repo de la organización<br/>(el jurado ve este)"] -- "git push a ambos" --> Personal["Repo personal<br/>(Vercel y Render lo ven)"]
     Personal --> Vercel["Vercel<br/>PWA estática"]
-    Personal --> Render["Render / Fly.io<br/>API + agente (Docker)"]
+    Personal --> Render["Render / Fly.io<br/>API (Docker)"]
+    Personal --> LKA["LiveKit Cloud Agents<br/>inbound-agent"]
     Vercel --> LK["LiveKit Cloud"]
     Render --> LK
+    LKA --> LK
+    LKA --> SB
     Render --> SB["Supabase"]
 ```
 
 - Vercel y Render **no pueden conectarse al repo de la organización**: se despliega desde un repo personal con doble `push`
-  (ver `docs/ONBOARDING.md` §4). Solo una persona despliega.
+  (ver `docs/ONBOARDING.md` §4). Solo una persona despliega: **Raimundo**, desde su repo personal.
 - La PWA necesita **HTTPS** (la cámara no funciona sin él).
 - El agente es un proceso de larga duración: **no cabe en funciones serverless**.
 - Los secretos van como variables del proveedor; nunca en el repo.
+- **Paso a paso con comandos:** [`DESPLIEGUE.md`](DESPLIEGUE.md).
 
 ### 3.4 Contenedores
 
@@ -312,6 +427,9 @@ Multi-stage con `uv sync --frozen`, imagen `python:3.12-slim` y usuario no root 
 El agente se inicia con `python agent.py start`. **No se han construido todavía** (no había Docker en el equipo de desarrollo).
 
 ### 3.5 Desarrollo local
+
+Atajo: `make setup` (crea `.env` e instala todo) y `make dev` (PWA + API; `make dev-all` suma el agente). Lista completa con `make help`.
+Esto es lo que hace por dentro:
 
 ```bash
 pnpm install                                                      # dependencias JS
@@ -340,15 +458,18 @@ No hay CD: el despliegue lo dispara el `push` al repo personal.
 
 ### 3.7 Variables de entorno
 
-Todas están en `.env.example`. Los secretos solo en `.env` (nunca commitear).
+Todas están en [`.env.example`](../.env.example), que es la documentación completa: marca cuáles son obligatorias, opcionales
+(con su valor por defecto) o reservadas (aún sin código), y dónde se carga cada una. Los secretos solo en `.env` (nunca commitear).
 
 | Variable | Usa | Notas |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | agent | Secreto |
 | `TRANSLATOR_MODEL` | agent | Por defecto `claude-haiku-5-5` |
-| `ESCENARIO_DEMO` | agent | Contexto del prompt (banco, hora médica) |
+| `ESCENARIO` | agent | Id del escenario (`packages/glosses/data/escenarios/<id>.json`): contexto, ejemplos, keyterms STT, pronunciaciones |
+| `AGENT_DB_PATH` | agent | SQLite del agente (caché, latencia, glosas faltantes); `off` la desactiva |
+| `ELEVENLABS_VOICE_ID_HOMBRE`, `VOZ_CLIENTE` | agent | Voz de hombre y voz por defecto (`mujer`/`hombre`) |
 | `DEEPGRAM_API_KEY`, `STT_LANGUAGE` | agent | STT; `es` por defecto |
-| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL` | agent | TTS; modelo por defecto `eleven_flash_v2_5` |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL` | agent | TTS; modelo por defecto `eleven_flash_v2_5`. El plugin espera `ELEVEN_API_KEY`; el agente le pasa `ELEVENLABS_API_KEY` |
 | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | api, agent | Secretos (salvo la URL) |
 | `LIVEKIT_SIP_TRUNK_ID` | api | Trunk SIP saliente hacia Twilio |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | api | Secretos |
@@ -358,7 +479,7 @@ Todas están en `.env.example`. Los secretos solo en `.env` (nunca commitear).
 | `GLOSSES_PATH` | api, agent | Opcional: otra ruta al `glosses.json` |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | web, api | Públicas |
 | `SUPABASE_SERVICE_ROLE_KEY` | api | **Solo backend** |
-| `NEXT_PUBLIC_API_URL` | web | Se expone al navegador |
+| `NEXT_PUBLIC_API_URL` | web | Se expone al navegador y se hornea en el build. **Next.js no lee el `.env` de la raíz** (verificado): en local va en `apps/web/.env.local`, en producción en Vercel |
 
 ### 3.8 Límites conocidos
 

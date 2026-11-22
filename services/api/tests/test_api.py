@@ -1,6 +1,7 @@
 import base64
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -69,3 +70,195 @@ def test_llamada_blocks_numbers_outside_allowlist(monkeypatch):
     assert r.status_code == 403
     r = client.post("/llamadas", json={"room": "x", "numero": "+56911111111"})
     assert r.status_code == 501  # permitido, pero la llamada SIP sigue como TODO(v1)
+
+
+
+class FakeTraductor:
+    async def simplificar(self, texto):
+        from app.traductor import SimpleResult
+
+        return SimpleResult(simple=f"simple({texto})", opciones=["Sí", "No"])
+
+    async def complejizar(self, texto):
+        return f"formal({texto})"
+
+    def para_voz(self, frase):
+        return frase
+
+
+@pytest.fixture
+def sala_falsa(monkeypatch):
+    from app.llamada import sala
+
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    # main.py carga el .env local: sin esto, un TWILIO_AUTH_TOKEN real haría fallar los POST sin firma.
+    monkeypatch.delenv("TWILIO_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("CLIENTE_WS_TOKEN", raising=False)
+    monkeypatch.setenv("API_ENV", "development")
+    monkeypatch.setattr(sala, "traductor", FakeTraductor())
+    sala.reiniciar()
+    return sala
+
+
+def test_twilio_voz_saluda_y_escucha_con_urls_absolutas(sala_falsa):
+    r = client.post("/twilio/voz")
+    assert '<Gather input="speech"' in r.text and "Puente" in r.text
+    assert 'action="https://abc.ngrok-free.app/twilio/turno"' in r.text
+
+
+def test_twilio_stream_mode_points_to_public_wss(sala_falsa):
+    r = client.post("/twilio/voz?modo=stream")
+    assert '<Stream url="wss://abc.ngrok-free.app/twilio/media"/>' in r.text
+
+
+def test_conversacion_completa_por_turnos(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
+
+        # Turno del ejecutivo: el texto (escapado) va simplificado a la PWA y Twilio queda esperando.
+        r = client.post("/twilio/turno", data={"SpeechResult": "su hora es el martes <x>"})
+        assert "/twilio/espera?n=0" in r.text
+        assert pwa.receive_json() == {
+            "tipo": "ejecutivo_dice",
+            "texto": "su hora es el martes <x>",
+            "simple": "simple(su hora es el martes <x>)",
+            "opciones": ["Sí", "No"],
+        }
+        assert "<Pause" in client.post("/twilio/espera?n=0").text  # el cliente todavía no responde
+
+        # Turno del cliente: se complejiza y se le dice al ejecutivo (escapado), y se vuelve a escuchar.
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})  # mensaje desconocido: se ignora
+        for _ in range(50):
+            r = client.post("/twilio/espera?n=1")
+            if "formal(" in r.text:
+                break
+        assert "formal(martes bueno)" in r.text and '<Gather input="speech"' in r.text
+
+
+def test_twilio_turno_vacio_vuelve_a_escuchar(sala_falsa):
+    r = client.post("/twilio/turno", data={"SpeechResult": ""})
+    assert '<Gather input="speech"' in r.text
+
+
+def test_ejecutivo_dice_sin_traduccion_si_claude_falla(sala_falsa, monkeypatch):
+    class Roto(FakeTraductor):
+        async def simplificar(self, texto):
+            raise RuntimeError("sin red")
+
+    monkeypatch.setattr(sala_falsa, "traductor", Roto())
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/turno", data={"SpeechResult": "hola"})
+        assert pwa.receive_json() == {"tipo": "ejecutivo_dice", "texto": "hola", "simple": None, "opciones": []}
+
+
+def test_ejecutivo_dice_respeta_el_tope_del_contrato(sala_falsa):
+    from app.traductor import MAX_TEXTO
+
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/turno", data={"SpeechResult": "a" * (MAX_TEXTO + 100)})
+        msg = pwa.receive_json()
+    assert len(msg["texto"]) == MAX_TEXTO and msg["texto"].endswith("…")
+    assert len(msg["simple"]) <= MAX_TEXTO
+
+
+# ── Auth mínima (A4) ──────────────────────────────────────────────────────────
+
+
+def _firmar(url: str, params: dict, token: str) -> str:
+    from twilio.request_validator import RequestValidator
+
+    return RequestValidator(token).compute_signature(url, params)
+
+
+def test_twilio_post_sin_firma_es_rechazado(sala_falsa, monkeypatch):
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "secreto-twilio")
+    assert client.post("/twilio/turno", data={"SpeechResult": "hola"}).status_code == 403
+    r = client.post("/twilio/voz", headers={"X-Twilio-Signature": "falsa"})
+    assert r.status_code == 403
+
+
+def test_twilio_post_con_firma_valida_pasa(sala_falsa, monkeypatch):
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "secreto-twilio")
+    # Twilio firma la URL pública (PUBLIC_BASE_URL), con query, y los parámetros del form.
+    params = {"SpeechResult": ""}
+    url = "https://abc.ngrok-free.app/twilio/turno?x=1"
+    r = client.post("/twilio/turno?x=1", data=params, headers={"X-Twilio-Signature": _firmar(url, params, "secreto-twilio")})
+    assert r.status_code == 200 and '<Gather input="speech"' in r.text
+
+
+def test_firma_de_otra_url_no_sirve(sala_falsa, monkeypatch):
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "secreto-twilio")
+    firma = _firmar("https://abc.ngrok-free.app/twilio/voz", {}, "secreto-twilio")
+    assert client.post("/twilio/escuchar", headers={"X-Twilio-Signature": firma}).status_code == 403
+
+
+def test_ws_cliente_exige_token(sala_falsa, monkeypatch):
+    from starlette.websockets import WebSocketDisconnect
+
+    monkeypatch.setenv("CLIENTE_WS_TOKEN", "abc123")
+    for ruta in ("/twilio/cliente", "/twilio/cliente?token=otro"):
+        with pytest.raises(WebSocketDisconnect) as e:
+            with client.websocket_connect(ruta):
+                pass
+        assert e.value.code == 1008
+    with client.websocket_connect("/twilio/cliente?token=abc123") as pwa:
+        client.post("/twilio/voz")
+        assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
+
+
+def test_en_produccion_sin_secretos_falla_cerrado(sala_falsa, monkeypatch):
+    from starlette.websockets import WebSocketDisconnect
+
+    monkeypatch.setenv("API_ENV", "production")
+    assert client.post("/twilio/voz").status_code == 503
+    with pytest.raises(WebSocketDisconnect) as e:
+        with client.websocket_connect("/twilio/cliente"):
+            pass
+    assert e.value.code == 1008
+
+
+def test_twilio_media_echoes_audio():
+    with client.websocket_connect("/twilio/media") as ws:
+        ws.send_json({"event": "start", "start": {"streamSid": "MZ1"}})
+        ws.send_json({"event": "media", "media": {"payload": "AAEC"}})
+        assert ws.receive_json() == {"event": "media", "streamSid": "MZ1", "media": {"payload": "AAEC"}}
+        ws.send_json({"event": "stop"})
+
+
+def test_glosses_respeta_el_modelo_publicado():
+    data = client.get("/glosses").json()
+    assert all({"gloss", "category", "es", "classifierLabel"} <= g.keys() for g in data["glosses"])
+
+
+def _app_con_env(monkeypatch, **env):
+    import importlib
+
+    import app.main as main
+
+    for k in ("API_ENV", "API_DOCS"):
+        monkeypatch.delenv(k, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    return TestClient(importlib.reload(main).app)
+
+
+def test_swagger_en_desarrollo(monkeypatch):
+    c = _app_con_env(monkeypatch)
+    assert c.get("/docs").status_code == 200
+    spec = c.get("/openapi.json").json()
+    assert {"/health", "/token", "/llamadas", "/glosses"} <= spec["paths"].keys()
+    assert {t["name"] for t in spec["tags"]} == {"sistema", "llamada", "glosas"}
+    assert "503" in spec["paths"]["/token"]["post"]["responses"]
+
+
+def test_swagger_apagado_en_produccion(monkeypatch):
+    c = _app_con_env(monkeypatch, API_ENV="production")
+    for ruta in ("/docs", "/redoc", "/openapi.json"):
+        assert c.get(ruta).status_code == 404
+    assert c.get("/health").status_code == 200
+    assert _app_con_env(monkeypatch, API_ENV="production", API_DOCS="1").get("/docs").status_code == 200
+    assert _app_con_env(monkeypatch, API_DOCS="0").get("/docs").status_code == 404
+    # `API_DOCS=` vacío (como viene en .env.example) no apaga Swagger en desarrollo
+    assert _app_con_env(monkeypatch, API_DOCS="").get("/docs").status_code == 200
