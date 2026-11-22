@@ -21,7 +21,7 @@ async function siguienteRespuesta(request: Parameters<typeof twilio>[0]) {
   return twiml;
 }
 
-test("conversación completa: la app llama, el ejecutivo habla, el cliente responde y cuelgan", async ({ page, request }) => {
+test("conversación completa: la app llama, parte el cliente, los turnos alternan y cuelgan", async ({ page, request }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Llamar a mi ejecutivo/ }).click();
   await expect(page.getByRole("heading", { name: "Llamada con Mi ejecutivo del banco" })).toBeAttached();
@@ -32,11 +32,20 @@ test("conversación completa: la app llama, el ejecutivo habla, el cliente respo
     { numero: "+56900000000", base: "https://e2e.puente.test" },
   ]);
 
-  // El ejecutivo contesta: Twilio pide el TwiML inicial y la app pasa a "En llamada".
+  // El ejecutivo contesta: Twilio pide el TwiML inicial y la app pasa a "En llamada". Parte la persona sorda (#40):
+  // tras el saludo no se escucha al ejecutivo, se espera el primer mensaje del cliente.
   const saludo = await twilio(request, API_URL, "/twilio/voz");
-  expect(saludo).toContain('<Gather input="speech"');
+  expect(saludo).toContain("/twilio/espera?n=0");
+  expect(saludo).not.toContain("<Gather");
   await expect(page.getByText(/En llamada · \d/)).toBeVisible();
   await abrirChat(page);
+  expect(await twilio(request, API_URL, "/twilio/espera?n=0")).toContain("<Pause"); // el cliente aún no habla
+
+  // El cliente parte con la frase sugerida: se le dice al ejecutivo (complejizada) y recién ahí se le escucha.
+  await sugerencias(page).getByRole("button", { name: "Hola, necesito hacer una consulta." }).click();
+  const primera = await siguienteRespuesta(request);
+  expect(primera).toContain("Formal: Hola, necesito hacer una consulta.");
+  expect(primera).toContain('<Gather input="speech"');
 
   // Turno del ejecutivo: llega a la app simplificado, con el original y respuestas sugeridas.
   const turno = await twilio(request, API_URL, "/twilio/turno", { SpeechResult: "Su saldo es de diez mil pesos", Confidence: "0.92" });

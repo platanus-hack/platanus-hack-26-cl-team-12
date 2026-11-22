@@ -126,10 +126,11 @@ def sala_falsa(monkeypatch):
     return sala
 
 
-def test_twilio_voz_saluda_y_escucha_con_urls_absolutas(sala_falsa):
+def test_twilio_voz_saluda_y_espera_que_parta_el_cliente(sala_falsa):
     r = client.post("/twilio/voz")
-    assert '<Gather input="speech"' in r.text and "Puente" in r.text
-    assert 'action="https://abc.ngrok-free.app/twilio/turno"' in r.text
+    # Parte la persona sorda: no se escucha al ejecutivo hasta que el cliente haya dicho algo.
+    assert '<Gather' not in r.text and "Puente" in r.text
+    assert "https://abc.ngrok-free.app/twilio/espera?n=0" in r.text
 
 
 def test_twilio_stream_mode_points_to_public_wss(sala_falsa):

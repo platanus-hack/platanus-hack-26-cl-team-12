@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Tomás / Claude (v1/turnos-cliente-primero) · la llamada parte con la persona sorda y los turnos alternan
+- Hice: `/twilio/voz` ya no escucha al ejecutivo tras el saludo: saluda y va a `/twilio/espera` hasta que la persona sorda envíe su primer mensaje. Antes (ejecutivo primero) el primer mensaje del cliente quedaba en cola sin que nadie lo dijera y solo salía cuando el ejecutivo hablaba, desordenando los turnos. Saludo ajustado ("La persona le hablará en unos segundos…"). Test actualizado; pytest api 57 OK.
+- Decidí: orden estricto cliente → ejecutivo → cliente… (espera → dice → escucha → turno → espera).
+- Falta / bloqueado: probar con llamada real (no probado en Twilio); redesplegar `puente-api`. Si el ejecutivo habla durante el turno del cliente, `ejecutivo_dice` borra las glosas que llevaba señadas (CallPanel).
+
 ## 2026-11-22 — Martín / Claude (v1/espera-larga)
 - Hallazgo: con el trial de Twilio ("Limited trial") **la llamada se corta después de ~10 pedidos de TwiML**, no por tiempo (dos llamadas de 66 s y 45 s cortadas justo en el pedido 10, con un mensaje de Twilio). Esperar al cliente con `<Pause 2>` + `<Redirect>` gastaba un pedido cada 2 s.
 - Hice: `/twilio/espera` retiene el pedido hasta `TWILIO_ESPERA_S` (10 s) y contesta apenas llega la respuesta del cliente: ~5 veces menos pedidos. Aviso "la persona sigue respondiendo" cada ~20 s.
