@@ -60,9 +60,18 @@ async def verificar_firma(request: Request) -> None:
     url = public_base(request) + request.url.path + (f"?{request.url.query}" if request.url.query else "")
     params = dict(await request.form())
     firma = request.headers.get("X-Twilio-Signature", "")
+    if not firma and _llamada_propia(params):
+        # Cuenta trial: el primer pedido pasa por TwilioProxy (el aviso "trial account") y llega SIN firma.
+        # Se acepta solo si es una llamada que creó este servidor (CallSid aleatorio de 34 caracteres) y de esta cuenta.
+        return
     if not RequestValidator(auth_token).validate(url, params, firma):
         log.warning("Firma de Twilio inválida para %s", url)
         raise HTTPException(403, "Firma de Twilio inválida")
+
+
+def _llamada_propia(params: dict) -> bool:
+    cuenta = os.getenv("TWILIO_ACCOUNT_SID", "")
+    return bool(cuenta) and params.get("AccountSid") == cuenta and params.get("CallSid") in sala.llamadas_creadas
 
 
 router = APIRouter(prefix="/twilio")

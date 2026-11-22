@@ -375,3 +375,33 @@ def test_si_elevenlabs_falla_se_usa_la_voz_de_twilio(voz_falsa, monkeypatch):
 
 def test_audio_inexistente_da_404():
     assert client.get("/twilio/audio/no-existe.mp3").status_code == 404
+
+
+def test_trial_primer_pedido_sin_firma_solo_para_llamadas_propias(sala_falsa, monkeypatch):
+    """El trial de Twilio manda /voz por TwilioProxy sin X-Twilio-Signature: se acepta solo con un CallSid nuestro."""
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token-de-prueba")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC_nuestra")
+    sala_falsa.llamadas_creadas.add("CA_nuestra")
+    try:
+        propia = {"CallSid": "CA_nuestra", "AccountSid": "AC_nuestra"}
+        assert client.post("/twilio/voz", data=propia).status_code == 200
+        assert client.post("/twilio/voz", data={**propia, "CallSid": "CA_ajena"}).status_code == 403
+        assert client.post("/twilio/voz", data={**propia, "AccountSid": "AC_otra"}).status_code == 403
+        # Con firma presente (aunque sea de una llamada propia), se valida la firma como siempre.
+        assert client.post("/twilio/voz", data=propia, headers={"X-Twilio-Signature": "falsa"}).status_code == 403
+    finally:
+        sala_falsa.llamadas_creadas.discard("CA_nuestra")
+
+
+def test_llamadas_registra_el_callsid(monkeypatch):
+    import app.main as m
+    from app.llamada import sala
+
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56911111111")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"):
+        monkeypatch.setenv(k, "x")
+    monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: ("CA_registrada", "queued"))
+    client.post("/llamadas", json={"numero": "+56911111111"})
+    assert "CA_registrada" in sala.llamadas_creadas
+    sala.llamadas_creadas.discard("CA_registrada")

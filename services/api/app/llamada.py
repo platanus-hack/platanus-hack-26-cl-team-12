@@ -33,6 +33,9 @@ class Sala:
         # (texto para <Say>, id del audio chileno o None): el audio se genera apenas responde el cliente.
         self.respuestas: asyncio.Queue[tuple[str, str | None]] = asyncio.Queue()
         self.traductor = Traductor()
+        # CallSid de las llamadas que creó este servidor (POST /llamadas). Sirve para aceptar el primer pedido del
+        # trial de Twilio, que llega por TwilioProxy SIN firma (ver verificar_firma en twilio_media.py).
+        self.llamadas_creadas: set[str] = set()
 
     async def enviar(self, msg: dict) -> None:
         for ws in list(self.clientes):
