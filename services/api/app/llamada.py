@@ -2,7 +2,7 @@
 
 Ejecutivo (teléfono) ⇄ Twilio <Gather>/<Say> ⇄ /twilio/* (twilio_media.py) ⇄ este módulo ⇄ WS /twilio/cliente ⇄ PWA
 Mensajes del WebSocket con el cliente: los de docs/contrato.md (`ejecutivo_dice`, `glosas_para_senar`, `cliente_dice`,
-`estado`).
+`glosas_cliente`, `cliente_dijo`, `estado`).
 
 TODO(v1): una sola llamada a la vez (demo). Para varias, indexar `Sala` por CallSid y unirla al token del cliente.
 """
@@ -29,7 +29,8 @@ class Sala:
 
     def __init__(self):
         self.clientes: set[WebSocket] = set()
-        self.respuestas: asyncio.Queue[str] = asyncio.Queue()
+        # (texto para la voz, frase para mostrar en la app). Se avisa a la app recién cuando empieza a sonar (respuesta_pendiente).
+        self.respuestas: asyncio.Queue[tuple[str, str]] = asyncio.Queue()
         self.traductor = Traductor()
 
     async def enviar(self, msg: dict) -> None:
@@ -52,6 +53,11 @@ class Sala:
             log.exception("No se pudo simplificar; se manda el texto original")
         await self.enviar({"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": simple, "opciones": opciones})
 
+    async def _cliente_dice_frase(self, frase: str) -> None:
+        """Lo que el cliente dijo ya convertido: queda listo para decirse por voz. La app lo ve cuando empieza a sonar."""
+        frase = recortar(frase)
+        await self.respuestas.put((self.traductor.para_voz(frase), frase))
+
     async def _senas(self, texto: str) -> None:
         try:
             r = await self.traductor.a_glosas(texto)
@@ -70,13 +76,29 @@ class Sala:
         except Exception:
             log.exception("No se pudo complejizar; se dice el texto original")
             frase = texto
-        await self.respuestas.put(self.traductor.para_voz(frase or texto))
+        await self._cliente_dice_frase(frase or texto)
 
-    def respuesta_pendiente(self) -> str | None:
+    async def cliente_senio(self, glosas: list[str]) -> None:
+        """v3: el cliente firmó frente a la cámara (`glosas_cliente`). Las glosas se convierten en una frase y se dice por voz."""
+        validas = self.traductor.glosas_conocidas(glosas)
+        if not validas:
+            return
         try:
-            return self.respuestas.get_nowait()
+            frase = await self.traductor.glosas_a_espanol(validas)
+        except Exception:
+            log.exception("No se pudo convertir las glosas; se dicen tal cual")
+            frase = " ".join(g.lower() for g in validas)
+        await self._cliente_dice_frase(frase or " ".join(g.lower() for g in validas))
+
+    async def respuesta_pendiente(self) -> str | None:
+        """La siguiente respuesta del cliente para decir por voz. Al sacarla empieza a sonar: ahí se le manda a la app
+        la frase (`cliente_dijo`) para que se vea escrita a la par del audio."""
+        try:
+            voz, pantalla = self.respuestas.get_nowait()
         except asyncio.QueueEmpty:
             return None
+        await self.enviar({"tipo": "cliente_dijo", "texto": pantalla})
+        return voz
 
     def reiniciar(self) -> None:
         """Nueva llamada: se descartan respuestas viejas."""
@@ -111,8 +133,12 @@ async def cliente(ws: WebSocket) -> None:
                 msg = json.loads(await ws.receive_text())
             except ValueError:
                 continue
-            if isinstance(msg, dict) and msg.get("tipo") == "cliente_dice" and isinstance(msg.get("texto"), str):
+            if not isinstance(msg, dict):
+                continue
+            if msg.get("tipo") == "cliente_dice" and isinstance(msg.get("texto"), str):
                 await sala.cliente_dijo(msg["texto"])
+            elif msg.get("tipo") == "glosas_cliente" and isinstance(msg.get("glosas"), list):
+                await sala.cliente_senio(msg["glosas"])
     except WebSocketDisconnect:
         pass
     finally:

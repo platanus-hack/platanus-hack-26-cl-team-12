@@ -346,7 +346,7 @@ main.login { min-height: 100dvh; justify-content: center; gap: var(--space-8); p
 /* ---------- Videollamada (estilo FaceTime): ejecutivo arriba, tú abajo ---------- */
 main.vl { position: relative; max-width: 560px; height: 100dvh; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 8px; background: #000; }
 .vl-tile { position: relative; min-height: 0; border-radius: 22px; overflow: hidden; }
-.vl-ejecutivo { background: linear-gradient(180deg, #e8ecf2 0%, #c9d0da 100%); }
+.vl-ejecutivo { background: linear-gradient(180deg, #2b3342 0%, #10141b 100%); } /* fondo oscuro: el avatar y el subtítulo se leen mejor */
 .vl-avatar { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; }
 .vl-avatar > svg { height: 112%; width: auto; margin-top: -4%; }
 .vl-cabeza { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; }

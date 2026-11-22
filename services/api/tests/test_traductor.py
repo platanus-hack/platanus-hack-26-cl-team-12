@@ -30,3 +30,15 @@ def test_es_el_mismo_translator_que_usa_el_agente():
     import translator
 
     assert SimpleResult is translator.SimpleResult  # una sola fuente, no una copia
+
+
+def test_glosas_conocidas_descarta_las_que_no_estan_en_el_diccionario_y_respeta_el_tope():
+    from translator import load_glossary
+    from translator.glossary import CONTRATO
+
+    class T(TranslatorFalso):
+        glossary = load_glossary()
+
+    tr = Traductor(T())
+    assert tr.glosas_conocidas(["HOLA", "XYZ-NO-EXISTE", "AMBULANCIA", 5]) == ["HOLA", "AMBULANCIA"]
+    assert len(tr.glosas_conocidas(["HOLA"] * (CONTRATO["max_glosas"] + 10))) == CONTRATO["max_glosas"]
