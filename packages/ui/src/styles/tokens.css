@@ -3,11 +3,11 @@
 /* Oscuro es el tema por defecto (Rafael, 21-11-2026); claro con data-theme="light" en <html> (botón de tema). */
 :root, [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0e1116;
-  --surface: #171b22;
-  --surface-raised: #232833;
-  --line: #2c323d;
-  --line-strong: #6f7889;
+  --bg: #161a21;
+  --surface: #1f242c;
+  --surface-raised: #2b313b;
+  --line: #363d48;
+  --line-strong: #7a8396;
   --fg: #f2f4f7;
   --muted: #a2abb9;
   --accent: #ffd34d;

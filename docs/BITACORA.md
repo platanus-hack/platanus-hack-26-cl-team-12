@@ -8,6 +8,10 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · login, avatar a la medida, calificación
+- Hice: perfil ficticio **Patricia Muñoz** con retrato dibujado (no se usa foto ni identidad de personas reales). **Editor del intérprete** con vista previa en vivo: estatura, contextura, piel (5), largo y color de pelo, ojos, vello facial, lentes y color de ropa (`Interprete` + `Retrato` en `packages/ui`). **Login** de demo (cualquier usuario y contraseña); Cerrar sesión vuelve al login. **Calificación de 5 estrellas** con comentario al terminar la llamada. Foto del usuario al lado de sus mensajes en el chat. Barra: foto a la izquierda, logo al centro, tema a la derecha; el menú sale desde la izquierda. Botón central "Inicio" neutro (antes "Llamar", confundía). Oscuro un poco más claro (`#161a21`). Revisado con capturas a 390×844.
+- Falta: enviar la calificación al backend y login real (TODO(real-data)).
+
 ## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · tema oscuro, menú de perfil y pestañas
 - Decidí (Rafael): **oscuro por defecto** con botón sol/luna arriba a la izquierda; la foto de perfil también arriba a la izquierda y abre un **menú desde la derecha** (perfil, personalizar intérprete, accesibilidad, cerrar sesión); abajo **Historial · Llamar (centro) · Emergencias**. LiveKit no se usará.
 - Hice: paleta oscura nueva (contrastes revisados, todo texto ≥ 4,5:1); `lib/preferencias.ts` (se guardan en el celular) con tema, tipo de intérprete (fotos/dibujado), velocidad de señas, tono de piel del intérprete dibujado, texto grande, reducir movimiento, ver texto original y vibrar; script en `<head>` para que no destelle el tema al abrir. `AppShell` (barras), `MenuPerfil`, `Historial` (simulado, con resumen al tocar), `Emergencias` (131 SAMU llama con Puente; 132/133/134 "Pronto"; clínica de ejemplo). Perfil de ejemplo: Camila Rojas. Revisado con capturas en 390×844, oscuro y claro.

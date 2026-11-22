@@ -1,29 +1,29 @@
 "use client";
 
-// Menú que sale desde la derecha al tocar la foto de perfil: 1 Perfil, 2 Intérprete de señas, 3 Accesibilidad, 4 Cerrar sesión.
-// El perfil es de ejemplo. Las opciones del intérprete y de accesibilidad funcionan de verdad (lib/preferencias.ts).
+// Menú que sale desde la izquierda al tocar la foto de perfil: 1 Perfil, 2 Intérprete de señas, 3 Accesibilidad, 4 Cerrar sesión.
+// El perfil es ficticio (de ejemplo). El editor del intérprete y accesibilidad funcionan de verdad (lib/preferencias.ts).
 // TODO(real-data): perfil real e inicio de sesión cuando exista backend con usuarios.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Icon, type IconName } from "@puente/ui";
+import {
+  COLORES_OJOS, COLORES_PELO, COLORES_ROPA, Icon, Interprete, Retrato, TONOS_PIEL,
+  type Apariencia, type IconName,
+} from "@puente/ui";
 import { cambiarPreferencias, usePreferencias, type Preferencias } from "@/lib/preferencias";
 
+// Persona ficticia de la demo (no es una persona real).
 export const PERFIL = {
-  nombre: "Camila Rojas",
-  iniciales: "CR",
+  nombre: "Patricia Muñoz",
   descripcion: "Persona sorda · Lengua de Señas Chilena",
   direccion: "Av. Providencia 1234, depto 56, Providencia",
-  contacto: "Pedro Rojas (esposo) · +56 9 0000 0000",
+  contacto: "Jorge Muñoz (esposo) · +56 9 0000 0000",
   medicos: "Sin alergias conocidas",
+  apariencia: { piel: "clara", largoPelo: "medio", colorPelo: "castano", ojos: "cafe", lentes: true, ropa: "burdeo" } satisfies Partial<Apariencia>,
 };
 
 type Vista = "menu" | "perfil" | "interprete" | "accesibilidad" | "salir";
 
 export function FotoPerfil({ size = 36 }: { size?: number }) {
-  return (
-    <span className="foto" style={{ width: size, height: size, fontSize: Math.round(size * 0.4) }} aria-hidden>
-      {PERFIL.iniciales}
-    </span>
-  );
+  return <Retrato apariencia={PERFIL.apariencia} size={size} />;
 }
 
 export function MenuPerfil({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
@@ -34,6 +34,7 @@ export function MenuPerfil({ abierto, onCerrar }: { abierto: boolean; onCerrar: 
   useEffect(() => {
     if (!abierto) return;
     setVista("menu");
+    setAviso(null);
     panel.current?.focus();
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
     window.addEventListener("keydown", esc);
@@ -91,8 +92,8 @@ export function MenuPerfil({ abierto, onCerrar }: { abierto: boolean; onCerrar: 
           {vista === "perfil" && (
             <>
               <div className="perfil-foto">
-                <FotoPerfil size={96} />
-                <button type="button" className="enlace" onClick={() => setAviso("Cambiar foto estará disponible pronto.")}>
+                <FotoPerfil size={104} />
+                <button type="button" className="enlace" onClick={() => setAviso("Subir tu propia foto estará disponible pronto.")}>
                   Cambiar foto
                 </button>
               </div>
@@ -107,20 +108,13 @@ export function MenuPerfil({ abierto, onCerrar }: { abierto: boolean; onCerrar: 
             </>
           )}
 
-          {vista === "interprete" && <Interprete />}
+          {vista === "interprete" && <EditorInterprete />}
           {vista === "accesibilidad" && <Accesibilidad />}
 
           {vista === "salir" && (
             <div className="salir">
               <p>¿Quieres cerrar sesión en este celular? Tus preferencias se mantienen.</p>
-              <button
-                type="button"
-                className="btn-peligro"
-                onClick={() => {
-                  setAviso("Cerraste sesión (simulado en la demo).");
-                  setVista("menu");
-                }}
-              >
+              <button type="button" className="btn-peligro" onClick={() => cambiarPreferencias({ sesion: null })}>
                 Cerrar sesión
               </button>
               <button type="button" className="enlace" onClick={() => setVista("menu")}>
@@ -172,17 +166,50 @@ function Grupo<T extends string>({ titulo, valor, opciones, onCambio }: { titulo
   );
 }
 
-function Interprete() {
+/** Fila de muestras de color (piel, pelo, ojos, ropa). */
+function Colores<T extends string>({ titulo, valor, colores, nombres, onCambio }: { titulo: string; valor: T; colores: Record<T, string | readonly string[]>; nombres: Record<T, string>; onCambio: (v: T) => void }) {
+  return (
+    <fieldset className="segmento">
+      <legend>
+        {titulo}: <span className="valor-elegido">{nombres[valor]}</span>
+      </legend>
+      <div className="muestras">
+        {(Object.keys(colores) as T[]).map((k) => {
+          const c = colores[k];
+          return (
+            <button
+              key={k}
+              type="button"
+              className={k === valor ? "muestra on" : "muestra"}
+              style={{ background: typeof c === "string" ? c : c[0] }}
+              aria-pressed={k === valor}
+              aria-label={nombres[k]}
+              onClick={() => onCambio(k)}
+            />
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function EditorInterprete() {
   const p = usePreferencias();
+  const a = p.avatar;
+  const cambiar = (c: Partial<Apariencia>) => cambiarPreferencias({ avatar: { ...a, ...c } });
   return (
     <div className="ajustes">
+      <div className="editor-vista" aria-label="Vista previa del intérprete">
+        <Interprete apariencia={a} signing={!p.reducirMovimiento} />
+      </div>
+
       <Grupo<Preferencias["interprete"]>
-        titulo="Cómo ver las señas"
+        titulo="Cómo ver las señas en la llamada"
         valor={p.interprete}
         onCambio={(interprete) => cambiarPreferencias({ interprete })}
         opciones={[
+          { v: "dibujado", texto: "Este intérprete" },
           { v: "fotos", texto: "Fotos reales" },
-          { v: "dibujado", texto: "Intérprete dibujado" },
         ]}
       />
       <Grupo<Preferencias["velocidad"]>
@@ -195,17 +222,92 @@ function Interprete() {
           { v: "rapida", texto: "Rápida" },
         ]}
       />
-      <Grupo<Preferencias["piel"]>
-        titulo="Tono de piel del intérprete dibujado"
-        valor={p.piel}
-        onCambio={(piel) => cambiarPreferencias({ piel })}
+
+      <h3 className="subtitulo-ajustes">Cuerpo</h3>
+      <Grupo<Apariencia["estatura"]>
+        titulo="Estatura"
+        valor={a.estatura}
+        onCambio={(estatura) => cambiar({ estatura })}
         opciones={[
-          { v: "clara", texto: <span className="tono clara">Clara</span> },
-          { v: "media", texto: <span className="tono media">Media</span> },
-          { v: "oscura", texto: <span className="tono oscura">Oscura</span> },
+          { v: "baja", texto: "Baja" },
+          { v: "media", texto: "Media" },
+          { v: "alta", texto: "Alta" },
         ]}
       />
-      <p className="nota">Las fotos reales son del Diccionario de Lengua de Señas Chilena (UMCE). Si no están en este celular, se usa el intérprete dibujado.</p>
+      <Grupo<Apariencia["contextura"]>
+        titulo="Contextura"
+        valor={a.contextura}
+        onCambio={(contextura) => cambiar({ contextura })}
+        opciones={[
+          { v: "delgada", texto: "Delgada" },
+          { v: "media", texto: "Media" },
+          { v: "robusta", texto: "Robusta" },
+        ]}
+      />
+      <Colores<Apariencia["piel"]>
+        titulo="Color de piel"
+        valor={a.piel}
+        colores={TONOS_PIEL}
+        nombres={{ "muy-clara": "Muy clara", clara: "Clara", media: "Media", morena: "Morena", oscura: "Oscura" }}
+        onCambio={(piel) => cambiar({ piel })}
+      />
+
+      <h3 className="subtitulo-ajustes">Cara y pelo</h3>
+      <Grupo<Apariencia["largoPelo"]>
+        titulo="Largo del pelo"
+        valor={a.largoPelo}
+        onCambio={(largoPelo) => cambiar({ largoPelo })}
+        opciones={[
+          { v: "sin-pelo", texto: "Sin" },
+          { v: "corto", texto: "Corto" },
+          { v: "medio", texto: "Medio" },
+          { v: "largo", texto: "Largo" },
+          { v: "tomado", texto: "Tomado" },
+        ]}
+      />
+      <Colores<Apariencia["colorPelo"]>
+        titulo="Color del pelo"
+        valor={a.colorPelo}
+        colores={COLORES_PELO}
+        nombres={{ negro: "Negro", castano: "Castaño", rubio: "Rubio", pelirrojo: "Pelirrojo", canoso: "Canoso" }}
+        onCambio={(colorPelo) => cambiar({ colorPelo })}
+      />
+      <Colores<Apariencia["ojos"]>
+        titulo="Color de ojos"
+        valor={a.ojos}
+        colores={COLORES_OJOS}
+        nombres={{ cafe: "Café", verde: "Verde", azul: "Azul", gris: "Gris", negro: "Negro" }}
+        onCambio={(ojos) => cambiar({ ojos })}
+      />
+      <Grupo<Apariencia["vello"]>
+        titulo="Vello facial"
+        valor={a.vello}
+        onCambio={(vello) => cambiar({ vello })}
+        opciones={[
+          { v: "ninguno", texto: "Ninguno" },
+          { v: "bigote", texto: "Bigote" },
+          { v: "barba", texto: "Barba" },
+        ]}
+      />
+      <Grupo<"si" | "no">
+        titulo="Lentes"
+        valor={a.lentes ? "si" : "no"}
+        onCambio={(v) => cambiar({ lentes: v === "si" })}
+        opciones={[
+          { v: "no", texto: "Sin lentes" },
+          { v: "si", texto: "Con lentes" },
+        ]}
+      />
+
+      <h3 className="subtitulo-ajustes">Ropa</h3>
+      <Colores<Apariencia["ropa"]>
+        titulo="Color de la ropa"
+        valor={a.ropa}
+        colores={COLORES_ROPA}
+        nombres={{ negro: "Negro", marino: "Azul marino", grafito: "Grafito", burdeo: "Burdeo" }}
+        onCambio={(ropa) => cambiar({ ropa })}
+      />
+      <p className="nota">Los intérpretes usan ropa oscura y lisa para que las manos se vean mejor. Las fotos reales son del Diccionario de Lengua de Señas Chilena (UMCE).</p>
     </div>
   );
 }

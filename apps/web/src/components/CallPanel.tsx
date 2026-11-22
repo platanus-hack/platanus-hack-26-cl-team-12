@@ -7,7 +7,7 @@
 //   abajo    respuestas rápidas y caja para escribir, fijas
 import { useEffect, useRef, useState } from "react";
 import {
-  Button, CallStatus, Composer, Icon, QuickReplies, SignAvatar, Subtitles, VisualAlert, DEFAULT_REPLIES,
+  CallStatus, Composer, Icon, QuickReplies, SignAvatar, Subtitles, VisualAlert, DEFAULT_REPLIES, formatDuration,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
 import type { MensajePuente } from "@puente/glosses";
@@ -15,6 +15,9 @@ import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
 import { URGENCIAS, type Destino } from "./Inicio";
 import { AppShell } from "./AppShell";
+import { Calificacion } from "./Calificacion";
+import { Login } from "./Login";
+import { FotoPerfil } from "./MenuPerfil";
 import { usePreferencias } from "@/lib/preferencias";
 import { SenasFotos, useManifestSenas } from "./SenasFotos";
 
@@ -168,6 +171,9 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     }
   }
 
+  // Sin sesión: login (demo: cualquier usuario y contraseña).
+  if (!prefs.sesion) return <Login />;
+
   // Inicio (antes de llamar).
   if (state === "idle") {
     return (
@@ -198,14 +204,14 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         current={senas?.actual}
         subtitle={subtitulo}
         signing={manifest ? senando : !!senas && senas.actual < senas.glosas.length}
-        piel={prefs.piel}
+        apariencia={prefs.avatar}
         player={
           manifest ? <SenasFotos manifest={manifest} glosas={senas?.glosas ?? []} frase={frase} onSenando={setSenando} velocidad={prefs.velocidad} /> : undefined
         }
       />
 
       <div className="chat" ref={chatRef}>
-        {lines.length > 0 && <Subtitles lines={lines} showOriginal={prefs.verOriginal} otherName={destino?.corto ?? "Ejecutivo"} />}
+        {lines.length > 0 && <Subtitles lines={lines} showOriginal={prefs.verOriginal} otherName={destino?.corto ?? "Ejecutivo"} fotoCliente={<FotoPerfil size={28} />} />}
         {esperando && enLlamada && (
           <p className="typing" aria-live="polite">
             <span className="dots" aria-hidden>
@@ -225,11 +231,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
           {opciones.length > 0 && <QuickReplies options={opciones} onPick={decir} />}
         </Composer>
       )}
-      {state === "ended" && (
-        <Button size="lg" block onClick={volver}>
-          Volver al inicio
-        </Button>
-      )}
+      {state === "ended" && <Calificacion quien={destino?.nombre ?? "Llamada"} duracion={formatDuration(seconds)} onListo={volver} />}
     </main>
   );
 }

@@ -3,12 +3,16 @@
 // Preferencias de la persona (tema, intérprete, accesibilidad). Se guardan en este celular (localStorage).
 // TODO(real-data): guardarlas en el perfil del usuario cuando exista inicio de sesión.
 import { useEffect, useSyncExternalStore } from "react";
+import { APARIENCIA_POR_DEFECTO, type Apariencia } from "@puente/ui";
 
 export interface Preferencias {
   tema: "oscuro" | "claro";
   interprete: "fotos" | "dibujado";
   velocidad: "lenta" | "normal" | "rapida";
-  piel: "clara" | "media" | "oscura";
+  /** Intérprete dibujado hecho a la medida (menú > Personalizar intérprete). */
+  avatar: Apariencia;
+  /** Sesión iniciada (demo: cualquier usuario y contraseña). TODO(real-data): login real. */
+  sesion: { usuario: string } | null;
   textoGrande: boolean;
   reducirMovimiento: boolean;
   vibrar: boolean;
@@ -20,7 +24,8 @@ const POR_DEFECTO: Preferencias = {
   tema: "oscuro",
   interprete: "fotos",
   velocidad: "normal",
-  piel: "media",
+  avatar: APARIENCIA_POR_DEFECTO,
+  sesion: { usuario: "patricia" },
   textoGrande: false,
   reducirMovimiento: false,
   vibrar: true,
@@ -72,6 +77,6 @@ export function useAplicarPreferencias() {
     html.dataset.theme = p.tema === "claro" ? "light" : "dark";
     html.dataset.texto = p.textoGrande ? "grande" : "normal";
     html.dataset.movimiento = p.reducirMovimiento ? "reducido" : "normal";
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", p.tema === "claro" ? "#f2f3f6" : "#0e1116");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", p.tema === "claro" ? "#f2f3f6" : "#161a21");
   }, [p.tema, p.textoGrande, p.reducirMovimiento]);
 }
