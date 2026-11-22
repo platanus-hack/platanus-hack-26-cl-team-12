@@ -7,7 +7,7 @@ API   := services/api
 AGENT := services/agent
 
 .PHONY: help doctor env install setup dev dev-all dev-web dev-api dev-agent \
-        test test-api test-agent lint typecheck build check docker-build docker-api docker-agent clean nuke
+        test test-api test-agent lint typecheck build check subir-senas docker-build docker-api docker-agent clean nuke
 
 help: ## Muestra esta ayuda
 	@echo "Uso: make <comando>"; echo
@@ -67,6 +67,15 @@ lint: ## Lint de Python (ruff) en API y agente
 	uv --directory $(AGENT) run ruff check .
 
 check: lint typecheck build test ## Lint + typecheck + build + tests (antes de abrir un PR)
+
+# ───────── Fotos de señas en S3 ─────────
+SENAS_DIR := apps/web/public/senas
+subir-senas: ## Sube las fotos de señas al bucket:  make subir-senas BUCKET=<bucket>  (usa tus credenciales de aws)
+	@test -n "$(BUCKET)" || { echo "Falta BUCKET:  make subir-senas BUCKET=<bucket>"; exit 1; }
+	@test -f $(SENAS_DIR)/manifest.json || { echo "No hay fotos: corre antes apps/web/scripts/extraer_senas.py"; exit 1; }
+	@# Las fotos no cambian (caché larga); el manifest sí (sin caché), para que la web vea las nuevas.
+	aws s3 sync $(SENAS_DIR) s3://$(BUCKET)/senas --exclude manifest.json --cache-control "public, max-age=31536000, immutable"
+	aws s3 cp $(SENAS_DIR)/manifest.json s3://$(BUCKET)/senas/manifest.json --cache-control "no-cache" --content-type application/json
 
 # ───────── Docker (se construye desde la raíz del repo) ─────────
 docker-api: ## Construye la imagen de la API
