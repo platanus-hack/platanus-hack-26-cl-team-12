@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { CallPanel } from "@/components/CallPanel";
+import { useServiceWorker } from "@/components/AppInstalable";
 
-// Inicio: la pantalla de llamada. Con ?mock=1 en la dirección, la llamada es simulada (no necesita backend).
+// Inicio: la pantalla de llamada.
+//   ?mock=1             la llamada es simulada (no necesita backend). La app instalada abre así (manifest).
+//   ?llamar=urgencias   llama altiro (atajo "Pedir una ambulancia" al mantener presionado el ícono en Android).
 export default function Home() {
-  const [mock, setMock] = useState(false);
+  useServiceWorker();
+  const [opts, setOpts] = useState<{ mock: boolean; autoLlamar: boolean } | null>(null);
   useEffect(() => {
-    setMock(new URLSearchParams(window.location.search).get("mock") === "1");
+    const q = new URLSearchParams(window.location.search);
+    setOpts({ mock: q.get("mock") === "1", autoLlamar: q.get("llamar") === "urgencias" });
   }, []);
-  return <CallPanel mock={mock} />;
+  if (!opts) return null;
+  return <CallPanel mock={opts.mock} autoLlamar={opts.autoLlamar} />;
 }
