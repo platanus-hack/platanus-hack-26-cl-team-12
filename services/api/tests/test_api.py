@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 
@@ -401,8 +402,9 @@ def voz_falsa(monkeypatch, sala_falsa):
 
     monkeypatch.setattr(voz, "activa", lambda: True)
     monkeypatch.setattr(voz, "_generar", generar)
-    voz._fijas.clear(), voz._id_fija.clear(), voz.olvidar_respuestas()
-    return voz
+    voz._fijas.clear(), voz._id_fija.clear(), voz._generando.clear(), voz.olvidar_respuestas()
+    yield voz
+    voz._generando.clear()
 
 
 def test_voz_chilena_en_el_saludo_y_twilio_baja_el_audio(voz_falsa):
@@ -440,6 +442,24 @@ def test_si_elevenlabs_falla_se_usa_la_voz_de_twilio(voz_falsa, monkeypatch):
     monkeypatch.setattr(voz_falsa, "_generar", falla)
     r = client.post("/twilio/voz")
     assert '<Say language="es-MX">Hola. Le habla Brich' in r.text and "<Play>" not in r.text
+
+
+def test_frase_fija_lenta_no_bloquea_el_webhook(voz_falsa, monkeypatch):
+    """Si ElevenLabs tarda, el webhook de Twilio no espera (corta a los 15 s): usa <Say> y el audio sigue generándose."""
+    import time
+
+    import app.voz as voz_mod
+
+    async def lento(texto):
+        await asyncio.sleep(0.5)
+        return b"MP3:" + texto.encode()
+
+    monkeypatch.setattr(voz_mod, "ESPERA_FIJA_S", 0.05)
+    monkeypatch.setattr(voz_falsa, "_generar", lento)
+    t0 = time.monotonic()
+    r = client.post("/twilio/voz")
+    assert time.monotonic() - t0 < 0.4
+    assert '<Say language="es-MX">Hola. Le habla Brich' in r.text
 
 
 def test_audio_inexistente_da_404():

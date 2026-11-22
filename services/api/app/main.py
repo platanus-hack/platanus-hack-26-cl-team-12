@@ -16,10 +16,15 @@ import os
 import re
 import tomllib
 import uuid
+from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+# Antes de importar app.*: twilio_media calcula PISTAS con el ESCENARIO al importarse (en local viene del .env).
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
@@ -28,9 +33,9 @@ from app.config import es_produccion
 from app.llamada import router as llamada_router
 from app.llamada import sala
 from app.traductor import DEFAULT_PATH
+from app import voz as voz_mod
+from app.twilio_media import FRASES_FIJAS
 from app.twilio_media import router as twilio_router
-
-load_dotenv()
 
 GLOSSES_PATH = Path(os.getenv("GLOSSES_PATH", DEFAULT_PATH))  # el mismo diccionario que usa el traductor
 
@@ -73,7 +78,18 @@ TAGS = [
 ]
 
 _docs = docs_habilitados()
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # La voz de las frases fijas se genera en segundo plano: el arranque no espera a ElevenLabs y la primera llamada
+    # ya no paga el TTS dentro del webhook de Twilio.
+    tarea = asyncio.create_task(voz_mod.voz.precalentar(FRASES_FIJAS))
+    yield
+    tarea.cancel()
+    await voz_mod.cerrar()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Puente - llamadas accesibles",
     description=DESCRIPCION,
     version=version_api(),
