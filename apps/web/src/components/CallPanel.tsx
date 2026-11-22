@@ -18,6 +18,7 @@ import { usePreferencias } from "@/lib/preferencias";
 import { AppShell } from "./AppShell";
 import { AvatarVRM } from "./AvatarVRM";
 import { Calificacion } from "./Calificacion";
+import { RECONOCER_SENAS, iniciarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
 import { CamaraPropia, type Lectura } from "./CamaraPropia";
 import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
@@ -47,9 +48,14 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   const prefs = usePreferencias();
   const [camara, setCamara] = useState(true);
   const [lectura, setLectura] = useState<Lectura>({ estado: "esperando" });
+  // Lectura real de señas (NEXT_PUBLIC_RECONOCER_SENAS=1): el <video> de la cámara y las glosas reconocidas en este turno.
+  const [video, setVideo] = useState<HTMLVideoElement | null>(null);
+  const glosasRef = useRef<string[]>([]);
   const [chat, setChat] = useState(false);
   // true desde que el cliente responde hasta que el otro lado vuelve a hablar.
   const [esperando, setEsperando] = useState(false);
+  const esperandoRef = useRef(false);
+  esperandoRef.current = esperando;
   const callRef = useRef<CallHandle | null>(null);
   const destinoRef = useRef<Destino | null>(null); // onMessage corre fuera del render: lee el destino de aquí
   const chatRef = useRef<HTMLDivElement>(null);
@@ -71,12 +77,35 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   // Lectura de señas simulada (TODO(v3)): cuando te toca responder, la cámara "lee" y luego tienes Enviar.
   // Lo que reconoce es la respuesta del guion (en la llamada real lo dará el clasificador de @puente/signs).
   useEffect(() => {
-    if (state !== "live" || esperando || !camara || lectura.estado !== "leyendo") return;
+    if (RECONOCER_SENAS || state !== "live" || esperando || !camara || lectura.estado !== "leyendo") return;
     const texto = opciones[0];
     if (!texto) return;
     const id = setTimeout(() => setLectura({ estado: "listo", texto }), LECTURA_SIMULADA_MS);
     return () => clearTimeout(id);
   }, [state, esperando, camara, lectura.estado, opciones]);
+
+  // Lectura real: MediaPipe + @puente/signs reconocen cada seña (con pausa entre señas) y se acumulan como glosas del turno.
+  useEffect(() => {
+    if (!RECONOCER_SENAS || state !== "live" || !camara || !video) return;
+    let rec: Reconocedor | null = null;
+    let cancelado = false;
+    iniciarReconocedor(video, {
+      onGlosa: (g) => {
+        if (esperandoRef.current) return;
+        glosasRef.current = [...glosasRef.current, g];
+        setLectura({ estado: "listo", texto: glosasRef.current.join(" ") });
+        setAlert(null);
+      },
+      onDuda: (a, b) => setAlert({ message: `No se distingue: ${a} o ${b}. Repite la seña.`, tone: "info" }),
+      onError: (e) => console.error("reconocimiento de señas", e),
+    })
+      .then((r) => (cancelado ? r.detener() : (rec = r)))
+      .catch(() => setAlert({ message: "No se pudo iniciar la lectura de señas. Puedes responder en el chat.", tone: "error" }));
+    return () => {
+      cancelado = true;
+      rec?.detener();
+    };
+  }, [state, camara, video]);
 
   // El chat baja solo al último mensaje.
   useEffect(() => {
@@ -104,6 +133,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         setOpciones(msg.opciones?.length ? msg.opciones : DEFAULT_REPLIES);
         setEsperando(false);
         setLectura({ estado: "leyendo" });
+        glosasRef.current = [];
         // Sin v4 activa no llega glosas_para_senar: el subtítulo igual muestra lo último que dijeron.
         setSenas((s) => ({ glosas: s?.glosas ?? [], actual: s?.actual ?? 0, subtitulo: msg.simple ?? msg.texto }));
         break;
@@ -114,6 +144,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
           // Al contestar, la primera frase es la del destino (habla primero la persona sorda).
           setOpciones((o) => (destinoRef.current?.frasesIniciales.length ? destinoRef.current.frasesIniciales : o));
           setLectura({ estado: "leyendo" });
+          glosasRef.current = [];
           setSenas((s) => s ?? { glosas: [], actual: 0, subtitulo: "Contestaron.\nCuéntales qué necesitas." });
         } else {
           setState("ended");
@@ -181,7 +212,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setOpciones([]);
     setEsperando(true);
     try {
-      await callRef.current.send({ tipo: "cliente_dice", texto });
+      // Con lectura real de señas se mandan las glosas (el agente las convierte en una frase y la dice); si no, el texto.
+      const glosas = RECONOCER_SENAS ? glosasRef.current : [];
+      await callRef.current.send(glosas.length ? { tipo: "glosas_cliente", glosas, confianza: 1 } : { tipo: "cliente_dice", texto });
+      glosasRef.current = [];
     } catch {
       setAlert({ message: "No se pudo enviar tu mensaje. Inténtalo de nuevo.", tone: "error" });
     }
@@ -238,7 +272,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       </section>
 
       {/* Abajo: tú, con la cámara que lee tus señas */}
-      <CamaraPropia encendida={camara && state !== "ended"} lectura={lecturaVisible} />
+      <CamaraPropia encendida={camara && state !== "ended"} lectura={lecturaVisible} onVideo={RECONOCER_SENAS ? setVideo : undefined} mostrarTexto={RECONOCER_SENAS} />
 
       <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
 

@@ -12,7 +12,19 @@ type EstadoCamara = "pidiendo" | "activa" | "apagada" | "sin-permiso";
 /** esperando: no te toca. leyendo: mirando tus señas. listo: reconoció una frase (sin mostrarla). enviado: ya se mandó. */
 export type Lectura = { estado: "esperando" } | { estado: "leyendo" } | { estado: "listo"; texto: string } | { estado: "enviado"; texto: string };
 
-export function CamaraPropia({ encendida, lectura }: { encendida: boolean; lectura: Lectura }) {
+export function CamaraPropia({
+  encendida,
+  lectura,
+  onVideo,
+  mostrarTexto = false,
+}: {
+  encendida: boolean;
+  lectura: Lectura;
+  /** Entrega el <video> cuando la cámara está activa (null al apagarse), para leer las señas con MediaPipe. */
+  onVideo?: (v: HTMLVideoElement | null) => void;
+  /** Muestra las glosas reconocidas mientras haces señas (lectura real de señas). */
+  mostrarTexto?: boolean;
+}) {
   const video = useRef<HTMLVideoElement>(null);
   const [estado, setEstado] = useState<EstadoCamara>("pidiendo");
 
@@ -38,12 +50,15 @@ export function CamaraPropia({ encendida, lectura }: { encendida: boolean; lectu
         stream = s;
         if (video.current) video.current.srcObject = s;
         setEstado("activa");
+        onVideo?.(video.current);
       })
       .catch(() => vivo && setEstado("sin-permiso"));
     return () => {
       vivo = false;
       stream?.getTracks().forEach((t) => t.stop());
+      onVideo?.(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [encendida]);
 
   const activa = estado === "activa";
@@ -78,7 +93,7 @@ export function CamaraPropia({ encendida, lectura }: { encendida: boolean; lectu
       )}
       {activa && lectura.estado === "listo" && (
         <p className="vl-sub vl-sub-yo listo" aria-live="polite">
-          <Icon name="listo" size={20} /> Entendí tus señas. Toca Enviar.
+          <Icon name="listo" size={20} /> {mostrarTexto ? <strong>{lectura.texto}</strong> : "Entendí tus señas. Toca Enviar."}
         </p>
       )}
       {lectura.estado === "enviado" && (

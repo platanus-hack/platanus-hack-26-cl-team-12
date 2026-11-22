@@ -45,6 +45,15 @@ describe("createPauseRecognizer", () => {
     expect(correr(rec2, [...cuadros(sena(0, 5), 0), ...reposo(500)])).toHaveLength(0);
   });
 
+  it("no repite la misma glosa si la seña se parte en dos, pero sí si pasa un rato", () => {
+    const rec = createPauseRecognizer(set);
+    const partida = [...cuadros(sena(0, 30), 0), ...reposo(1000, 16), ...cuadros(sena(0, 20), 1500), ...reposo(2200)];
+    expect(correr(rec, partida)).toHaveLength(1);
+    const rec2 = createPauseRecognizer(set);
+    const repetida = [...cuadros(sena(0, 30), 0), ...reposo(1000, 16), ...cuadros(sena(0, 30), 4000), ...reposo(5100)];
+    expect(correr(rec2, repetida).map((r) => r?.gloss)).toEqual(["HOLA", "HOLA"]);
+  });
+
   it("respeta el vocabulario permitido", () => {
     const rec = createPauseRecognizer(set, { permitidas: new Set(["HOLA", "ADIÓS"]) });
     expect(correr(rec, [...cuadros(sena(1, 30), 0), ...reposo(1000)])[0]?.gloss).toBe("ADIÓS");

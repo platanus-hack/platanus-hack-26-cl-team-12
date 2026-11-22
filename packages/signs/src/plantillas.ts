@@ -82,6 +82,8 @@ export interface PauseOptions {
   pausaMs?: number;
   /** Cuadros mínimos con manos arriba para considerar una seña (descarta saludos al aire y ruido). */
   minCuadros?: number;
+  /** La misma glosa no se repite antes de este tiempo (una seña larga a veces se parte en dos al bajar un poco las manos). */
+  sinRepetirMs?: number;
   /** Glosas permitidas (vocabulario de la demo). Por defecto, todas las de las plantillas. */
   permitidas?: Set<string>;
 }
@@ -95,7 +97,7 @@ export interface PauseRecognizer {
 }
 
 export function createPauseRecognizer(set: TemplateSet, opts: PauseOptions = {}): PauseRecognizer {
-  const { pausaMs = 450, minCuadros = 10 } = opts;
+  const { pausaMs = 450, minCuadros = 10, sinRepetirMs = 1500 } = opts;
   const { nT, dim } = set;
   const plantillas = set.templates
     .filter((p) => !opts.permitidas || opts.permitidas.has(p.gloss))
@@ -107,6 +109,7 @@ export function createPauseRecognizer(set: TemplateSet, opts: PauseOptions = {})
   let buf: number[][] = [];
   let ultimoActivo = 0;
   let dudosa: { a: string; b: string } | null = null;
+  let ultima: { gloss: string; t: number } | null = null;
 
   function clasificar(seg: number[][]): Recognition | null {
     const q = resample(seg, nT), mejor = new Map<string, number>();
@@ -128,11 +131,15 @@ export function createPauseRecognizer(set: TemplateSet, opts: PauseOptions = {})
       if (frame.active) { buf.push(frame.features); ultimoActivo = frame.timestampMs; return null; }
       if (buf.length && frame.timestampMs - ultimoActivo > pausaMs) {
         const seg = buf; buf = [];
-        return seg.length >= minCuadros ? clasificar(seg) : null;
+        const r = seg.length >= minCuadros ? clasificar(seg) : null;
+        if (!r) return null;
+        if (ultima && ultima.gloss === r.gloss && frame.timestampMs - ultima.t < sinRepetirMs) return null;
+        ultima = { gloss: r.gloss, t: frame.timestampMs };
+        return r;
       }
       return null;
     },
     get dudosa() { return dudosa; },
-    reset() { buf = []; dudosa = null; },
+    reset() { buf = []; dudosa = null; ultima = null; },
   };
 }
