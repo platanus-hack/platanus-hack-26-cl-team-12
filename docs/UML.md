@@ -22,7 +22,7 @@
 | 12 | Estados: reconocimiento de una seña | Del cuadro de cámara a la glosa |
 | 13 | Actividad: validación de mensajes | Qué acepta el agente y qué descarta |
 | 14 | Despliegue | ¿Dónde corre cada pieza? **(plan)** |
-| 15 | Componentes (plan C, en producción) | Lo que corre hoy: PWA → API → Twilio, Claude y ElevenLabs. Reemplaza al #2 (plan con LiveKit) |
+| 15 | Componentes (en producción) | Lo que corre hoy: PWA → API → Twilio, Claude y ElevenLabs. Reemplaza al #2 (plan con LiveKit) |
 
 ---
 
@@ -39,7 +39,7 @@ Los mismos 14 diagramas como imagen, para pitch, diapositivas o draw.io (fondo b
 | 5 | [secuencia: unirse](diagramas/uml/05-secuencia-unirse-a-la-llamada.png) | 12 | [estados: reconocimiento](diagramas/uml/12-estados-reconocimiento-sena.png) |
 | 6 | [secuencia: ejecutivo → cliente](diagramas/uml/06-secuencia-ejecutivo-a-cliente.png) | 13 | [actividad: validación](diagramas/uml/13-actividad-validacion-mensajes.png) |
 | 7 | [secuencia: cliente escribe](diagramas/uml/07-secuencia-cliente-escribe.png) | 14 | [despliegue](diagramas/uml/14-despliegue.png) |
-| 15 | [componentes plan C](diagramas/uml/15-componentes-plan-c.png) (horizontal, para slides) · [vertical](diagramas/uml/15-componentes-plan-c-vertical.png) · fuente: [`.mmd`](diagramas/uml/15-componentes-plan-c.mmd) | | |
+| 15 | [componentes en producción](diagramas/uml/15-componentes-plan-c.png) (horizontal, para slides) · [vertical](diagramas/uml/15-componentes-plan-c-vertical.png) · fuente: [`.mmd`](diagramas/uml/15-componentes-plan-c.mmd) | | |
 
 **Si cambias un diagrama, las imágenes no se actualizan solas.** Para regenerar una: copia su bloque `mermaid` al
 [Mermaid Live Editor](https://mermaid.live) y exporta PNG o SVG. Con la CLI: `npm install @mermaid-js/mermaid-cli` en una

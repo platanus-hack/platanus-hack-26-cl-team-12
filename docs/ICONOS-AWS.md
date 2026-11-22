@@ -49,7 +49,7 @@ Equivalencias aproximadas (no están probadas; verifica disponibilidad y precios
 
 > El **WAF con límite de tasa** resolvería parte del requerimiento A4 del plan (`/token` sin límite es un riesgo de costo).
 
-## Diagrama ya hecho: Puente en AWS (plan C)
+## Diagrama ya hecho: Puente en AWS
 
 ![Puente en AWS](diagramas/arquitectura/04-puente-en-aws.png)
 
