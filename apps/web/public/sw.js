@@ -5,7 +5,7 @@
 // - Archivos estáticos (/_next/static, /senas, /icons): primero la copia guardada (no cambian).
 // - Nunca guarda llamadas a la API ni a LiveKit (otros dominios): una llamada real siempre necesita internet.
 // Cambia VERSION cuando quieras que todos los celulares descarten la copia vieja.
-const VERSION = "puente-v3"; // v3: fotos de señas desde el bucket S3 (v2: avatar 3D)
+const VERSION = "puente-v4"; // v4: /reco en caché e índice de animaciones al día (v3: fotos S3, v2: avatar 3D)
 // Base de las fotos: /senas (locales) o la URL del bucket. Sin `/` final.
 const SENAS = (new URL(self.location.href).searchParams.get("senas") || "/senas").replace(/\/+$/, "");
 const SENAS_URL = new URL(SENAS + "/", self.location.origin).href; // absoluta, para comparar con las peticiones
@@ -83,10 +83,28 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
+  // El índice de animaciones cambia cuando se agregan glosas: primero la red (si no, el celular seguía con el viejo).
+  if (url.pathname === "/anim/index.json") {
+    e.respondWith(primeroRed(req));
+    return;
+  }
+
   if (/^\/(_next\/static|icons|anim|models|perfil|reco)\//.test(url.pathname) || url.pathname === "/manifest.webmanifest") {
     e.respondWith(primeroGuardada(req));
   }
 });
+
+function primeroRed(req) {
+  return fetch(req)
+    .then((res) => {
+      if (res.ok) {
+        const copia = res.clone();
+        caches.open(VERSION).then((c) => c.put(req, copia));
+      }
+      return res;
+    })
+    .catch(() => caches.match(req));
+}
 
 function primeroGuardada(req) {
   return caches.match(req).then(
