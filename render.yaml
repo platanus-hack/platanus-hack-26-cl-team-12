@@ -17,6 +17,8 @@ services:
     healthCheckPath: /health
     autoDeployTrigger: "off"
     envVars:
+      - key: ESCENARIO # el traductor de la llamada real (glosas ↔ español) usa el escenario de la ambulancia
+        value: urgencia_caida
       - key: PORT
         value: "8000" # el CMD del Dockerfile escucha en 8000 (Render asume 10000)
       - key: API_ENV

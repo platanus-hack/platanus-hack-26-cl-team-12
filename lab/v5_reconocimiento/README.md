@@ -17,6 +17,6 @@ python3 lab/v5_reconocimiento/server.py          # http://localhost:8766  (cáma
    (traduce los nombres de la página a las glosas del diccionario del agente: HIJO-A→HIJO, SI→SÍ, …).
 
 ## En la app
-`NEXT_PUBLIC_RECONOCER_SENAS=1 pnpm --filter @puente/web dev`, abrir `/?mock=1&llamar=urgencias&debug=1`.
+`pnpm --filter @puente/web dev` (la lectura real viene activa; `NEXT_PUBLIC_RECONOCER_SENAS=0` vuelve a la simulada), abrir `/?mock=1&llamar=urgencias&debug=1`.
 Señar con una pausa entre palabras y tocar **Enviar**. Con `?debug`: candidatas del reconocedor y `window.__senas(["HOLA", ...])` para simular señas.
 Licencias: no subir videos ni salidas de WiLoR/MANO (no comerciales).
