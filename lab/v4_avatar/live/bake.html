@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Cocinar tomas</title>
+<style>body{background:#14161a;color:#eee;font:15px system-ui;padding:20px}pre{white-space:pre-wrap}</style>
+<script src="https://cdn.jsdelivr.net/npm/kalidokit@1.1.5/dist/kalidokit.umd.js"></script>
+<script type="importmap">{"imports":{
+ "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+ "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+ "@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.0.0/lib/three-vrm.module.js"}}</script></head><body>
+<h3>Cocinar tomas: video + WiLoR + MediaPipe → animación del avatar (una por toma)</h3>
+<pre id="log">Cargando…</pre><video id="v" muted playsinline style="height:120px"></video>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {VRMLoaderPlugin} from '@pixiv/three-vrm';
+import {FilesetResolver,PoseLandmarker,HandLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+import {createRig} from './rig.js';
+const log=m=>{$('log').textContent+='\n'+m};const $=id=>document.getElementById(id);
+const names=(new URLSearchParams(location.search).get('v')||'HOLA__1').split(',');
+const FPS=30;
+const loader=new GLTFLoader();loader.register(p=>new VRMLoaderPlugin(p));
+const vrm=(await loader.loadAsync('models/avatar.vrm')).userData.vrm;
+const rig=createRig(vrm,null);
+const REC=[];for(const s of['left','right']){REC.push(s+'UpperArm',s+'LowerArm',s+'Hand');
+ for(const f of['Thumb','Index','Middle','Ring','Little'])for(const j of(f==='Thumb'?['Metacarpal','Proximal','Distal']:['Proximal','Intermediate','Distal']))REC.push(s+f+j)}
+const fs=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+const G='https://storage.googleapis.com/mediapipe-models/';
+const mk=async(Cls,url,o)=>{try{return await Cls.createFromOptions(fs,{baseOptions:{modelAssetPath:url,delegate:'GPU'},runningMode:'VIDEO',...o})}catch(e){return await Cls.createFromOptions(fs,{baseOptions:{modelAssetPath:url,delegate:'CPU'},runningMode:'VIDEO',...o})}};
+const pose=await mk(PoseLandmarker,G+'pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',{numPoses:1});
+const hands=await mk(HandLandmarker,G+'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',{numHands:2,minHandDetectionConfidence:0.5,minHandPresenceConfidence:0.5,minTrackingConfidence:0.5});
+const video=$('v');let ts=0;
+function step(wil,i){
+ ts+=34;
+ const pr=pose.detectForVideo(video,ts),hr=hands.detectForVideo(video,ts);
+ const L=pr.landmarks[0];let ok=false;
+ if(L){const W=pr.worldLandmarks[0],vis=L.map(p=>p.visibility??0);ok=rig.arms(W,vis)}
+ if(!ok)rig.restArms(0.08);
+ const mpBySide={};
+ hr.landmarks.forEach((lm,k)=>{let side;
+  if(L&&(L[15].visibility>0.4||L[16].visibility>0.4)){const d=p=>Math.hypot(lm[0].x-p.x,lm[0].y-p.y),dl=d(L[15]),dr=d(L[16]);if(Math.min(dl,dr)>0.22)return;side=dl<dr?'Left':'Right'}
+  else side=hr.handednesses[k][0].categoryName==='Left'?'Right':'Left';
+  if(!mpBySide[side])mpBySide[side]=lm});
+ const fr=wil.frames[Math.min(wil.frames.length-1,i)],seen={Left:false,Right:false};
+ for(const h of fr.hands){const side=h.is_right?'Right':'Left';if(seen[side])continue;seen[side]=true;
+  const P=j=>rig.V3a(h.joints3d[j]);rig.wrist(side,P);rig.fingersGeo(side,P);
+  if(mpBySide[side])rig.fingersKal(side,mpBySide[side],'Thumb')}
+ for(const s of['Left','Right'])if(!seen[s])rig.restHand(s);
+}
+for(const name of names){
+ log('▶ '+name);
+ const wil=await (await fetch('/api/wilor/'+name)).json();
+ video.src=URL.createObjectURL(await (await fetch('/video/'+name+'.webm')).blob());
+ await new Promise(r=>video.onloadedmetadata=r);
+ const N=Math.floor(video.duration*FPS),frames=[];
+ rig.restArms(1);rig.restHand('Left',1);rig.restHand('Right',1);
+ for(let i=0;i<N;i++){
+  video.currentTime=(i+0.5)/FPS;await new Promise(r=>video.onseeked=r);
+  step(wil,i);
+  const q=[];for(const b of REC)q.push(...rig.bone(b).quaternion.toArray().map(v=>Math.round(v*1e4)/1e4));
+  frames.push({t:Math.round(i/FPS*1e3)/1e3,q});
+ }
+ const clip={glosa:name,fps:FPS,duration:Math.round((N-1)/FPS*1e3)/1e3,bones:REC,frames};
+ const r=await (await fetch('/api/bake?name='+name,{method:'POST',body:JSON.stringify(clip)})).json();
+ log('  ✔ '+name+': '+N+' cuadros '+(r.ok?'guardado':'ERROR'));
+}
+log('LISTO');
+</script></body></html>

@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/descargar_avatar.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/descargar_avatar.mjs",
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "preview": "next build && python3 -m http.server 3001 --bind 127.0.0.1 --directory out"

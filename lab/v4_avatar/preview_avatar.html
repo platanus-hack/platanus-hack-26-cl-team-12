@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Preview avatar vectorial LSCh</title>
+<style>
+body{margin:0;font-family:system-ui,sans-serif;background:#f4f1ec;color:#222;display:flex;flex-direction:column;align-items:center;padding:16px}
+h1{font-size:18px;margin:0 0 4px} p{margin:0 0 12px;font-size:13px;color:#666;max-width:520px;text-align:center}
+svg{background:#fff;border-radius:16px;box-shadow:0 2px 12px #0002;width:min(92vw,420px);height:auto}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0}
+button{border:0;border-radius:20px;padding:8px 16px;font-size:14px;background:#e3ddd2;cursor:pointer}
+button.on{background:#2a6f5e;color:#fff}
+#sub{font-size:22px;font-weight:600;min-height:30px;margin-top:6px}
+label{font-size:13px}
+</style></head><body>
+<h1>Avatar vectorial — preview</h1>
+<p>Poses de ejemplo escritas a mano con la misma forma que saldría de MediaPipe (codos, muñecas, curvatura de dedos). Con datos reales se reemplaza solo el JSON.</p>
+<svg id="s" viewBox="0 0 400 480"></svg>
+<div id="sub"></div>
+<div class="bar" id="bar"></div>
+<div class="bar"><button id="seq">▶ Secuencia: HOLA → GRACIAS → DOCTOR → HORA</button></div>
+<label><input type="checkbox" id="pts"> ver puntos clave</label>
+<script>
+// Pose: coordenadas de articulaciones en el lienzo 400x480 + curvatura de dedos (0 abierto, 1 cerrado) + rotación de mano (grados)
+const F=(a,b,c,d,e)=>[a,b,c,d,e];
+const POSES={
+ reposo:{t:"",  L:{e:[128,330],w:[120,400],r:0,c:F(.3,.3,.3,.3,.3)}, R:{e:[272,330],w:[280,400],r:0,c:F(.3,.3,.3,.3,.3)}},
+ hola:  {t:"HOLA",   L:{e:[128,330],w:[120,400],r:0,c:F(.3,.3,.3,.3,.3)}, R:{e:[300,250],w:[318,160],r:10,c:F(0,0,0,0,0)}},
+ gracias:{t:"GRACIAS",L:{e:[128,330],w:[120,400],r:0,c:F(.3,.3,.3,.3,.3)}, R:{e:[262,290],w:[222,196],r:-35,c:F(.1,0,0,0,0)}},
+ doctor:{t:"DOCTOR", L:{e:[150,320],w:[205,300],r:80,c:F(.1,.0,.0,.0,.0)}, R:{e:[250,310],w:[210,290],r:-90,c:F(.9,0,.9,.9,.9)}},
+ hora:  {t:"HORA",   L:{e:[150,320],w:[185,285],r:60,c:F(.9,0,.9,.9,.9)}, R:{e:[260,300],w:[200,262],r:-60,c:F(.8,0,.9,.9,.9)}},
+};
+const SH={L:[150,235],R:[250,235]}, SK="#e8b89a", CL="#2a6f5e";
+let cur=JSON.parse(JSON.stringify(POSES.reposo));
+const svg=document.getElementById('s');
+const lerp=(a,b,t)=>a+(b-a)*t, ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function mix(a,b,t){const o=JSON.parse(JSON.stringify(a));for(const k of['L','R']){
+ for(const j of['e','w'])o[k][j]=[lerp(a[k][j][0],b[k][j][0],t),lerp(a[k][j][1],b[k][j][1],t)];
+ o[k].r=lerp(a[k].r,b[k].r,t);o[k].c=a[k].c.map((v,i)=>lerp(v,b[k].c[i],t));}return o}
+function line(a,b,w,col){return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`}
+function hand(w,rot,c,side){ // palma + 5 dedos con 2 falanges
+ const sgn=side==='R'?1:-1; let g=`<g transform="translate(${w[0]},${w[1]}) rotate(${rot})">`;
+ g+=`<ellipse cx="0" cy="-14" rx="15" ry="17" fill="${SK}"/>`;
+ const base=[[-sgn*13,-12],[-6,-28],[0,-30],[6,-28],[12,-24]]; // pulgar..meñique (simplificado)
+ const ang=[-sgn*55,-14,0,12,24], len=[17,20,23,20,15];
+ for(let i=0;i<5;i++){const L=len[i],cv=c[i]*80,a0=ang[i]*Math.PI/180,a1=(ang[i]+(sgn*0+ (i==0?-sgn:1)*cv))*Math.PI/180;
+  const p0=base[i],p1=[p0[0]+Math.sin(a0)*L*.55,p0[1]-Math.cos(a0)*L*.55];
+  const a2=a0+(i==0?-sgn:1)*cv*Math.PI/180,p2=[p1[0]+Math.sin(a2)*L*.5,p1[1]-Math.cos(a2)*L*.5];
+  g+=`<polyline points="${p0} ${p1} ${p2}" fill="none" stroke="${SK}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;}
+ return g+'</g>'}
+function draw(p){const pts=document.getElementById('pts').checked;
+ let h=`<rect x="120" y="225" width="160" height="255" rx="55" fill="${CL}"/>`;
+ h+=`<rect x="188" y="195" width="24" height="40" fill="${SK}"/>`;
+ h+=`<ellipse cx="200" cy="150" rx="46" ry="54" fill="${SK}"/>`;
+ h+=`<path d="M154 140 Q158 92 200 92 Q244 92 246 140 Q226 118 200 120 Q172 118 154 140Z" fill="#3b2a20"/>`;
+ h+=`<circle cx="183" cy="150" r="4" fill="#222"/><circle cx="217" cy="150" r="4" fill="#222"/>`;
+ h+=`<path d="M184 174 Q200 184 216 174" stroke="#8a4a3a" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+ for(const k of['L','R']){const s=SH[k],a=p[k];
+  h+=line(s,a.e,24,CL)+line(a.e,a.w,20,SK);}
+ for(const k of['L','R'])h+=hand(p[k].w,p[k].r,p[k].c,k);
+ if(pts)for(const k of['L','R']){for(const q of[SH[k],p[k].e,p[k].w])h+=`<circle cx="${q[0]}" cy="${q[1]}" r="5" fill="#d33" stroke="#fff"/>`}
+ svg.innerHTML=h}
+let raf;function go(name,ms=550){return new Promise(res=>{cancelAnimationFrame(raf);const from=JSON.parse(JSON.stringify(cur)),to=POSES[name],t0=performance.now();
+ document.getElementById('sub').textContent=to.t;
+ (function step(n){const t=Math.min(1,(n-t0)/ms);cur=mix(from,to,ease(t));draw(cur);if(t<1)raf=requestAnimationFrame(step);else res()})(t0)})}
+const bar=document.getElementById('bar');
+for(const k of Object.keys(POSES)){const b=document.createElement('button');b.textContent=k;b.onclick=()=>{[...bar.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');go(k)};bar.appendChild(b)}
+document.getElementById('seq').onclick=async()=>{for(const k of['hola','gracias','doctor','hora']){await go(k,700);await new Promise(r=>setTimeout(r,450))}await go('reposo');document.getElementById('sub').textContent=''};
+document.getElementById('pts').onchange=()=>draw(cur);
+draw(cur);
+</script></body></html>
