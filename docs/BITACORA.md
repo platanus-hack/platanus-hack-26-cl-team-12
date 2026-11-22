@@ -190,3 +190,8 @@ Las entradas nuevas van **arriba**. Formato:
 - Decidí: la animación de cada glosa se busca por `lexiconId` en mayúsculas (`hijo-a` → `data/signs/anim/HIJO-A.json`), no por el nombre de la glosa (`HIJO`). Las frases grabadas (`FRASE-*`) no son glosas: solo enseñan transiciones (`ml/learn_transitions.py`).
 - Verificado: pytest del agente (escenario, glosario, traductor: 22 OK) con las glosas nuevas. NO corrido: `pnpm typecheck/test`, ni el agente contra servicios reales. Se activa con `ESCENARIO=urgencia_caida`.
 - Falta / bloqueado: reproductor del avatar en `apps/web` (hoy `SenasFotos`); servir `data/signs/anim` y `transitions.json`; validar las señas con una persona señante de LSCh.
+
+## 2026-11-22 — Rafael / Claude (v4/logo-texto-voz) · logo nuevo "texto que suena"
+- Hice: reemplacé el logo del arco por "texto que suena": dos guiones de texto celestes (`--cliente`) que se vuelven barras de audio amarillas (`--brand`). Cambié `packages/ui/src/components/Logo.tsx`, `components.css` y los íconos de la PWA (`icon.svg`, `icon-maskable.svg` y sus PNG regenerados con sharp, fondo #141414).
+- Decidí: salió de 3 rondas de exploración en Figma (archivo "Logo — exploración" en los borradores de Rafael; es el concepto F3). El nombre sigue siendo provisorio, así que el símbolo no depende de él.
+- Verificado: `pnpm typecheck` OK; revisé los PNG a ojo. NO probado en el celular ni en `apps/mobile` (Capacitor tiene sus propios íconos nativos).
