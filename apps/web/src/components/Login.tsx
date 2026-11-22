@@ -24,7 +24,7 @@ export function Login() {
     <main className="login">
       <div className="login-marca">
         <Logo variant="mark" size={64} />
-        <h1>Puente</h1>
+        <h1>Bridge</h1>
         <p>Llamadas por teléfono, en texto y lengua de señas.</p>
       </div>
       <form className="login-form" onSubmit={entrar} noValidate>

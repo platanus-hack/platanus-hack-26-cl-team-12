@@ -109,6 +109,7 @@ jobs:
         run: pnpm --filter @puente/web build
         env:
           NEXT_PUBLIC_API_URL: ${{ env.API_URL }}
+          NEXT_PUBLIC_CLIENTE_WS_TOKEN: ${{ secrets.CLIENTE_WS_TOKEN }} # sin esto la APK no puede abrir /twilio/cliente
       - name: Copiar web al proyecto Android
         run: pnpm exec cap sync android
         working-directory: apps/mobile

@@ -120,7 +120,7 @@ def wired(monkeypatch):
     monkeypatch.setattr(agent, "abrir_store", lambda: None)
     monkeypatch.setattr(agent, "elegir_voz", lambda pref=None: voces[pref])
     monkeypatch.setattr(agent, "turno_cliente", fake_turno_cliente)
-    monkeypatch.setattr(agent.anthropic, "Anthropic", lambda: None)
+    monkeypatch.setattr(agent.anthropic, "Anthropic", lambda **_kw: None)
     monkeypatch.setattr(agent.deepgram, "STT", lambda **k: ("stt", k))
     monkeypatch.setattr(agent.elevenlabs, "TTS", fake_tts)
     monkeypatch.setattr(agent.silero.VAD, "load", staticmethod(lambda: "vad"))

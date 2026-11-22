@@ -1,7 +1,10 @@
 """Telefonía de v1 sin LiveKit: Twilio llama al ejecutivo y conversa por turnos (plan C, funciona en trial).
 
 Turno del ejecutivo:  /twilio/escuchar (<Gather speech>) → /twilio/turno con el texto → Claude simplifica → PWA.
-Turno del cliente:    /twilio/espera repite una pausa hasta que el cliente responde en la PWA → <Say> → escuchar.
+Turno del cliente:    /twilio/espera repite una pausa hasta que el cliente responde en la PWA → <Play> → escuchar.
+
+Voz: lo que escucha el ejecutivo es la voz chilena de ElevenLabs (<Play> de /twilio/audio/{id}.mp3, app/voz.py).
+Sin ELEVENLABS_API_KEY o si ElevenLabs falla, se usa la voz de Twilio (<Say> es-MX).
 
 Probado en el trial de Twilio (ver BITACORA): <Say> y <Gather speech> funcionan; Media Streams y SIP no.
 `/twilio/media` (audio en vivo, plan B) queda solo para cuando se pague el upgrade.
@@ -12,6 +15,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from xml.sax.saxutils import escape, quoteattr
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -20,20 +24,39 @@ from fastapi.responses import Response
 from app.config import es_produccion
 from app.llamada import sala
 from app.traductor import load_escenario
+from app.voz import voz as voz_chilena
 
 log = logging.getLogger("puente.twilio")
 
 IDIOMA = 'language="es-MX"'
+# La llamada parte con la persona sorda: tras el saludo se espera su primer mensaje (/twilio/espera) y recién después se
+# escucha al ejecutivo. Desde ahí los turnos alternan: cliente → ejecutivo → cliente…
+# "Brich" es "Bridge" escrito como se pronuncia: la voz chilena lee en español.
 SALUDO = (
-    "Hola. Le habla Puente, un servicio de interpretación para una persona sorda. "
-    "Hable después de este mensaje y espere unos segundos la respuesta."
+    "Hola. Le habla la Brich, un servicio de interpretación para una persona sorda. "
+    "La persona le hablará en unos segundos; escuche el mensaje y, cuando termine, responda y espere la respuesta."
 )
+UN_MOMENTO = "Un momento, por favor."
+AVISO_ESPERA = "La persona sigue respondiendo, espere por favor."
+FRASES_FIJAS = [SALUDO, UN_MOMENTO, AVISO_ESPERA]  # se precalientan al arrancar la API (main.py, lifespan)
 # Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol"): los términos del
 # escenario (los mismos que recibe Deepgram en el agente) más algunos que solo le hacen falta a Twilio.
 _PISTAS_TWILIO = ["hora", "hora médica", "médico", "doctor", "previsión", "copago", "dígito verificador"]
 PISTAS = ", ".join(dict.fromkeys([*load_escenario().stt_keyterms, *_PISTAS_TWILIO]))
-ESPERA_S = 2  # segundos entre revisiones de la respuesta del cliente
-AVISO_CADA = 10  # cada ~20 s de espera se le avisa al ejecutivo que el cliente sigue escribiendo
+# Si el cliente no respondió en la espera larga, Twilio recibe UNA secuencia de (silencio + aviso) que dura hasta
+# ~9 min: se espera hasta que el cliente aprieta Enviar, y ahí Sala la interrumpe (calls.update). Una sola consulta:
+# el trial corta tras ~10 consultas por llamada y a los 10 minutos.
+SILENCIO_S = 20  # silencio entre avisos "la persona sigue respondiendo"
+VUELTAS = 26  # ~26 × (20 s + ~3 s de aviso) ≈ 9 min
+
+
+def espera_larga_s() -> float:
+    """Cuánto retiene el servidor cada pedido de /twilio/espera esperando la respuesta del cliente (Twilio espera
+    hasta 15 s por un webhook). Menos pedidos por llamada: el trial de Twilio corta después de ~10."""
+    try:
+        return max(0.0, min(float(os.getenv("TWILIO_ESPERA_S", "10")), 12.0))
+    except ValueError:
+        return 10.0
 _tareas: set[asyncio.Task] = set()
 
 
@@ -56,9 +79,18 @@ async def verificar_firma(request: Request) -> None:
     url = public_base(request) + request.url.path + (f"?{request.url.query}" if request.url.query else "")
     params = dict(await request.form())
     firma = request.headers.get("X-Twilio-Signature", "")
+    if not firma and _llamada_propia(params):
+        # Cuenta trial: el primer pedido pasa por TwilioProxy (el aviso "trial account") y llega SIN firma.
+        # Se acepta solo si es una llamada que creó este servidor (CallSid aleatorio de 34 caracteres) y de esta cuenta.
+        return
     if not RequestValidator(auth_token).validate(url, params, firma):
         log.warning("Firma de Twilio inválida para %s", url)
         raise HTTPException(403, "Firma de Twilio inválida")
+
+
+def _llamada_propia(params: dict) -> bool:
+    cuenta = os.getenv("TWILIO_ACCOUNT_SID", "")
+    return bool(cuenta) and params.get("AccountSid") == cuenta and params.get("CallSid") in sala.llamadas_creadas
 
 
 router = APIRouter(prefix="/twilio")
@@ -71,6 +103,18 @@ def twiml(cuerpo: str) -> Response:
 
 def decir(texto: str) -> str:
     return f"<Say {IDIOMA}>{escape(texto)}</Say>"
+
+
+def reproducir(base: str, texto: str, audio_id: str | None) -> str:
+    """Voz chilena (<Play>) si hay audio de ElevenLabs; si no, la voz de Twilio (<Say>)."""
+    if audio_id:
+        return f"<Play>{escape(f'{base}/twilio/audio/{audio_id}.mp3')}</Play>"
+    return decir(texto)
+
+
+async def hablar(base: str, texto: str) -> str:
+    """Frase fija del sistema (sin datos personales): el audio se genera una vez y se reutiliza."""
+    return reproducir(base, texto, await voz_chilena.preparar(texto, fija=True))
 
 
 def ir_a(base: str, ruta: str) -> str:
@@ -87,13 +131,15 @@ def escuchar(base: str, antes: str = "") -> str:
 
 @router.post("/voz", dependencies=FIRMADO)
 async def voz(request: Request) -> Response:
-    """TwiML inicial cuando el ejecutivo contesta. `?modo=stream` usa audio en vivo (requiere cuenta pagada)."""
+    """TwiML inicial cuando el ejecutivo contesta: saluda y espera que parta la persona sorda. `?modo=stream` usa audio en vivo (requiere cuenta pagada)."""
     if request.query_params.get("modo") == "stream":
         url = public_base(request).replace("https://", "wss://").replace("http://", "ws://") + "/twilio/media"
         return twiml(f"<Connect><Stream url={quoteattr(url)}/></Connect>")
     sala.reiniciar()
+    sala.call_sid = str((await request.form()).get("CallSid") or "") or None
     await sala.enviar({"tipo": "estado", "valor": "llamada_iniciada"})
-    return twiml(escuchar(public_base(request), decir(SALUDO)))
+    base = public_base(request)
+    return twiml(await hablar(base, SALUDO) + ir_a(base, "/twilio/espera?n=0"))  # parte la persona sorda
 
 
 @router.post("/escuchar", dependencies=FIRMADO)
@@ -114,29 +160,58 @@ async def turno(request: Request) -> Response:
     tarea = asyncio.create_task(sala.ejecutivo_dijo(texto))  # Twilio no espera a Claude
     _tareas.add(tarea)
     tarea.add_done_callback(_tareas.discard)
-    return twiml(decir("Un momento, por favor.") + ir_a(base, "/twilio/espera?n=0"))
+    return twiml(await hablar(base, UN_MOMENTO) + ir_a(base, "/twilio/espera?n=0"))
 
 
 @router.post("/espera", dependencies=FIRMADO)
 async def espera(request: Request) -> Response:
     """Mientras el cliente escribe: pausa corta y vuelve a revisar. Cuando hay respuesta, se dice y se escucha."""
     base = public_base(request)
-    respuesta = sala.respuesta_pendiente()
+    sala.en_pausa_larga = False  # Twilio volvió a preguntar: ya no está en pausa
+    t = time.perf_counter()
+    n_pedido = request.query_params.get("n", "?")
+    log.info("espera n=%s: llega (cola=%d)", n_pedido, sala.respuestas.qsize())
+    respuesta = await sala.respuesta_pendiente(espera_larga_s())
+    log.info("espera n=%s: %s tras %d ms", n_pedido,
+             f"ENTREGA respuesta (audio {(respuesta[1] or '-')[:6]})" if respuesta else "sin respuesta → espera larga",
+             (time.perf_counter() - t) * 1000)
     if respuesta:
-        log.info("Respuesta del cliente lista: %d caracteres", len(respuesta))
-        return twiml(decir(respuesta) + escuchar(base))
+        texto, audio_id = respuesta
+        log.info("Respuesta del cliente lista: %d caracteres (voz %s)", len(texto), "chilena" if audio_id else "Twilio")
+        return twiml(reproducir(base, texto, audio_id) + escuchar(base))
     try:
         n = int(request.query_params.get("n", "0")) + 1
     except ValueError:
         n = 1
-    aviso = decir("La persona sigue escribiendo, espere por favor.") if n % AVISO_CADA == 0 else ""
-    return twiml(f'{aviso}<Pause length="{ESPERA_S}"/>' + ir_a(base, f"/twilio/espera?n={n}"))
+    aviso = await hablar(base, AVISO_ESPERA)
+    # Espera hasta que el cliente aprieta Enviar: Sala corta esta secuencia con la API de Twilio y la respuesta
+    # suena al tiro. Si no se pudiera interrumpir, al terminar vuelve a /twilio/espera, que ya tiene la respuesta.
+    sala.en_pausa_larga = True
+    return twiml(f'<Pause length="{SILENCIO_S}"/>{aviso}' * VUELTAS + ir_a(base, f"/twilio/espera?n={n}"))
+
+
+@router.get("/audio/{audio_id}.mp3")
+async def audio(audio_id: str) -> Response:
+    """Twilio descarga aquí el audio de <Play>. Sin firma (Twilio no firma estas descargas): el id es aleatorio
+    de 128 bits y el audio de una respuesta vence a los pocos minutos (app/voz.py)."""
+    mp3 = voz_chilena.audio(audio_id)
+    log.info("Twilio descarga audio %s: %s", audio_id[:6], "ok" if mp3 else "NO EXISTE")
+    if mp3 is not None:
+        await sala.confirmar_audio(audio_id)
+    if mp3 is None:
+        raise HTTPException(404, "Audio no disponible")
+    return Response(mp3, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})
 
 
 @router.post("/estado", dependencies=FIRMADO)
 async def estado(request: Request) -> Response:
     """statusCallback de Twilio: avisa a la PWA cuando la llamada termina."""
     form = await request.form()
+    sid = str(form.get("CallSid") or "")
+    if sala.call_sid and sid and sid != sala.call_sid:
+        # Un "completed" atrasado de la llamada anterior cortaba en la app la llamada nueva.
+        log.info("statusCallback de otra llamada: se ignora")
+        return Response(status_code=204)
     if form.get("CallStatus") in {"completed", "busy", "failed", "no-answer", "canceled"}:
         await sala.enviar({"tipo": "estado", "valor": "llamada_terminada"})
     return Response(status_code=204)

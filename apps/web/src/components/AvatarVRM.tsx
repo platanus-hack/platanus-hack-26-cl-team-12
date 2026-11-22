@@ -8,14 +8,9 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { VRMLoaderPlugin, type VRM } from "@pixiv/three-vrm";
+import { VRMLoaderPlugin, VRMUtils, type VRM } from "@pixiv/three-vrm";
 import { isLiteralGloss } from "@puente/glosses";
-
-interface Clip {
-  glosa: string;
-  duration: number;
-  frames: { t: number; q: number[] }[];
-}
+import { clipAnimacion, indiceAnimaciones, modeloVRM, type Clip } from "@/lib/avatarAssets";
 
 const FACTOR = { lenta: 1.5, normal: 1, rapida: 0.7 } as const;
 const BONES: string[] = [];
@@ -39,6 +34,7 @@ export function AvatarVRM({
   frase,
   velocidad = "normal",
   onSenando,
+  onProgreso,
   onFalla,
 }: {
   glosas: string[];
@@ -46,14 +42,16 @@ export function AvatarVRM({
   frase: number;
   velocidad?: keyof typeof FACTOR;
   onSenando?: (senando: boolean) => void;
+  /** Avance de la frase de 0 a 1 mientras el avatar firma (en 24 pasos): el subtítulo va apareciendo a la par. */
+  onProgreso?: (fraccion: number) => void;
   onFalla?: () => void;
 }) {
   const lienzo = useRef<HTMLCanvasElement>(null);
   const motor = useRef<{
     reproducir: (glosas: string[], factor: number) => void;
   } | null>(null);
-  const callbacks = useRef({ onSenando, onFalla });
-  callbacks.current = { onSenando, onFalla };
+  const callbacks = useRef({ onSenando, onProgreso, onFalla });
+  callbacks.current = { onSenando, onProgreso, onFalla };
 
   // Escena, modelo y bucle de dibujo (una sola vez).
   useEffect(() => {
@@ -91,10 +89,11 @@ export function AvatarVRM({
     let vrm: VRM | null = null;
     let REST: THREE.Quaternion[] = [];
     let ids: string[] = [];
-    const cache: Record<string, Clip> = {};
+    let generacion = 0; // cada frase nueva invalida la anterior que aún esté cargando sus clips
     let linea: { items: { c: Clip; d: number; s: number; e: number }[]; total: number; factor: number } | null = null;
     let t0 = 0;
     let senando = false;
+    let ultimoPaso = -1; // último paso (de 24) de progreso informado
     let pendiente: [string[], number] | null = null; // frase que llegó antes de que cargara el modelo
 
     const hueso = (n: string) => vrm?.humanoid.getNormalizedBoneNode(n as never) ?? null;
@@ -113,13 +112,10 @@ export function AvatarVRM({
       return { glosa: "", duration: d, frames: [{ t: 0, q }, { t: d, q }] };
     };
 
-    async function cargarClip(id: string) {
-      if (!cache[id]) {
-        const c = (await (await fetch(`/anim/${id}.json`)).json()) as Clip & { bones: string[] };
-        if (JSON.stringify(c.bones) !== JSON.stringify(BONES)) throw new Error(`${id}: huesos distintos`);
-        cache[id] = c;
-      }
-      return cache[id]!;
+    async function cargarClip(id: string): Promise<Clip> {
+      const c = await clipAnimacion(id);
+      if (JSON.stringify(c.bones) !== JSON.stringify(BONES)) throw new Error(`${id}: huesos distintos`);
+      return c;
     }
 
     motor.current = {
@@ -128,12 +124,14 @@ export function AvatarVRM({
           pendiente = [lista, factor];
           return;
         }
-        const clips: Clip[] = [];
-        for (const g of lista) {
-          const id = resolver(g, ids);
-          if (id) clips.push(await cargarClip(id).catch(() => null as never));
-        }
-        const seq = [reposo(0.25), ...clips.filter(Boolean), reposo(0.5)];
+        const gen = ++generacion;
+        // En paralelo (antes uno tras otro: N viajes de red seguidos en la primera frase).
+        const cargados = await Promise.all(
+          lista.map((g) => resolver(g, ids)).filter((id): id is string => !!id).map((id) => cargarClip(id).catch(() => null)),
+        );
+        if (gen !== generacion || !vivo) return; // llegó otra frase mientras cargaba: no pisarla con la vieja
+        const clips = cargados.filter((c): c is Clip => !!c);
+        const seq = [reposo(0.25), ...clips, reposo(0.5)];
         const items: { c: Clip; d: number; s: number; e: number }[] = [];
         seq.forEach((c, i) => {
           const d = c.duration * factor;
@@ -147,13 +145,14 @@ export function AvatarVRM({
         });
         linea = { items, total: items[items.length - 1]!.e, factor };
         t0 = performance.now();
+        ultimoPaso = -1;
         despertar((linea.total + 0.6) * 1000);
       },
     };
 
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));
-    Promise.all([loader.loadAsync("/models/avatar.vrm"), fetch("/anim/index.json").then((r) => (r.ok ? r.json() : []))])
+    Promise.all([modeloVRM().then((buf) => loader.parseAsync(buf, "/models/")), indiceAnimaciones()])
       .then(([gltf, lista]) => {
         if (!vivo) return;
         vrm = gltf.userData.vrm as VRM;
@@ -209,6 +208,12 @@ export function AvatarVRM({
           P = pose(A).map((q, k) => q.slerp(pb[k]!, w));
         } else if (act.length === 1) P = pose(act[0]!);
         BONES.forEach((b, k) => hueso(b)?.quaternion.copy(P[k]!));
+        const f = Math.min(1, t / Math.max(0.001, linea.total));
+        const paso = Math.floor(f * 24);
+        if (paso !== ultimoPaso) {
+          ultimoPaso = paso;
+          callbacks.current.onProgreso?.(f);
+        }
         const ahora = t < linea.total;
         if (ahora !== senando) {
           senando = ahora;
@@ -224,7 +229,11 @@ export function AvatarVRM({
       cancelAnimationFrame(raf);
       obs.disconnect();
       motor.current = null;
+      // Liberar texturas, geometrías y el contexto WebGL: tras varias llamadas se acumulaban hasta
+      // "Too many active WebGL contexts" y el avatar caía al dibujo.
+      if (vrm) VRMUtils.deepDispose(vrm.scene);
       renderer.dispose();
+      renderer.forceContextLoss();
     };
   }, []);
 

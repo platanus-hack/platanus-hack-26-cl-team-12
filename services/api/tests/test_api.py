@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 
@@ -97,6 +98,17 @@ class FakeTraductor:
     async def complejizar(self, texto):
         return f"formal({texto})"
 
+    async def glosas_a_espanol(self, glosas):
+        return f"formal({' '.join(glosas)})"
+
+    def glosas_conocidas(self, glosas):
+        return [g for g in glosas if isinstance(g, str) and g != "INVENTADA"]
+
+    async def a_glosas(self, texto):
+        from app.traductor import GlossResult
+
+        return GlossResult(glosas=["MARTES", "HORA"], subtitulo=f"señas({texto})")
+
     def para_voz(self, frase):
         return frase
 
@@ -115,10 +127,11 @@ def sala_falsa(monkeypatch):
     return sala
 
 
-def test_twilio_voz_saluda_y_escucha_con_urls_absolutas(sala_falsa):
+def test_twilio_voz_saluda_y_espera_que_parta_el_cliente(sala_falsa):
     r = client.post("/twilio/voz")
-    assert '<Gather input="speech"' in r.text and "Puente" in r.text
-    assert 'action="https://abc.ngrok-free.app/twilio/turno"' in r.text
+    # Parte la persona sorda: no se escucha al ejecutivo hasta que el cliente haya dicho algo.
+    assert '<Gather' not in r.text and "Brich" in r.text
+    assert "https://abc.ngrok-free.app/twilio/espera?n=0" in r.text
 
 
 def test_twilio_stream_mode_points_to_public_wss(sala_falsa):
@@ -134,11 +147,16 @@ def test_conversacion_completa_por_turnos(sala_falsa):
         # Turno del ejecutivo: el texto (escapado) va simplificado a la PWA y Twilio queda esperando.
         r = client.post("/twilio/turno", data={"SpeechResult": "su hora es el martes <x>"})
         assert "/twilio/espera?n=0" in r.text
-        assert pwa.receive_json() == {
+        # Texto simple (v2) y señas (v4) llegan los dos; el orden no importa (van en paralelo).
+        recibidos = {m["tipo"]: m for m in (pwa.receive_json(), pwa.receive_json())}
+        assert recibidos["ejecutivo_dice"] == {
             "tipo": "ejecutivo_dice",
             "texto": "su hora es el martes <x>",
             "simple": "simple(su hora es el martes <x>)",
             "opciones": ["Sí", "No"],
+        }
+        assert recibidos["glosas_para_senar"] == {
+            "tipo": "glosas_para_senar", "glosas": ["MARTES", "HORA"], "subtitulo": "señas(su hora es el martes <x>)"
         }
         assert "<Pause" in client.post("/twilio/espera?n=0").text  # el cliente todavía no responde
 
@@ -286,6 +304,68 @@ def test_logs_no_guardan_lo_que_se_dice(sala_falsa, caplog):
     assert "11.111.111-1" not in caplog.text
 
 
+def _decir_pendiente():
+    """Twilio vuelve a preguntar si hay respuesta: ahí empieza a sonar y la app recibe `cliente_dijo`."""
+    for _ in range(50):
+        r = client.post("/twilio/espera?n=1")
+        if "<Say" in r.text:
+            return r.text
+    return r.text
+
+
+def test_glosas_cliente_se_convierten_en_frase_se_dicen_y_se_muestran_al_sonar(sala_falsa):
+    """v3: lo que firma el cliente (glosas) se convierte y se dice por voz; la app recibe la frase recién cuando suena."""
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "INVENTADA", "AMBULANCIA"], "confianza": 1})
+        assert "formal(HOLA AMBULANCIA)" in _decir_pendiente()
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(HOLA AMBULANCIA)"}
+
+
+def test_cliente_dice_tambien_muestra_la_frase_convertida_al_sonar(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        assert "formal(martes bueno)" in _decir_pendiente()
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(martes bueno)"}
+
+
+def test_cliente_dijo_no_se_manda_antes_de_que_suene(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+        assert sala_falsa.respuestas.qsize() in (0, 1)  # aún en cola (o recién convertida): la app no recibe nada todavía
+        _decir_pendiente()
+        assert pwa.receive_json()["tipo"] == "cliente_dijo"
+
+
+def test_glosas_cliente_sin_glosas_validas_no_hace_nada(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["INVENTADA"], "confianza": 1})
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": "no-es-lista", "confianza": 1})
+        pwa.send_json({"tipo": "cliente_dice", "texto": "hola"})
+        assert "formal(hola)" in _decir_pendiente()  # lo único que se dice es lo válido
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(hola)"}
+
+
+def test_glosas_cliente_si_claude_falla_se_dicen_tal_cual(sala_falsa, monkeypatch):
+    async def falla(glosas):
+        raise RuntimeError("sin Claude")
+
+    monkeypatch.setattr(sala_falsa.traductor, "glosas_a_espanol", falla)
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "AMBULANCIA"], "confianza": 1})
+        assert "hola ambulancia" in _decir_pendiente()
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "hola ambulancia"}
+
 
 def test_llamada_sin_numero_usa_el_telefono_de_la_demo(monkeypatch):
     import app.main as m
@@ -299,3 +379,262 @@ def test_llamada_sin_numero_usa_el_telefono_de_la_demo(monkeypatch):
     monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: llamadas.append(numero) or ("CA1", "queued"))
     assert client.post("/llamadas", json={"destino": "clinica"}).status_code == 200
     assert llamadas == ["+56911111111"]
+
+
+
+def test_si_fallan_las_senas_igual_llega_el_texto(sala_falsa):
+    async def falla(_texto):
+        raise RuntimeError("Claude caído")
+
+    sala_falsa.traductor.a_glosas = falla
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/turno", data={"SpeechResult": "hola"})
+        assert pwa.receive_json()["tipo"] == "ejecutivo_dice"
+
+
+@pytest.fixture
+def voz_falsa(monkeypatch, sala_falsa):
+    """ElevenLabs falso: devuelve un 'mp3' con el texto, sin red ni costo."""
+    from app.voz import voz
+
+    async def generar(texto):
+        return b"MP3:" + texto.encode()
+
+    monkeypatch.setattr(voz, "activa", lambda: True)
+    monkeypatch.setattr(voz, "_generar", generar)
+    voz._fijas.clear(), voz._id_fija.clear(), voz._generando.clear(), voz.olvidar_respuestas()
+    yield voz
+    voz._generando.clear()
+
+
+def test_voz_chilena_en_el_saludo_y_twilio_baja_el_audio(voz_falsa):
+    import re
+
+    r = client.post("/twilio/voz")
+    assert "<Say" not in r.text
+    url = re.search(r"<Play>(https://abc\.ngrok-free\.app/twilio/audio/[\w-]+\.mp3)</Play>", r.text)
+    assert url, r.text
+    audio = client.get(url.group(1).replace("https://abc.ngrok-free.app", ""))
+    assert audio.status_code == 200 and audio.headers["content-type"] == "audio/mpeg"
+    assert audio.content.startswith(b"MP3:Hola. Le habla la Brich")
+
+
+def test_respuesta_del_cliente_con_voz_chilena_y_se_borra_en_otra_llamada(voz_falsa):
+    import re
+
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+        for _ in range(50):
+            r = client.post("/twilio/espera?n=1")
+            if "<Play>" in r.text and "audio" in r.text:
+                break
+    ruta = re.search(r"/twilio/audio/[\w-]+\.mp3", r.text.split("<Gather")[0]).group(0)
+    assert client.get(ruta).content == b"MP3:formal(martes bueno)"
+    client.post("/twilio/voz")  # empieza otra llamada: el audio con datos de la anterior ya no existe
+    assert client.get(ruta).status_code == 404
+
+
+def test_si_elevenlabs_falla_se_usa_la_voz_de_twilio(voz_falsa, monkeypatch):
+    async def falla(_texto):
+        return None
+
+    monkeypatch.setattr(voz_falsa, "_generar", falla)
+    r = client.post("/twilio/voz")
+    assert '<Say language="es-MX">Hola. Le habla la Brich' in r.text and "<Play>" not in r.text
+
+
+def test_frase_fija_lenta_no_bloquea_el_webhook(voz_falsa, monkeypatch):
+    """Si ElevenLabs tarda, el webhook de Twilio no espera (corta a los 15 s): usa <Say> y el audio sigue generándose."""
+    import time
+
+    import app.voz as voz_mod
+
+    async def lento(texto):
+        await asyncio.sleep(0.5)
+        return b"MP3:" + texto.encode()
+
+    monkeypatch.setattr(voz_mod, "ESPERA_FIJA_S", 0.05)
+    monkeypatch.setattr(voz_falsa, "_generar", lento)
+    t0 = time.monotonic()
+    r = client.post("/twilio/voz")
+    assert time.monotonic() - t0 < 0.4
+    from app.twilio_media import SALUDO
+
+    assert f'<Say language="es-MX">{SALUDO[:20]}' in r.text  # sin texto fijo: el saludo cambia seguido
+
+
+def test_audio_inexistente_da_404():
+    assert client.get("/twilio/audio/no-existe.mp3").status_code == 404
+
+
+def test_trial_primer_pedido_sin_firma_solo_para_llamadas_propias(sala_falsa, monkeypatch):
+    """El trial de Twilio manda /voz por TwilioProxy sin X-Twilio-Signature: se acepta solo con un CallSid nuestro."""
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token-de-prueba")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC_nuestra")
+    sala_falsa.llamadas_creadas.add("CA_nuestra")
+    try:
+        propia = {"CallSid": "CA_nuestra", "AccountSid": "AC_nuestra"}
+        assert client.post("/twilio/voz", data=propia).status_code == 200
+        assert client.post("/twilio/voz", data={**propia, "CallSid": "CA_ajena"}).status_code == 403
+        assert client.post("/twilio/voz", data={**propia, "AccountSid": "AC_otra"}).status_code == 403
+        # Con firma presente (aunque sea de una llamada propia), se valida la firma como siempre.
+        assert client.post("/twilio/voz", data=propia, headers={"X-Twilio-Signature": "falsa"}).status_code == 403
+    finally:
+        sala_falsa.llamadas_creadas.discard("CA_nuestra")
+
+
+def test_llamadas_registra_el_callsid(monkeypatch):
+    import app.main as m
+    from app.llamada import sala
+
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56911111111")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"):
+        monkeypatch.setenv(k, "x")
+    monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: ("CA_registrada", "queued"))
+    client.post("/llamadas", json={"numero": "+56911111111"})
+    assert "CA_registrada" in sala.llamadas_creadas
+    sala.llamadas_creadas.discard("CA_registrada")
+
+
+
+def test_espera_larga_responde_apenas_llega_la_respuesta(sala_falsa, monkeypatch):
+    """El servidor retiene /twilio/espera hasta que el cliente responde: menos pedidos a Twilio por llamada."""
+    import threading
+    import time
+
+    monkeypatch.setenv("TWILIO_ESPERA_S", "5")
+    with TestClient(app) as c, c.websocket_connect("/twilio/cliente") as pwa:  # un solo bucle, como en producción
+        t0 = time.monotonic()
+        threading.Timer(0.3, lambda: pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})).start()
+        r = c.post("/twilio/espera?n=0")
+        assert "formal(martes bueno)" in r.text
+        assert time.monotonic() - t0 < 4  # contestó al llegar la respuesta, no al vencer la espera
+
+
+def test_espera_larga_sin_respuesta_vuelve_a_esperar(sala_falsa, monkeypatch):
+    monkeypatch.setenv("TWILIO_ESPERA_S", "0.2")
+    r = client.post("/twilio/espera?n=0")
+    assert "<Pause" in r.text and "/twilio/espera?n=1" in r.text
+
+
+
+def test_responder_durante_la_pausa_larga_la_interrumpe(sala_falsa, monkeypatch):
+    """Sin respuesta a tiempo, Twilio queda en <Pause> largo; al responder, la API de Twilio corta la pausa."""
+    import app.llamada as llamada
+
+    interrumpidas = []
+    monkeypatch.setattr(llamada, "interrumpir_pausa", lambda sid: interrumpidas.append(sid))
+    monkeypatch.setenv("TWILIO_ESPERA_S", "0")
+    client.post("/twilio/voz", data={"CallSid": "CA_en_curso"})
+    r = client.post("/twilio/espera?n=0")
+    assert r.text.count('<Pause length="20"/>') >= 20 and sala_falsa.en_pausa_larga  # ~9 min en una sola consulta
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+    assert interrumpidas == ["CA_en_curso"] and not sala_falsa.en_pausa_larga
+    assert "formal(martes bueno)" in client.post("/twilio/espera?n=0").text
+
+
+@pytest.mark.parametrize(
+    "valor, esperado",
+    [(None, 240 * 60), ("30", 30 * 60), ("0", 60), ("99999", 24 * 3600), ("no-numero", 240 * 60)],
+)
+def test_duracion_maxima_de_la_llamada(monkeypatch, valor, esperado):
+    from app.main import duracion_maxima_s
+
+    if valor is None:
+        monkeypatch.delenv("LLAMADA_MAX_MIN", raising=False)
+    else:
+        monkeypatch.setenv("LLAMADA_MAX_MIN", valor)
+    assert duracion_maxima_s() == esperado
+
+
+def test_respuesta_perdida_al_interrumpir_se_vuelve_a_entregar(voz_falsa):
+    """Bug medido en fix/debug: al interrumpir la pausa, Twilio pide /espera dos veces y descarta la primera.
+    La respuesta no se da por entregada hasta que Twilio descarga su audio, así la segunda la vuelve a mandar."""
+    import re
+
+    with TestClient(app) as c, c.websocket_connect("/twilio/cliente") as pwa:
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+        primera = c.post("/twilio/espera?n=1").text  # Twilio la descarta (no baja el audio)
+        segunda = c.post("/twilio/espera?n=0").text  # la de la interrupción: debe traer la misma respuesta
+        ruta = re.search(r"/twilio/audio/[\w-]+\.mp3", primera.split("<Gather")[0]).group(0)
+        assert ruta in segunda
+        assert c.get(ruta).content == b"MP3:formal(martes bueno)"  # ahora sí suena
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(martes bueno)"}  # la app la ve al sonar
+        assert "<Pause" in c.post("/twilio/espera?n=0").text  # ya entregada: no se repite
+
+
+
+# ── Llamadas seguidas: lo de la llamada anterior no se cuela en la nueva ───────
+def test_respuesta_traducida_tras_empezar_otra_llamada_se_descarta(sala_falsa, monkeypatch):
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+
+    class Lento(FakeTraductor):
+        async def complejizar(self, texto):
+            sala_falsa.reiniciar()  # empieza otra llamada mientras Claude responde
+            return f"formal({texto})"
+
+    monkeypatch.setattr(sala_falsa, "traductor", Lento())
+    asyncio.run(sala_falsa.cliente_dijo("martes bueno"))
+    assert sala_falsa.respuestas.qsize() == 0
+
+
+def test_ejecutivo_dice_de_la_llamada_anterior_no_llega_a_la_nueva(sala_falsa, monkeypatch):
+    enviados = []
+
+    async def enviar(msg):
+        enviados.append(msg)
+
+    class Lento(FakeTraductor):
+        async def simplificar(self, texto):
+            sala_falsa.reiniciar()
+            return await super().simplificar(texto)
+
+    monkeypatch.setattr(sala_falsa, "enviar", enviar)
+    monkeypatch.setattr(sala_falsa, "traductor", Lento())
+    asyncio.run(sala_falsa.ejecutivo_dijo("hola"))
+    assert not [m for m in enviados if m["tipo"] == "ejecutivo_dice"]
+
+
+def test_estado_de_otra_llamada_no_corta_la_actual(sala_falsa, monkeypatch):
+    enviados = []
+
+    async def enviar(msg):
+        enviados.append(msg)
+
+    monkeypatch.setattr(sala_falsa, "enviar", enviar)
+    sala_falsa.call_sid = "CA_nueva"
+    client.post("/twilio/estado", data={"CallSid": "CA_vieja", "CallStatus": "completed"})
+    assert enviados == []
+    client.post("/twilio/estado", data={"CallSid": "CA_nueva", "CallStatus": "completed"})
+    assert enviados == [{"tipo": "estado", "valor": "llamada_terminada"}]
+
+
+def test_una_segunda_pantalla_no_expulsa_a_la_primera(sala_falsa):
+    from starlette.websockets import WebSocketDisconnect
+
+    with client.websocket_connect("/twilio/cliente") as primera:
+        with pytest.raises(WebSocketDisconnect) as e:
+            with client.websocket_connect("/twilio/cliente") as segunda:
+                segunda.receive_json()
+        assert e.value.code == 4001
+        client.post("/twilio/estado", data={"CallStatus": "completed"})
+        assert primera.receive_json() == {"tipo": "estado", "valor": "llamada_terminada"}
+
+
+def test_colgar_corta_en_twilio_y_exige_token(sala_falsa, monkeypatch):
+    import app.llamada as llamada
+
+    cortadas = []
+    monkeypatch.setattr(llamada, "colgar_twilio", lambda sid: cortadas.append(sid) or True)
+    monkeypatch.setenv("CLIENTE_WS_TOKEN", "abc123")
+    sala_falsa.ultima_creada = "CA_demo"
+    assert client.post("/twilio/colgar?sid=CA_demo").status_code == 403  # sin token
+    assert client.post("/twilio/colgar?token=abc123&sid=CA_otra").status_code == 403  # no es la llamada en curso
+    assert cortadas == []
+    assert client.post("/twilio/colgar?token=abc123&sid=CA_demo").status_code == 204
+    assert cortadas == ["CA_demo"]

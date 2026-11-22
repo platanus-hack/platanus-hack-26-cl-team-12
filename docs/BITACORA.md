@@ -8,6 +8,81 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Claude (fix/revision-demo) · revisión de código en 2 rondas y arreglos 🔴🟠🟡
+- Hice: revisé origin/dev con 4 agentes más un verificador y arreglé 14 hallazgos que afectan el plan C.
+  - **Despliegue:** `NEXT_PUBLIC_CLIENTE_WS_TOKEN` y `NUMERO_DEMO` en render.yaml y en el CD.
+  - **Traducción:** `complejizar` sin thinking (Haiku 5.5 gastaba `max_tokens=200` pensando y devolvía vacío).
+  - **Web:**
+    - El texto escrito ya no se reemplaza por glosas.
+    - La PWA abre la llamada real.
+    - El subtítulo aparece al tiro.
+    - MediaPipe y el VRM se precargan al marcar y no tienen fugas; three.js queda fuera del bundle inicial.
+    - Horas, RUT y nombres (`TEXTO:`) se muestran en grande sobre el avatar.
+    - El SW revalida `/anim/index.json`.
+  - **API:**
+    - Las frases fijas no bloquean el webhook: esperan su audio máx. 1,5 s y se precalientan al arrancar.
+    - httpx compartido y Anthropic con `timeout=10`.
+    - `Sala.gen` descarta lo que llegue de la llamada anterior, `/estado` se filtra por CallSid y queda un solo WS a la vez.
+    - `POST /twilio/colgar` (token + CallSid) corta el teléfono al colgar en la app.
+- Decidí:
+  - Un solo PR que cruza las carpetas de A, B y D.
+  - `pose_full` se mantiene: las plantillas están calibradas con ese modelo.
+- Verificado: pytest api (71) y agent (64), los 10 archivos de vitest (66), `pnpm typecheck` y `pnpm build`. NO probado con Twilio ni ElevenLabs reales.
+- Falta / bloqueado:
+  - Raimundo carga `NUMERO_DEMO` y `NEXT_PUBLIC_CLIENTE_WS_TOKEN` en Render, más el secreto `CLIENTE_WS_TOKEN` en GitHub para la APK.
+  - Decidir si `puente-api` sube a starter.
+  - Rotar el token compartido después de la demo.
+  - Lo de LiveKit (turn detector de ~400 MB, RoomIO) sigue pendiente.
+
+## 2026-11-22 — Martín / Claude (fix/debug) · las señas se decían tal cual (complejizar sin espacio)
+- Hallazgo: `complejizar` (también lo usa `glosas_a_espanol`) tenía `max_tokens=200` y en Claude Haiku 5.5 el pensamiento viene activado: **la mitad de las veces se acababan los tokens pensando** (`stop_reason=max_tokens`) y la frase salía vacía (se decían las glosas tal cual) o cortada ("Mi hijo se cay").
+- Hice: en `complejizar`, `thinking={"type": "disabled"}` (permitido en Haiku 5.5 con el esfuerzo por defecto) y `max_tokens` 1024. Medido con Claude real: 8/8 frases completas (antes 4/8). **Raimundo**: toqué `services/agent/translator/translate.py` (tu carpeta), solo esa llamada; tests del traductor OK.
+
+## 2026-11-22 — Martín / Claude (fix/debug) · la respuesta del cliente se perdía al interrumpir la espera
+- Hallazgo (con registro detallado, sin datos personales): señas → `glosas_a_espanol` → voz chilena funcionaban. Al apretar Enviar, `calls.update` interrumpe la pausa y **Twilio hace dos consultas seguidas a `/twilio/espera` y descarta la primera**; esa se llevaba la respuesta y nunca sonaba.
+- Hice: la respuesta queda `en_entrega` hasta que Twilio **descarga su audio** (`/twilio/audio/{id}.mp3`); si una consulta se pierde, la siguiente la reentrega. `cliente_dijo` se manda a la app al descargarse el audio (cuando de verdad suena). Registro detallado (`puente.*`, `PUENTE_LOG`).
+- Falta: probar con llamada real.
+
+## 2026-11-22 — Martín / Claude (v1/twilio-pagado)
+- Decidí: **pagar el upgrade de Twilio** (cierra el TODO de evaluar el upgrade). Con el trial: llamadas de máx. 10 min, solo 5 números verificados y aviso "trial account".
+- Hice: `LLAMADA_MAX_MIN` (por defecto 240 = 4 h, máx. 24 h) se pasa como `time_limit` al crear la llamada. Solo rige con cuenta pagada.
+- Falta: probar con la cuenta pagada (debería desaparecer el corte de TwilioProxy a ~10 s y el tope de ~10 consultas por llamada); evaluar conversación fluida (audio en vivo, sin turnos) ahora que Media Streams queda disponible.
+
+## 2026-11-22 — Tomás / Claude (v1/turnos-cliente-primero) · la llamada parte con la persona sorda y los turnos alternan
+- Hice: `/twilio/voz` ya no escucha al ejecutivo tras el saludo: saluda y va a `/twilio/espera` hasta que la persona sorda envíe su primer mensaje. Antes (ejecutivo primero) el primer mensaje del cliente quedaba en cola sin que nadie lo dijera y solo salía cuando el ejecutivo hablaba, desordenando los turnos. Saludo ajustado ("La persona le hablará en unos segundos…"). Test actualizado; pytest api 57 OK.
+- Decidí: orden estricto cliente → ejecutivo → cliente… (espera → dice → escucha → turno → espera).
+- Falta / bloqueado: probar con llamada real (no probado en Twilio); redesplegar `puente-api`. Si el ejecutivo habla durante el turno del cliente, `ejecutivo_dice` borra las glosas que llevaba señadas (CallPanel).
+
+## 2026-11-22 — Martín / Claude (v1/espera-larga)
+- Hallazgo: con el trial de Twilio ("Limited trial") **la llamada se corta después de ~10 pedidos de TwiML**, no por tiempo (dos llamadas de 66 s y 45 s cortadas justo en el pedido 10, con un mensaje de Twilio). Esperar al cliente con `<Pause 2>` + `<Redirect>` gastaba un pedido cada 2 s.
+- Hice: `/twilio/espera` retiene el pedido hasta `TWILIO_ESPERA_S` (10 s) y contesta apenas llega la respuesta del cliente: ~5 veces menos pedidos. Aviso "la persona sigue respondiendo" cada ~20 s.
+- Falta: confirmar el límite con una llamada larga. Si se confirma, una conversación de varios turnos igual lo puede agotar; con Twilio pagado no debería existir.
+
+## 2026-11-22 — Tomás / Claude (v3/senas-reales) · la lectura real de señas pasa a ser la de por defecto
+- Hice: `RECONOCER_SENAS` ahora está activa salvo `NEXT_PUBLIC_RECONOCER_SENAS=0`. Antes exigía `=1`: en el deploy de `main` (que ni siquiera tiene aún el PR #35) la app usaba la lectura simulada y **Enviar mandaba la respuesta completa del guion (todo P1) aunque la persona no hubiera señado nada**.
+- Decidí: la simulación solo por opt-in explícito; así un build sin variable nunca envía lo que no se señó.
+- Falta / bloqueado: **`main` no tiene el reconocimiento** (PR #35 solo está en `dev`): hace falta el PR `dev` → `main` y redesplegar la web. Con el build actual de `main` seguirá pasando.
+
+## 2026-11-22 — r.labbevidal / Claude (v4/vista-web) · vista web en el computador
+- Hice: desde 1024 px la app deja de ser una columna de 560 px. La barra y las pestañas pasan a una barra lateral; el inicio va en dos columnas (contactos frecuentes y acciones a la izquierda, consejos a la derecha, cómo funciona abajo; los carruseles se vuelven grilla). La llamada tiene el intérprete y tu cámara a la izquierda, el chat fijo a la derecha (abierto por defecto en computador) y los controles abajo. Todo en un `@media (min-width: 1024px)` al final de `globals.css`, más `.shell` en `AppShell` y `esEscritorio()` en `CallPanel`. En el celular no cambia nada.
+- Verificado: typecheck, build, vitest `call` (4) y `senas` (3). No probado en el navegador (Chrome DevTools no conecta en este equipo).
+- Falta: mirarlo en el navegador a 1280-1440 px y a 390 px (celular), en tema claro y oscuro.
+
+## 2026-11-22 — r.labbevidal / Claude (docs/entrega-platanus) · entrega
+- Hice: `deploy-url` en `platanus-hack-project.jsonc` → https://puente-web.onrender.com/. `project-logo.png` ahora es el logo final de Rafael (10 barras = puente colgante), dibujado desde `apps/web/public/icons/icon.svg` a 1000×1000 (10 KB); antes era el logo genérico de Platanus.
+- Falta: README del proyecto (sigue la plantilla de Platanus).
+
+## 2026-11-22 — Tomás / Claude (feature/v5-reconocimiento) · lectura de señas de la persona sorda (v3) conectada a la llamada
+- Hice: **la cámara lee las señas y las manda al agente** (ADR-0002). `packages/signs`: reconocedor de señas *aisladas* por plantillas (DTW) con pausa entre señas (`createPauseRecognizer`, `extractFeatures`). `apps/web`: `lib/reconocimiento.ts` (MediaPipe pose+manos desde CDN) enganchado a `CallPanel`/`CamaraPropia` **solo con `NEXT_PUBLIC_RECONOCER_SENAS=1`** (sin eso sigue la lectura simulada). Las glosas se acumulan sobre la cámara y se envían **solo al tocar Enviar** como `glosas_cliente`. Vocabulario cerrado: las 22 glosas de P1–P3 (`apps/web/public/reco/templates.json`, 137 plantillas de Tomás; salen de `data/reco` con `lab/v5_reconocimiento/export_templates.mjs`).
+- Hice (backend, **revisar Rai/Martín**): `services/api/app/llamada.py` **ignoraba `glosas_cliente`** (solo entendía `cliente_dice`): ahora lo convierte con `Translator.glosas_a_espanol` (el del agente) y lo dice por voz. Mensaje nuevo del contrato **`cliente_dijo {texto}`** (backend → app): la frase en español en que se convirtió; se manda **justo cuando empieza a sonar** (cuando `/twilio/espera` la saca de la cola). La app la muestra escrita a la par del audio (`lib/voz.ts`; en el mock sigue los eventos reales de la voz del navegador). El subtítulo del ejecutivo aparece a medida que el avatar firma. Fondo del ejecutivo más oscuro.
+- Medido (solo Tomás, laptop, `lab/v5_reconocimiento`): **con pausa entre señas ~98 % de las palabras (51/52, 0 sobrantes) en las corridas completas de P1–P3**; de corrido ~85 % pero ~4 palabras de más por frase. Por eso la demo se hace **bajando las manos entre palabras**. Los errores fuertes eran tomas inconsistentes (BRAZO↔HOSPITAL): se arregla con tomas nuevas consistentes.
+- Decidí: nada de envío automático (solo el botón Enviar). `ESCENARIO=urgencia_caida` en el `.env` del servidor para que v2 use el escenario de la ambulancia.
+- Falta / bloqueado: (1) **voz**: en la ruta Twilio el ejecutivo oye `<Say es-MX>` de Twilio, **no la voz chilena de ElevenLabs** (esa solo está en `services/agent`); lo toma Martín (idea: ElevenLabs → mp3 → `<Play>`). (2) Probado en laptop, **falta ensayar en el celular** (cámara vertical; se corrige la proporción pero no está medido). (3) MediaPipe se baja de un CDN: sin internet no lee señas. (4) Solo lectura de *un* señante (Tomás); otra persona necesitaría sus propias muestras. (5) Con `?debug` en la URL: candidatas del reconocedor y `window.__senas([...])` para simular señas sin cámara.
+
+## 2026-11-22 — Rafael / Claude (v4/mejoras-chat) · el proyecto pasa a llamarse Bridge
+- Decidí (Rafael): el proyecto se llama **Bridge** (antes Puente). Logo: **un puente simple, sin lo que conecta**.
+- Hice: varias rondas de logo con Rafael. **Logo final: 10 barras cuyas alturas dibujan un puente colgante (altas en las torres, bajas al centro), sin piso** (`apps/web/public/logo/bridge-logo.svg` y `-claro.svg`; componente `Logo`; íconos de la PWA). No había plugin de Figma en la sesión: son SVG, importables a Figma. **Paleta Bridge**: azul `#6E9BFF` (oscuro) / `#2F5BE0` (claro) como marca y color del usuario, ámbar `#FFB547` de acento, rojo urgencia, verde estado, neutros igual (contrastes revisados, todos ≥ 5:1). Nombre visible "Bridge" en la app, manifest, login, calificación y textos; íconos PNG de la PWA regenerados. Los paquetes siguen como `@puente/*` (solo cambia lo que ve el usuario).
+- Falta: actualizar `project-description.md` y `platanus-hack-project.jsonc` (los arma A) y el pitch con el nombre nuevo.
 ## 2026-11-22 — r.labbevidal / Claude (fix/agente-hilos) · el agente se reiniciaba en Render
 - Hice: medí la memoria real (PSS) del agente en modo producción: ~780 MB. `livekit-agents` 1.8 precarga por defecto el modelo de fin de turno (~450 MB, "EOT weights") en cada ejecutor de llamadas aunque no lo usemos. En Render Starter (512 MB) el sistema lo mataba antes de conectarse a LiveKit (por eso no había error y Render lo reintentaba cada ~5 min). Ahora `agent.py` fija `LIVEKIT_AGENTS_PRELOAD_LOCAL_INFERENCE=0` y corre las llamadas en hilos (`AGENT_EXECUTOR=thread`): **221 MB** (379 MB si se vuelve a procesos).
 - Verificado: pytest 63 y ruff OK; corrido contra el LiveKit real: `registered worker` (Brazil) y `job runner initialized` en 0,6 s. No probado: una llamada completa en Render.
@@ -221,3 +296,9 @@ Las entradas nuevas van **arriba**. Formato:
 - Hice: `make senas-pull` / `make senas-push` (`aws s3 sync` de `apps/web/public/senas/` ↔ `s3://$SENAS_S3_BUCKET/senas/`) y las variables `SENAS_S3_BUCKET`, `AWS_REGION`, `AWS_PROFILE` en `.env.example`.
 - Decidí: bucket PRIVADO (derechos UMCE): cada persona baja las fotos con sus credenciales en vez de correr `extraer_senas.py` con los PDF. **Cambió después:** `senas/*` quedó de lectura pública para que la web desplegada muestre las fotos (ver v4/senas-s3). Sin fotos la app sigue usando el avatar de palitos.
 - Falta: crear el bucket (la sesión de AWS había expirado) y que alguien con las fotos generadas corra `make senas-push`.
+
+## 2026-11-22 — Claude (chore/tests-e2e) · tests e2e con Playwright
+- Hice: paquete `e2e/` (Playwright, Chromium en perfil Pixel 7 con cámara falsa), con 16 tests. `mock`: login, pestañas, buscador, tema, el guion completo de la ambulancia (chat, señas + Enviar, "Repita"), colgar, calificación y `?llamar=urgencias`. `real`: la PWA contra la API real por `WS /twilio/cliente`. El test hace de Twilio con webhooks firmados, y `e2e/api_e2e.py` reemplaza Twilio y Claude por falsos deterministas. Agregué `make test-e2e`, `make e2e-install`, `make test-e2e-ui` y el job `e2e` en la CI.
+- Decidí: correr contra el export estático de producción y no contra `next dev`, que falla con recargas concurrentes (`Unexpected end of JSON input`). El proyecto `real` corre con `workers: 1` porque la API tiene una sola sala global y dos tests en paralelo reciben los mensajes del otro.
+- Verificado: 48/48 con `--repeat-each=3` y 16/16 en modo CI (`CI=1`).
+- Falta: un e2e de la caída de conexión (`onDesconectado`). Cuando haya varias salas en la API, quitar `workers: 1`.

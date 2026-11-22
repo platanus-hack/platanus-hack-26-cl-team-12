@@ -39,6 +39,15 @@ describe("parseMensaje", () => {
     expect(parseMensaje(j({ tipo: "ejecutivo_dice", texto: "a".repeat(500) }))).not.toBeNull();
   });
 
+  it("cliente_dijo: la frase en español en que se convirtió lo firmado", () => {
+    expect(parseMensaje(j({ tipo: "cliente_dijo", texto: "Hola, necesito una ambulancia.", extra: 1 }))).toEqual({
+      tipo: "cliente_dijo",
+      texto: "Hola, necesito una ambulancia.",
+    });
+    expect(parseMensaje(j({ tipo: "cliente_dijo", texto: "" }))).toBeNull();
+    expect(parseMensaje(j({ tipo: "cliente_dijo" }))).toBeNull();
+  });
+
   it("cliente_dice: descarta campos extra", () => {
     expect(parseMensaje(j({ tipo: "cliente_dice", texto: "hola", role: "agente" }))).toEqual({
       tipo: "cliente_dice",
@@ -83,7 +92,7 @@ describe("parseMensaje", () => {
 
 describe("SOLO_AGENTE", () => {
   it("contiene solo los tipos que emite el agente", () => {
-    expect([...SOLO_AGENTE].sort()).toEqual(["ejecutivo_dice", "estado", "glosas_para_senar"]);
+    expect([...SOLO_AGENTE].sort()).toEqual(["cliente_dijo", "ejecutivo_dice", "estado", "glosas_para_senar"]);
     expect(SOLO_AGENTE.has("cliente_dice")).toBe(false);
     expect(SOLO_AGENTE.has("glosas_cliente")).toBe(false);
   });

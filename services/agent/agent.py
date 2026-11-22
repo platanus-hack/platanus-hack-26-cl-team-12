@@ -67,7 +67,7 @@ def prewarm(proc: agents.JobProcess) -> None:
 async def entrypoint(ctx: agents.JobContext):
     await ctx.connect()
     escenario = ctx.proc.userdata["escenario"]
-    translator = Translator(anthropic.Anthropic(), ctx.proc.userdata["glossary"], escenario, store=abrir_store())
+    translator = Translator(anthropic.Anthropic(timeout=10, max_retries=1), ctx.proc.userdata["glossary"], escenario, store=abrir_store())
     voz_actual = elegir_voz()
 
     tts = elevenlabs.TTS(

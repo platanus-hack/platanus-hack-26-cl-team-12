@@ -10,4 +10,6 @@ def sin_llamadas_reales(monkeypatch):
         raise AssertionError("Un test intentó hacer una llamada real con Twilio")
 
     monkeypatch.setattr(main, "llamar_con_twilio", prohibido)
-    monkeypatch.delenv("NUMERO_DEMO", raising=False)  # que el .env local no cambie los tests
+    monkeypatch.delenv("NUMERO_DEMO", raising=False)
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+    monkeypatch.setenv("TWILIO_ESPERA_S", "0")  # sin espera larga en los tests (salvo los que la prueban)  # sin voz chilena real en los tests (no gastar ni red)  # que el .env local no cambie los tests

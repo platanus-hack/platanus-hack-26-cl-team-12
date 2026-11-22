@@ -17,6 +17,8 @@ services:
     healthCheckPath: /health
     autoDeployTrigger: "off"
     envVars:
+      - key: ESCENARIO # el traductor de la llamada real (glosas ↔ español) usa el escenario de la ambulancia
+        value: urgencia_caida
       - key: PORT
         value: "8000" # el CMD del Dockerfile escucha en 8000 (Render asume 10000)
       - key: API_ENV
@@ -31,6 +33,10 @@ services:
       - key: LIVEKIT_API_SECRET
         sync: false
       - key: ALLOWED_DESTINATIONS
+        sync: false
+      # Teléfono al que llaman los contactos de la app (la web manda solo `destino`). Sin esto POST /llamadas da 422.
+      # Debe estar también en ALLOWED_DESTINATIONS.
+      - key: NUMERO_DEMO
         sync: false
       # Telefonía plan C (app/twilio_media.py): Twilio llama a /twilio/* y Claude simplifica (app/llamada.py).
       - key: PUBLIC_BASE_URL
@@ -47,6 +53,15 @@ services:
         sync: false
       - key: CLIENTE_WS_TOKEN
         sync: false
+      - key: LLAMADA_MAX_MIN
+        value: "240" # duración máxima de cada llamada en minutos (cuenta pagada de Twilio)
+      # Voz chilena de lo que escucha el ejecutivo (app/voz.py). Sin clave, Twilio usa su voz es-MX.
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        value: Fd38GRHtJllY0CuguAy9 # voz chilena mujer (ADR-0006); no es secreto
+      - key: ELEVENLABS_VOICE_ID_HOMBRE
+        value: 6WgXEzo1HGn3i7ilT4Fh
 
   # ── Agente (LiveKit Agents): proceso largo, sin puerto ──────────────────────
   - type: worker
@@ -91,5 +106,8 @@ services:
         value: https://puente-api.onrender.com
       - key: NODE_VERSION
         value: "22"
+      # El mismo valor que CLIENTE_WS_TOKEN de puente-api: sin esto la API cierra el WebSocket (1008) y no hay llamada.
+      - key: NEXT_PUBLIC_CLIENTE_WS_TOKEN
+        sync: false
       - key: NEXT_PUBLIC_SENAS_URL # fotos de señas en S3 (https://<bucket>.s3.<región>.amazonaws.com/senas)
         sync: false
