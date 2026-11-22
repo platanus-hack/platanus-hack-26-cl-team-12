@@ -13,7 +13,6 @@
     "@puente/glosses": "workspace:*",
     "@puente/signs": "workspace:*",
     "@puente/ui": "workspace:*",
-    "livekit-client": "^2.7.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
