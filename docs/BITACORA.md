@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Tomás / Claude (v3/senas-reales) · la lectura real de señas pasa a ser la de por defecto
+- Hice: `RECONOCER_SENAS` ahora está activa salvo `NEXT_PUBLIC_RECONOCER_SENAS=0`. Antes exigía `=1`: en el deploy de `main` (que ni siquiera tiene aún el PR #35) la app usaba la lectura simulada y **Enviar mandaba la respuesta completa del guion (todo P1) aunque la persona no hubiera señado nada**.
+- Decidí: la simulación solo por opt-in explícito; así un build sin variable nunca envía lo que no se señó.
+- Falta / bloqueado: **`main` no tiene el reconocimiento** (PR #35 solo está en `dev`): hace falta el PR `dev` → `main` y redesplegar la web. Con el build actual de `main` seguirá pasando.
+
 ## 2026-11-22 — r.labbevidal / Claude (v4/vista-web) · vista web en el computador
 - Hice: desde 1024 px la app deja de ser una columna de 560 px. La barra y las pestañas pasan a una barra lateral; el inicio va en dos columnas (contactos frecuentes y acciones a la izquierda, consejos a la derecha, cómo funciona abajo; los carruseles se vuelven grilla). La llamada tiene el intérprete y tu cámara a la izquierda, el chat fijo a la derecha (abierto por defecto en computador) y los controles abajo. Todo en un `@media (min-width: 1024px)` al final de `globals.css`, más `.shell` en `AppShell` y `esEscritorio()` en `CallPanel`. En el celular no cambia nada.
 - Verificado: typecheck, build, vitest `call` (4) y `senas` (3). No probado en el navegador (Chrome DevTools no conecta en este equipo).

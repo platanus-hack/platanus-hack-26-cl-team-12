@@ -4,8 +4,11 @@
 // TODO(offline): MediaPipe (wasm + modelos) se baja de un CDN la primera vez; para uso sin internet hay que empaquetarlo en la app.
 import { createPauseRecognizer, extractFeatures, type HandsByLabel, type Pt, type TemplateSet } from "@puente/signs";
 
-/** Se activa con NEXT_PUBLIC_RECONOCER_SENAS=1; sin eso la app sigue usando la lectura simulada. */
-export const RECONOCER_SENAS = process.env.NEXT_PUBLIC_RECONOCER_SENAS === "1";
+/**
+ * Lectura real de señas: activa por defecto. La lectura simulada (que "lee" la respuesta del guion y la envía completa) solo
+ * se usa con NEXT_PUBLIC_RECONOCER_SENAS=0, para no mandar nunca algo que la persona no señó por olvidar una variable.
+ */
+export const RECONOCER_SENAS = process.env.NEXT_PUBLIC_RECONOCER_SENAS !== "0";
 
 const MP = "0.10.14";
 const BUNDLE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP}/vision_bundle.mjs`;
