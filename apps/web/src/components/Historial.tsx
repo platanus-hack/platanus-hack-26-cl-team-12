@@ -15,10 +15,11 @@ interface Llamada {
 }
 
 const LLAMADAS: Llamada[] = [
-  { id: "1", cuando: "Hoy, 19:42", quien: "Urgencias Clínica Santa María", duracion: "3 min", resultado: "Ambulancia enviada", tono: "ok", resumen: "Pediste una ambulancia porque tu hijo se cayó y se quebró el codo. Te dijeron que llegaba en unos 10 minutos y que no le movieras el brazo." },
-  { id: "2", cuando: "Ayer, 10:15", quien: "Clínica Santa María", duracion: "5 min", resultado: "Hora confirmada", tono: "ok", resumen: "Te confirmaron hora con medicina general el lunes 24 a las 10:00. Tienes que llegar 15 minutos antes con tu carnet." },
-  { id: "3", cuando: "18 nov, 16:03", quien: "CESFAM Providencia", duracion: "1 min", resultado: "No contestaron", tono: "fallo", resumen: "Nadie contestó. Puedes volver a llamar desde Emergencias o desde el inicio." },
-  { id: "4", cuando: "12 nov, 11:30", quien: "Fonasa", duracion: "7 min", resultado: "Consulta resuelta", tono: "neutro", resumen: "Preguntaste por el bono para una consulta médica. Te dijeron que lo puedes comprar en la app de Fonasa." },
+  { id: "1", cuando: "Hoy, 19:42", quien: "Urgencias Clínica Santa María", duracion: "3 min", resultado: "Ambulancia enviada", tono: "ok", resumen: "Pediste una ambulancia porque tu hijo se cayó y se quebró el codo. Te dijeron que no le movieras el brazo." },
+  { id: "2", cuando: "Hoy, 11:05", quien: "Mi ejecutivo del banco", duracion: "4 min", resultado: "Tarjeta bloqueada", tono: "ok", resumen: "Bloquearon tu tarjeta terminada en 4321. La nueva llega a tu casa en 5 días hábiles." },
+  { id: "3", cuando: "Ayer, 10:15", quien: "Clínica Santa María", duracion: "5 min", resultado: "Hora confirmada", tono: "ok", resumen: "Tienes hora con medicina general el lunes 24 a las 10:00. Llega 15 minutos antes con tu carnet." },
+  { id: "4", cuando: "18 nov, 16:03", quien: "Registro Civil", duracion: "1 min", resultado: "No contestaron", tono: "fallo", resumen: "Nadie contestó. Puedes volver a llamar desde Contactos." },
+  { id: "5", cuando: "12 nov, 11:30", quien: "Fonasa", duracion: "7 min", resultado: "Consulta resuelta", tono: "neutro", resumen: "Preguntaste por el bono para una consulta médica. Lo puedes comprar en la app de Fonasa." },
 ];
 
 export function Historial() {

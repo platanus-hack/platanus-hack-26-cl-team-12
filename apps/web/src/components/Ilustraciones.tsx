@@ -60,3 +60,30 @@ export function MiniMapa() {
     </svg>
   );
 }
+
+export function IlustracionRepetir() {
+  return (
+    <svg viewBox="0 0 96 96" aria-hidden>
+      <circle cx="48" cy="48" r="46" fill="#efe6ff" />
+      <rect x="18" y="26" width="46" height="30" rx="10" fill="#a855f7" />
+      <path d="M30 56l-4 10 12-10z" fill="#a855f7" />
+      <rect x="26" y="36" width="30" height="4" rx="2" fill="#fff" />
+      <rect x="26" y="44" width="20" height="4" rx="2" fill="#fff" opacity="0.8" />
+      <circle cx="68" cy="60" r="14" fill="#ffffff" stroke="#a855f7" strokeWidth="3" />
+      <path d="M62 60a6 6 0 1 1 3 5.2" fill="none" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
+      <path d="M61 54v6h6" fill="none" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IlustracionDerechos() {
+  return (
+    <svg viewBox="0 0 96 96" aria-hidden>
+      <circle cx="48" cy="48" r="46" fill="#fff3d6" />
+      <path d="M48 18v58M30 76h36" stroke="#b7791f" strokeWidth="4" strokeLinecap="round" />
+      <path d="M26 30h44" stroke="#b7791f" strokeWidth="4" strokeLinecap="round" />
+      <path d="M26 30l-10 22h20zM70 30l-10 22h20z" fill="#f6c453" stroke="#b7791f" strokeWidth="3" strokeLinejoin="round" />
+      <circle cx="48" cy="18" r="5" fill="#b7791f" />
+    </svg>
+  );
+}
