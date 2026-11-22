@@ -84,4 +84,13 @@ describe("joinCall", () => {
     FakeWS.ultimo!.onerror?.();
     await expect(p).rejects.toThrow("no se pudo conectar con el servidor");
   });
+
+  it("si nunca conectó no avisa 'se cortó' (la app vuelve al inicio con el error, no a calificar)", async () => {
+    const onDesconectado = vi.fn();
+    const p = joinCall({ onMessage: () => {}, onDesconectado });
+    FakeWS.ultimo!.onerror?.();
+    FakeWS.ultimo!.close(); // el navegador dispara close después de error
+    await expect(p).rejects.toThrow();
+    expect(onDesconectado).not.toHaveBeenCalled();
+  });
 });

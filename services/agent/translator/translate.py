@@ -8,6 +8,7 @@ Son funciones síncronas sobre un cliente de Anthropic inyectable, para poder te
 """
 
 import hashlib
+import logging
 import os
 from dataclasses import asdict, dataclass, field
 
@@ -24,9 +25,23 @@ from .glossary import (
     literal,
 )
 
+log = logging.getLogger("puente.translator")
+
 MODELO_DEFECTO = "claude-haiku-5-5"
 # Tope de tokens de salida por tarea. Las glosas necesitan más: con 300 Haiku a veces devolvía vacío (lab/v4_avatar).
-MAX_TOKENS = {"simplificar": 500, "complejizar": 200, "espanol_a_glosas": 1000}
+# complejizar no fuerza una herramienta: con thinking encendido, el pensamiento cuenta contra este tope (ver _sin_pensar).
+MAX_TOKENS = {"simplificar": 500, "complejizar": 1024, "espanol_a_glosas": 1000}
+
+
+def _sin_pensar(model: str) -> dict:
+    """Haiku 5.5 piensa por defecto (effort medium) y ese pensamiento gasta max_tokens y suma latencia.
+
+    En Haiku se apaga (`disabled` vale con effort high o menor). En Opus 5.5 / Sonnet 5.5 `disabled` da 400: ahí se baja
+    el effort. simplificar y glosas no lo necesitan: un tool_choice forzado ya se salta el thinking en Haiku 5.5.
+    """
+    if model.startswith("claude-haiku"):
+        return {"thinking": {"type": "disabled"}}
+    return {"output_config": {"effort": "low"}}
 
 
 def modelo() -> str:
@@ -188,7 +203,10 @@ class Translator:
             max_tokens=MAX_TOKENS["complejizar"],
             system=self._system("complejizar"),
             messages=[{"role": "user", "content": texto}],
+            **_sin_pensar(self.model),
         )
+        if getattr(msg, "stop_reason", None) == "max_tokens":
+            log.warning("complejizar llegó a max_tokens: se dice el texto original si no hay frase")
         frase = _texto(msg)
         if not frase:
             return texto

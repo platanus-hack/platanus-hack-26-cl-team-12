@@ -5,28 +5,32 @@
 //   abajo     tu cámara: lee tus señas (v3, hoy simulado) y, cuando las reconoce, tocas Enviar
 //   chat      modo aparte con la conversación, respuestas sugeridas y teclado
 //   controles Chat, Cámara, Enviar y Colgar
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   Composer, Icon, Interprete, QuickReplies, Subtitles, VisualAlert, DEFAULT_REPLIES, formatDuration,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
-import { LIMITES, type MensajePuente } from "@puente/glosses";
-import { joinCall, type CallHandle } from "@/lib/call";
+import { FINGERSPELL_PREFIX, LIMITES, isLiteralGloss, literalText, type MensajePuente } from "@puente/glosses";
+import { despertarServidor, joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall, type EventoVoz } from "@/lib/mockCall";
 import { URGENCIAS, type Destino } from "@/lib/contactos";
 import { usePreferencias } from "@/lib/preferencias";
 import { AppShell } from "./AppShell";
-import { AvatarVRM } from "./AvatarVRM";
 import { Calificacion } from "./Calificacion";
-import { RECONOCER_SENAS, iniciarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
+import { RECONOCER_SENAS, iniciarReconocedor, precargarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
+import { mensajeCliente } from "@/lib/respuesta";
+import { precargarAvatar } from "@/lib/avatarAssets";
 import { CamaraPropia, type Conversion, type Lectura, type Voz } from "./CamaraPropia";
 import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
 
+// three.js (~600 kB) solo se baja al entrar a una llamada, no en el login ni el inicio.
+const AvatarVRM = dynamic(() => import("./AvatarVRM").then((m) => m.AvatarVRM), { ssr: false });
+
 const AVATAR_MS_POR_SENA = 1300; // intérprete dibujado (respaldo): una seña cada 1,3 s
 // La frase convertida se queda a la vista hasta que empiezas a señar la siguiente respuesta (o pasa este tiempo).
 const CONVERSION_MAX_MS = 90_000;
-const SUBTITULO_SIN_AVATAR_MS = 3500; // si el avatar no llega a firmar, el subtítulo se muestra completo pasado este tiempo
 const LECTURA_SIMULADA_MS = 2600; // TODO(v3): lo que "tarda" la cámara en reconocer una frase
 
 const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
@@ -48,9 +52,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
   const [frase, setFrase] = useState(0); // sube con cada glosas_para_senar: reinicia el avatar 3D
   const [senando3d, setSenando3d] = useState(false);
-  // Subtítulo del ejecutivo: va apareciendo a medida que el avatar firma (0 a 1). 1 = completo.
+  // Subtítulo del ejecutivo: siempre visible completo; el avatar resalta lo que va firmando (0 a 1). 1 = todo resaltado.
   const [progSub, setProgSub] = useState(1);
-  const timerSub = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Texto simple del turno actual (de ejecutivo_dice): glosas_para_senar no lo pisa, llegue antes o después.
+  const simpleTurno = useRef<string | null>(null);
   const [sin3d, setSin3d] = useState(false); // el modelo 3D no cargó: se usa el intérprete dibujado
   const [destino, setDestino] = useState<Destino | null>(null);
   const prefs = usePreferencias();
@@ -120,6 +125,18 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // La API gratis de Render se duerme: se despierta al abrir la app, no recién al llamar.
+  useEffect(() => {
+    if (!mock) despertarServidor();
+  }, [mock]);
+
+  // MediaPipe se empieza a bajar al marcar (no al contestar): habla primero la persona sorda.
+  useEffect(() => {
+    if (state !== "connecting") return;
+    precargarAvatar();
+    if (RECONOCER_SENAS) precargarReconocedor().catch(() => {});
+  }, [state]);
+
   // Lectura real: MediaPipe + @puente/signs reconocen cada seña (con pausa entre señas) y se acumulan como glosas del turno.
   useEffect(() => {
     if (!RECONOCER_SENAS || state !== "live" || !camara || !video) return;
@@ -130,6 +147,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       onDuda: (a, b) => setAlert({ message: `No se distingue: ${a} o ${b}. Repite la seña.`, tone: "info" }),
       onError: (e) => console.error("reconocimiento de señas", e),
       onRanking: (r) => debugActivo.current && setDebug(r.map((x) => `${x.gloss} ${x.dist.toFixed(2)}`).join(" · ")),
+      pausado: () => esperandoRef.current,
     })
       .then((r) => (cancelado ? r.detener() : (rec = r)))
       .catch(() => setAlert({ message: "No se pudo iniciar la lectura de señas. Puedes responder en el chat.", tone: "error" }));
@@ -158,7 +176,6 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   // Cortar la conexión si el usuario cierra la pantalla en medio de una llamada.
   useEffect(() => () => {
     callRef.current?.leave();
-    if (timerSub.current) clearTimeout(timerSub.current);
     if (timerConv.current) clearTimeout(timerConv.current);
   }, []);
 
@@ -170,11 +187,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         setEsperando(false);
         setLectura({ estado: "leyendo" });
         glosasRef.current = [];
-        // El subtítulo espera al avatar; si no firma (sin v4 o sin modelo 3D), se muestra completo.
-        setProgSub(0);
-        if (timerSub.current) clearTimeout(timerSub.current);
-        timerSub.current = setTimeout(() => setProgSub((p) => (p === 0 ? 1 : p)), SUBTITULO_SIN_AVATAR_MS);
-        // Sin v4 activa no llega glosas_para_senar: el subtítulo igual muestra lo último que dijeron.
+        // El subtítulo es el canal principal: se muestra completo al tiro, sin esperar al avatar (antes quedaba oculto
+        // hasta 3,5 s). Sin v4 activa no llega glosas_para_senar: el subtítulo igual muestra lo último que dijeron.
+        simpleTurno.current = msg.simple ?? msg.texto;
+        setProgSub(1);
         setSenas((s) => ({ glosas: s?.glosas ?? [], actual: s?.actual ?? 0, subtitulo: msg.simple ?? msg.texto }));
         break;
       case "estado":
@@ -194,9 +210,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         }
         break;
       case "glosas_para_senar":
-        setSenas({ glosas: msg.glosas, subtitulo: msg.subtitulo, actual: 0 });
+        // Una sola fuente de texto por turno: si ya llegó ejecutivo_dice, se mantiene su texto simple.
+        setSenas({ glosas: msg.glosas, subtitulo: simpleTurno.current ?? msg.subtitulo, actual: 0 });
         setFrase((f) => f + 1);
-        setProgSub(0);
+        setProgSub(0); // empieza el resaltado; el texto sigue visible (SubtituloProgresivo)
         break;
       case "cliente_dijo":
         // La frase en español en que se convirtió lo que señaste (o escribiste): se ve en tu cámara y en el chat.
@@ -235,6 +252,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     destinoRef.current = d;
     setLines([]);
     setSenas(null);
+    simpleTurno.current = null;
     setOpciones(DEFAULT_REPLIES);
     setEsperando(false);
     setSeconds(0);
@@ -269,21 +287,23 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setDestino(null);
   }
 
-  async function decir(texto: string) {
+  // `deSenas`: solo el botón Enviar de la cámara. El chat y las sugerencias siempre mandan su texto (ver lib/respuesta).
+  async function decir(texto: string, deSenas = false) {
     if (!callRef.current) return;
+    simpleTurno.current = null; // el próximo turno del ejecutivo trae su propio texto
     setLectura({ estado: "enviado", texto });
     setLines((l) => [...l, { id: nuevoId(), who: "cliente", time: hora(), text: texto }]);
     setOpciones([]);
     setEsperando(true);
     try {
       // Con lectura real de señas se mandan las glosas (el agente las convierte en una frase y la dice); si no, el texto.
-      const glosas = RECONOCER_SENAS ? glosasRef.current : [];
-      if (glosas.length) {
+      const msg = mensajeCliente(texto, RECONOCER_SENAS ? glosasRef.current : [], deSenas);
+      if (msg.tipo === "glosas_cliente") {
         setConversion({ glosas: texto });
         if (timerConv.current) clearTimeout(timerConv.current);
         timerConv.current = setTimeout(() => setConversion(null), CONVERSION_MAX_MS); // respaldo si la frase convertida nunca llega
       }
-      await callRef.current.send(glosas.length ? { tipo: "glosas_cliente", glosas, confianza: 1 } : { tipo: "cliente_dice", texto });
+      await callRef.current.send(msg);
       glosasRef.current = [];
     } catch {
       setAlert({ message: "No se pudo enviar tu mensaje. Inténtalo de nuevo.", tone: "error" });
@@ -320,6 +340,14 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
             <AvatarVRM glosas={senas?.glosas ?? []} frase={frase} velocidad={prefs.velocidad} onSenando={setSenando3d} onProgreso={setProgSub} onFalla={() => setSin3d(true)} />
           )}
         </div>
+        {/* Horas, cifras, RUT, nombres (TEXTO:) y deletreos no tienen seña: van en grande sobre el avatar (docs/contrato.md). */}
+        {enLlamada && !esperando && datosSinSena(senas?.glosas ?? []).length > 0 && (
+          <ul className="vl-datos" aria-label="Datos de la frase">
+            {datosSinSena(senas?.glosas ?? []).map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
+          </ul>
+        )}
         <header className="vl-cabeza">
           <span className="row-txt">
             <strong>{destino?.nombre}</strong>
@@ -391,7 +419,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
             type="button"
             className={listoParaEnviar ? "vl-ctrl enviar listo" : "vl-ctrl enviar"}
             disabled={!listoParaEnviar}
-            onClick={() => lectura.estado === "listo" && decir(lectura.texto)}
+            onClick={() => lectura.estado === "listo" && decir(lectura.texto, true)}
             aria-label={listoParaEnviar ? "Enviar lo que dijiste con señas" : "Enviar (esperando tus señas)"}
           >
             <Icon name="enviar" size={24} />
@@ -412,6 +440,13 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
 }
 
 /** Muestra el texto palabra por palabra según `fraccion` (0 a 1). Las palabras que faltan ocupan su lugar sin verse: el texto no se mueve. */
+/** Glosas que se muestran escritas en vez de firmarse: `TEXTO:10:30` → "10:30", `DACTILOLOGÍA:A-N-A` → "ANA". */
+function datosSinSena(glosas: string[]): string[] {
+  return glosas.flatMap((g) =>
+    isLiteralGloss(g) ? [literalText(g)] : g.startsWith(FINGERSPELL_PREFIX) ? [g.slice(FINGERSPELL_PREFIX.length).replace(/-/g, "")] : [],
+  );
+}
+
 function SubtituloProgresivo({ texto, fraccion }: { texto: string; fraccion: number }) {
   const partes = texto.split(/(\s+)/);
   const palabras = partes.filter((p) => p.trim()).length;
@@ -423,7 +458,7 @@ function SubtituloProgresivo({ texto, fraccion }: { texto: string; fraccion: num
         if (!p.trim()) return p;
         n += 1;
         return (
-          <span key={i} style={n <= visibles ? undefined : { opacity: 0 }}>
+          <span key={i} style={n <= visibles ? undefined : { opacity: 0.45 }}>
             {p}
           </span>
         );

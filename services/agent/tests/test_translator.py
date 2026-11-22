@@ -129,3 +129,20 @@ def test_literal_helpers():
     assert len(literal("x" * 100)) == len("TEXTO:") + 24
     assert is_literal("TEXTO:$25.000") and not is_literal("TEXTO:")
     assert not load_glossary().is_known("TEXTO:10:30")  # el cliente no puede mandar literales
+
+
+def test_complejizar_apaga_thinking_en_haiku_y_baja_effort_en_otros(monkeypatch):
+    client = fake_client([text("Necesito una ambulancia, por favor.")])
+    monkeypatch.setenv("TRANSLATOR_MODEL", "claude-haiku-5-5")
+    t = Translator(client, load_glossary())
+    assert t.complejizar("necesito ambulancia") == "Necesito una ambulancia, por favor."
+    call = client.messages.calls[-1]
+    assert call["thinking"] == {"type": "disabled"}
+    assert call["max_tokens"] >= 1024
+
+    client = fake_client([text("Hola.")])
+    monkeypatch.setenv("TRANSLATOR_MODEL", "claude-sonnet-5-5")
+    Translator(client, load_glossary()).complejizar("hola")
+    call = client.messages.calls[-1]
+    assert "thinking" not in call
+    assert call["output_config"] == {"effort": "low"}

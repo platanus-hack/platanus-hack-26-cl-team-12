@@ -35,6 +35,9 @@ SALUDO = (
     "Hola. Le habla la Brich, un servicio de interpretación para una persona sorda. "
     "La persona le hablará en unos segundos; escuche el mensaje y, cuando termine, responda y espere la respuesta."
 )
+UN_MOMENTO = "Un momento, por favor."
+AVISO_ESPERA = "La persona sigue respondiendo, espere por favor."
+FRASES_FIJAS = [SALUDO, UN_MOMENTO, AVISO_ESPERA]  # se precalientan al arrancar la API (main.py, lifespan)
 # Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol"): los términos del
 # escenario (los mismos que recibe Deepgram en el agente) más algunos que solo le hacen falta a Twilio.
 _PISTAS_TWILIO = ["hora", "hora médica", "médico", "doctor", "previsión", "copago", "dígito verificador"]
@@ -156,7 +159,7 @@ async def turno(request: Request) -> Response:
     tarea = asyncio.create_task(sala.ejecutivo_dijo(texto))  # Twilio no espera a Claude
     _tareas.add(tarea)
     tarea.add_done_callback(_tareas.discard)
-    return twiml(await hablar(base, "Un momento, por favor.") + ir_a(base, "/twilio/espera?n=0"))
+    return twiml(await hablar(base, UN_MOMENTO) + ir_a(base, "/twilio/espera?n=0"))
 
 
 @router.post("/espera", dependencies=FIRMADO)
@@ -173,7 +176,7 @@ async def espera(request: Request) -> Response:
         n = int(request.query_params.get("n", "0")) + 1
     except ValueError:
         n = 1
-    aviso = await hablar(base, "La persona sigue respondiendo, espere por favor.")
+    aviso = await hablar(base, AVISO_ESPERA)
     # Espera hasta que el cliente aprieta Enviar: Sala corta esta secuencia con la API de Twilio y la respuesta
     # suena al tiro. Si no se pudiera interrumpir, al terminar vuelve a /twilio/espera, que ya tiene la respuesta.
     sala.en_pausa_larga = True
@@ -194,6 +197,11 @@ async def audio(audio_id: str) -> Response:
 async def estado(request: Request) -> Response:
     """statusCallback de Twilio: avisa a la PWA cuando la llamada termina."""
     form = await request.form()
+    sid = str(form.get("CallSid") or "")
+    if sala.call_sid and sid and sid != sala.call_sid:
+        # Un "completed" atrasado de la llamada anterior cortaba en la app la llamada nueva.
+        log.info("statusCallback de otra llamada: se ignora")
+        return Response(status_code=204)
     if form.get("CallStatus") in {"completed", "busy", "failed", "no-answer", "canceled"}:
         await sala.enviar({"tipo": "estado", "valor": "llamada_terminada"})
     return Response(status_code=204)
