@@ -23,6 +23,7 @@ const ICONS = {
   emergencia: ["M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"],
   derecha: ["M9 6l6 6-6 6"],
   cerrar: ["M6 6l12 12M18 6L6 18"],
+  listo: ["M5 12.5l4.5 4.5L19 7"],
 } as const;
 
 export type IconName = keyof typeof ICONS;

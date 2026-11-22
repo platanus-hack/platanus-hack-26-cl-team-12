@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · estilo de app de movilidad y fuente SUSE
+- Decidí (Rafael): interfaz con el lenguaje visual de las apps de movilidad (referencia: Uber), sin copiar su marca: grises neutros, negro/blanco como color de acción, títulos grandes y gruesos, tarjetas grises, carrusel y barra inferior plana. Fuente **SUSE** (Google Fonts; sin internet, la del sistema).
+- Hice: inicio con **3 clínicas** (Santa María, Alemana, Las Condes; las tres usan el mismo guion en `?mock=1`), **3 consejos de primeros auxilios** en carrusel (fractura, quemaduras, datos a mano) y "Cómo funciona" en chico. **Calificación nueva**: pantalla completa con la sigla de la clínica, estrellas grandes en el color del texto, etiquetas "¿Qué salió bien?" / "¿Qué podemos mejorar?" según la nota, comentario y botón negro; "Omitir" arriba. Paletas nuevas con contrastes revisados. Revisado con capturas a 390×844.
+- Falta: números reales de las clínicas (TODO(real-data)); revisar los consejos con alguien del área de salud antes de mostrarlos fuera de la demo.
+
 ## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · login, avatar a la medida, calificación
 - Hice: perfil ficticio **Patricia Muñoz** con retrato dibujado (no se usa foto ni identidad de personas reales). **Editor del intérprete** con vista previa en vivo: estatura, contextura, piel (5), largo y color de pelo, ojos, vello facial, lentes y color de ropa (`Interprete` + `Retrato` en `packages/ui`). **Login** de demo (cualquier usuario y contraseña); Cerrar sesión vuelve al login. **Calificación de 5 estrellas** con comentario al terminar la llamada. Foto del usuario al lado de sus mensajes en el chat. Barra: foto a la izquierda, logo al centro, tema a la derecha; el menú sale desde la izquierda. Botón central "Inicio" neutro (antes "Llamar", confundía). Oscuro un poco más claro (`#161a21`). Revisado con capturas a 390×844.
 - Falta: enviar la calificación al backend y login real (TODO(real-data)).

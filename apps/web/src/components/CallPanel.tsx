@@ -231,7 +231,14 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
           {opciones.length > 0 && <QuickReplies options={opciones} onPick={decir} />}
         </Composer>
       )}
-      {state === "ended" && <Calificacion quien={destino?.nombre ?? "Llamada"} duracion={formatDuration(seconds)} onListo={volver} />}
+      {state === "ended" && (
+        <Calificacion
+          quien={destino?.nombre ?? "Llamada"}
+          sigla={(destino && "sigla" in destino ? String(destino.sigla) : destino?.corto.slice(0, 2) ?? "P").toUpperCase()}
+          duracion={formatDuration(seconds)}
+          onListo={volver}
+        />
+      )}
     </main>
   );
 }

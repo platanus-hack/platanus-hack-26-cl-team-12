@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#161a21", // oscuro por defecto; useAplicarPreferencias lo cambia con el tema
+  themeColor: "#141414", // oscuro por defecto; useAplicarPreferencias lo cambia con el tema
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +25,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es-CL" data-theme="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
+        {/* Tipografía SUSE (Google Fonts). Sin internet se usa la del sistema. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=SUSE:wght@400;500;600;700;800&display=swap" />
       </head>
       <body>{children}</body>
     </html>

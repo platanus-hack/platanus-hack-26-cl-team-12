@@ -77,6 +77,6 @@ export function useAplicarPreferencias() {
     html.dataset.theme = p.tema === "claro" ? "light" : "dark";
     html.dataset.texto = p.textoGrande ? "grande" : "normal";
     html.dataset.movimiento = p.reducirMovimiento ? "reducido" : "normal";
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", p.tema === "claro" ? "#f2f3f6" : "#161a21");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", p.tema === "claro" ? "#ffffff" : "#141414");
   }, [p.tema, p.textoGrande, p.reducirMovimiento]);
 }
