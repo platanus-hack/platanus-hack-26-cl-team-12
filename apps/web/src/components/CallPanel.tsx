@@ -24,8 +24,6 @@ import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
 
 const AVATAR_MS_POR_SENA = 1300; // intérprete dibujado (respaldo): una seña cada 1,3 s
-const ENVIO_AUTO_MS = 3500; // lectura real: sin seña nueva por este tiempo, se envía sola lo que reconoció (NEXT_PUBLIC_ENVIO_AUTOMATICO=0 lo apaga)
-const ENVIO_AUTO = process.env.NEXT_PUBLIC_ENVIO_AUTOMATICO !== "0";
 const SUBTITULO_SIN_AVATAR_MS = 3500; // si el avatar no llega a firmar, el subtítulo se muestra completo pasado este tiempo
 const LECTURA_SIMULADA_MS = 2600; // TODO(v3): lo que "tarda" la cámara en reconocer una frase
 
@@ -112,14 +110,6 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       rec?.detener();
     };
   }, [state, camara, video]);
-
-  // Lectura real: cuando ya no llegan señas nuevas, se envía solo lo reconocido (se ve la conversión en pantalla).
-  useEffect(() => {
-    if (!RECONOCER_SENAS || !ENVIO_AUTO || lectura.estado !== "listo") return;
-    const id = setTimeout(() => void decir(lectura.texto), ENVIO_AUTO_MS);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lectura]);
 
   // El chat baja solo al último mensaje.
   useEffect(() => {

@@ -56,6 +56,13 @@ const GUIONES: Record<TipoGuion, Turno[]> = {
   ],
 };
 
+/** Glosas que se esperan en cada respuesta del cliente (P1, P2, P3 de docs/GUION-1.md), para el mock. */
+const GLOSAS_ESPERADAS: string[][] = [
+  ["HOLA", "AMBULANCIA", "NECESITAR", "HIJO", "CAER-PERSONA", "CODO", "HUESO", "ROMPER"],
+  ["SÍ", "HIJO", "DESPERTAR", "PERO", "BRAZO", "APOYAR", "NO-PODER", "CODO", "HINCHADO"],
+  ["SANGRE", "POCO", "PERO", "MANO", "BIEN", "URGENTE", "NECESITAR", "HOSPITAL", "IR"],
+];
+
 const ESPERA_RESPUESTA_MS = 2000; // lo que "tarda" el ejecutivo en contestar
 const PIDE_REPETIR = /repit|otra vez|no entend/i;
 
@@ -99,9 +106,14 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
       // Si el cliente pide que repita, repite; si no, el ejecutivo dice la siguiente línea del guion.
       if (msg.tipo === "cliente_dice") later(ESPERA_RESPUESTA_MS, PIDE_REPETIR.test(msg.texto) ? repetir : siguiente);
       if (msg.tipo === "glosas_cliente") {
-        // TODO(real-data): en la llamada real la API convierte las glosas con v2 y manda `cliente_dijo`; aquí se simula con la frase del guion.
+        // TODO(real-data): en la llamada real la API convierte las glosas con v2 y manda `cliente_dijo`.
+        // Aquí se simula: si señaste casi todo lo esperado se muestra la frase del guion; si no, solo lo que señaste (nada se "autocompleta").
         const frase = turno === 0 ? FRASE_INICIAL[opts.guion ?? "general"] : GUION[turno - 1]?.opciones?.[0];
-        if (frase) later(700, () => opts.onMessage({ tipo: "cliente_dijo", texto: frase }));
+        const esperadas = (opts.guion === "urgencia" ? GLOSAS_ESPERADAS[turno] : undefined) ?? [];
+        const aciertos = esperadas.filter((g) => msg.glosas.includes(g)).length;
+        const completa = esperadas.length > 0 && aciertos / esperadas.length >= 0.7;
+        const texto = completa && frase ? frase : msg.glosas.join(" ").toLowerCase();
+        later(700, () => opts.onMessage({ tipo: "cliente_dijo", texto }));
         later(ESPERA_RESPUESTA_MS, siguiente);
       }
     },
