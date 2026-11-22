@@ -96,13 +96,21 @@ class Sala:
             frase = " ".join(g.lower() for g in validas)
         await self._cliente_dice_frase(frase or " ".join(g.lower() for g in validas))
 
-    async def respuesta_pendiente(self) -> tuple[str, str | None] | None:
-        """La siguiente respuesta del cliente para decir por voz. Al sacarla empieza a sonar: ahí se le manda a la app
-        la frase (`cliente_dijo`) para que se vea escrita a la par del audio."""
+    async def respuesta_pendiente(self, esperar_s: float = 0) -> tuple[str, str | None] | None:
+        """La siguiente respuesta del cliente para decir por voz, esperando hasta `esperar_s` a que llegue.
+
+        Al sacarla empieza a sonar: ahí se le manda a la app la frase (`cliente_dijo`) para que se vea a la par del audio.
+        Esperar aquí (en vez de que Twilio vuelva a preguntar cada 2 s) ahorra pedidos: el trial de Twilio corta la
+        llamada después de ~10 pedidos de TwiML (ver BITACORA 2026-11-22).
+        """
         try:
-            para_decir, pantalla, audio_id = self.respuestas.get_nowait()
-        except asyncio.QueueEmpty:
+            if esperar_s > 0:
+                item = await asyncio.wait_for(self.respuestas.get(), timeout=esperar_s)
+            else:
+                item = self.respuestas.get_nowait()
+        except (asyncio.QueueEmpty, asyncio.TimeoutError):
             return None
+        para_decir, pantalla, audio_id = item
         await self.enviar({"tipo": "cliente_dijo", "texto": pantalla})
         return para_decir, audio_id
 

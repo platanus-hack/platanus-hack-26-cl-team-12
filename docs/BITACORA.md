@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Martín / Claude (v1/espera-larga)
+- Hallazgo: con el trial de Twilio ("Limited trial") **la llamada se corta después de ~10 pedidos de TwiML**, no por tiempo (dos llamadas de 66 s y 45 s cortadas justo en el pedido 10, con un mensaje de Twilio). Esperar al cliente con `<Pause 2>` + `<Redirect>` gastaba un pedido cada 2 s.
+- Hice: `/twilio/espera` retiene el pedido hasta `TWILIO_ESPERA_S` (10 s) y contesta apenas llega la respuesta del cliente: ~5 veces menos pedidos. Aviso "la persona sigue respondiendo" cada ~20 s.
+- Falta: confirmar el límite con una llamada larga. Si se confirma, una conversación de varios turnos igual lo puede agotar; con Twilio pagado no debería existir.
+
 ## 2026-11-22 — Tomás / Claude (v3/senas-reales) · la lectura real de señas pasa a ser la de por defecto
 - Hice: `RECONOCER_SENAS` ahora está activa salvo `NEXT_PUBLIC_RECONOCER_SENAS=0`. Antes exigía `=1`: en el deploy de `main` (que ni siquiera tiene aún el PR #35) la app usaba la lectura simulada y **Enviar mandaba la respuesta completa del guion (todo P1) aunque la persona no hubiera señado nada**.
 - Decidí: la simulación solo por opt-in explícito; así un build sin variable nunca envía lo que no se señó.

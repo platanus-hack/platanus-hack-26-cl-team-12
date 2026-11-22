@@ -36,8 +36,17 @@ SALUDO = (
 # escenario (los mismos que recibe Deepgram en el agente) más algunos que solo le hacen falta a Twilio.
 _PISTAS_TWILIO = ["hora", "hora médica", "médico", "doctor", "previsión", "copago", "dígito verificador"]
 PISTAS = ", ".join(dict.fromkeys([*load_escenario().stt_keyterms, *_PISTAS_TWILIO]))
-ESPERA_S = 2  # segundos entre revisiones de la respuesta del cliente
-AVISO_CADA = 10  # cada ~20 s de espera se le avisa al ejecutivo que el cliente sigue escribiendo
+ESPERA_S = 1  # pausa corta entre una espera larga y la siguiente
+AVISO_CADA = 2  # cada ~2 esperas largas (~20 s) se le avisa al ejecutivo que el cliente sigue respondiendo
+
+
+def espera_larga_s() -> float:
+    """Cuánto retiene el servidor cada pedido de /twilio/espera esperando la respuesta del cliente (Twilio espera
+    hasta 15 s por un webhook). Menos pedidos por llamada: el trial de Twilio corta después de ~10."""
+    try:
+        return max(0.0, min(float(os.getenv("TWILIO_ESPERA_S", "10")), 12.0))
+    except ValueError:
+        return 10.0
 _tareas: set[asyncio.Task] = set()
 
 
@@ -147,7 +156,7 @@ async def turno(request: Request) -> Response:
 async def espera(request: Request) -> Response:
     """Mientras el cliente escribe: pausa corta y vuelve a revisar. Cuando hay respuesta, se dice y se escucha."""
     base = public_base(request)
-    respuesta = await sala.respuesta_pendiente()
+    respuesta = await sala.respuesta_pendiente(espera_larga_s())
     if respuesta:
         texto, audio_id = respuesta
         log.info("Respuesta del cliente lista: %d caracteres (voz %s)", len(texto), "chilena" if audio_id else "Twilio")
@@ -156,7 +165,7 @@ async def espera(request: Request) -> Response:
         n = int(request.query_params.get("n", "0")) + 1
     except ValueError:
         n = 1
-    aviso = await hablar(base, "La persona sigue escribiendo, espere por favor.") if n % AVISO_CADA == 0 else ""
+    aviso = await hablar(base, "La persona sigue respondiendo, espere por favor.") if n % AVISO_CADA == 0 else ""
     return twiml(f'{aviso}<Pause length="{ESPERA_S}"/>' + ir_a(base, f"/twilio/espera?n={n}"))
 
 

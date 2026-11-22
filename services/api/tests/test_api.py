@@ -473,3 +473,24 @@ def test_llamadas_registra_el_callsid(monkeypatch):
     client.post("/llamadas", json={"numero": "+56911111111"})
     assert "CA_registrada" in sala.llamadas_creadas
     sala.llamadas_creadas.discard("CA_registrada")
+
+
+
+def test_espera_larga_responde_apenas_llega_la_respuesta(sala_falsa, monkeypatch):
+    """El servidor retiene /twilio/espera hasta que el cliente responde: menos pedidos a Twilio por llamada."""
+    import threading
+    import time
+
+    monkeypatch.setenv("TWILIO_ESPERA_S", "5")
+    with TestClient(app) as c, c.websocket_connect("/twilio/cliente") as pwa:  # un solo bucle, como en producción
+        t0 = time.monotonic()
+        threading.Timer(0.3, lambda: pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})).start()
+        r = c.post("/twilio/espera?n=0")
+        assert "formal(martes bueno)" in r.text
+        assert time.monotonic() - t0 < 4  # contestó al llegar la respuesta, no al vencer la espera
+
+
+def test_espera_larga_sin_respuesta_vuelve_a_esperar(sala_falsa, monkeypatch):
+    monkeypatch.setenv("TWILIO_ESPERA_S", "0.2")
+    r = client.post("/twilio/espera?n=0")
+    assert "<Pause" in r.text and "/twilio/espera?n=1" in r.text
