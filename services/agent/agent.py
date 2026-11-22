@@ -116,4 +116,14 @@ async def entrypoint(ctx: agents.JobContext):
 
 
 if __name__ == "__main__":
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm))
+    agents.cli.run_app(
+        agents.WorkerOptions(
+            entrypoint_fnc=entrypoint,
+            prewarm_fnc=prewarm,
+            # En producción LiveKit deja un proceso en espera por CPU *del host* (no del plan), y cada uno carga el
+            # VAD en prewarm: en Render Starter (512 MB) eso agota la memoria y el contenedor se reinicia en bucle.
+            num_idle_processes=int(os.getenv("AGENT_IDLE_PROCESSES", "1")),
+            # Cargar el VAD en una CPU compartida puede pasar de los 10 s por defecto.
+            initialize_process_timeout=float(os.getenv("AGENT_INIT_TIMEOUT_S", "30")),
+        )
+    )
