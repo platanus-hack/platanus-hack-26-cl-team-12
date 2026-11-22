@@ -24,6 +24,11 @@ small,.mut{color:#999}table{border-collapse:collapse}td{padding:2px 8px;border-b
  <p><button id="run" class="go">▶ Reconocer</button> <button id="eval">📊 Evaluar (leave-one-out)</button></p>
  <div class="big" id="res">—</div><div id="top" class="mut"></div><p>Sensibilidad <input id="sens" type="range" min="0.8" max="2.5" step="0.05" value="1.4"> <span id="sv">1.4</span> <button id="clr">limpiar</button></p>
  <div id="evalr"></div>
+ <h3>3 · Enviar a la llamada (v2 → v1 → audio)</h3>
+ <p class="mut">Palabras pendientes: <b id="pend">—</b></p>
+ <p><button id="send" class="go">📞 Enviar ahora</button> <label><input type="checkbox" id="auto" checked> enviar solo tras 2,5 s sin señar</label></p>
+ <div id="sent" class="mut"></div>
+ <p class="mut">Necesita <code>uvicorn main:app --port 8000</code> en <code>lab/sim_llamada</code> y la pestaña <a href="http://localhost:8000/ejecutivo" target="_blank" style="color:#79c">localhost:8000/ejecutivo</a> abierta (ahí suena el audio).</p>
  <p class="mut">Señas de corrido con las manos arriba: cada palabra aparece al terminar. Con 3+ muestras por palabra y mismo encuadre funciona mejor. Si no detecta nada, sube la sensibilidad; si inventa palabras, bájala.</p>
 </div>
 <script type="module">
@@ -103,7 +108,18 @@ function evalStream(now){if(!samples.length)return;const B=buf.slice(-WIN);if(B.
  else if(cand){cand.n++}
  // emitir cuando el candidato dejó de mejorar (mínimo local) o ya no cumple
  if(cand&&(cand.n>=3||(!ok&&cand.n>=1))){emit(cand.l,cand.r);cand=null;lockUntil=now+250;buf=buf.slice(-5)}}
-function emit(l,r){out.push(l);$('res').textContent=out.slice(-12).join(' ');st('Detectado: '+l+' (ratio '+r.toFixed(2)+')')}
+// ── salida: palabras → sim_llamada (cliente): v2 las arma en frase natural, v1 (TTS) la dice al ejecutivo ──
+let pending=[],lastWord=0,ws=null;
+const showPend=()=>$('pend').textContent=pending.join(' ')||'—';
+function conectar(){ws=new WebSocket('ws://localhost:8000/ws/cliente');ws.onclose=()=>setTimeout(conectar,2000);
+ ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.tipo==='enviado')$('sent').innerHTML=`✔ "${m.texto}" → <b>${m.natural}</b> <small>(llm ${m.ms.llm} ms, tts ${m.ms.tts} ms)</small>`;
+  if(m.tipo==='error')$('sent').textContent='⚠ '+m.texto}}
+conectar();
+function enviar(){if(!pending.length)return;if(!ws||ws.readyState!==1){st('No hay conexión con sim_llamada (puerto 8000)');return}
+ ws.send(JSON.stringify({texto:pending.join(' '),v2:true}));pending=[];showPend()}
+$('send').onclick=enviar;
+setInterval(()=>{if($('auto').checked&&pending.length&&performance.now()-lastWord>2500&&!buf.length)enviar()},300);
+function emit(l,r){pending.push(l);lastWord=performance.now();showPend();out.push(l);$('res').textContent=out.slice(-12).join(' ');st('Detectado: '+l+' (ratio '+r.toFixed(2)+')')}
 
 // ── cámara + modelos ──
 const video=$('v'),cv=$('c'),ctx=cv.getContext('2d');
