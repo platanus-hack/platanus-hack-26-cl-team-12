@@ -28,9 +28,11 @@ from app.voz import voz as voz_chilena
 log = logging.getLogger("puente.twilio")
 
 IDIOMA = 'language="es-MX"'
+# La llamada parte con la persona sorda: tras el saludo se espera su primer mensaje (/twilio/espera) y recién después se
+# escucha al ejecutivo. Desde ahí los turnos alternan: cliente → ejecutivo → cliente…
 SALUDO = (
     "Hola. Le habla Puente, un servicio de interpretación para una persona sorda. "
-    "Hable después de este mensaje y espere unos segundos la respuesta."
+    "La persona le hablará en unos segundos; escuche el mensaje y, cuando termine, responda y espere la respuesta."
 )
 # Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol"): los términos del
 # escenario (los mismos que recibe Deepgram en el agente) más algunos que solo le hacen falta a Twilio.
@@ -112,14 +114,14 @@ def escuchar(base: str, antes: str = "") -> str:
 
 @router.post("/voz", dependencies=FIRMADO)
 async def voz(request: Request) -> Response:
-    """TwiML inicial cuando el ejecutivo contesta. `?modo=stream` usa audio en vivo (requiere cuenta pagada)."""
+    """TwiML inicial cuando el ejecutivo contesta: saluda y espera que parta la persona sorda. `?modo=stream` usa audio en vivo (requiere cuenta pagada)."""
     if request.query_params.get("modo") == "stream":
         url = public_base(request).replace("https://", "wss://").replace("http://", "ws://") + "/twilio/media"
         return twiml(f"<Connect><Stream url={quoteattr(url)}/></Connect>")
     sala.reiniciar()
     await sala.enviar({"tipo": "estado", "valor": "llamada_iniciada"})
     base = public_base(request)
-    return twiml(escuchar(base, await hablar(base, SALUDO)))
+    return twiml(await hablar(base, SALUDO) + ir_a(base, "/twilio/espera?n=0"))  # parte la persona sorda
 
 
 @router.post("/escuchar", dependencies=FIRMADO)
