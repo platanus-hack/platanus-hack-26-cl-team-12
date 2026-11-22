@@ -12,6 +12,7 @@ Se apaga con API_ENV=production (el Dockerfile ya lo fija) o con API_DOCS=0.
 
 import asyncio
 import json
+import logging
 import os
 import re
 import tomllib
@@ -31,6 +32,10 @@ from app.traductor import DEFAULT_PATH
 from app.twilio_media import router as twilio_router
 
 load_dotenv()
+
+# Registro de la llamada (sin datos personales: largos, tiempos e ids). PUENTE_LOG=WARNING para silenciarlo.
+logging.basicConfig(format="%(asctime)s.%(msecs)03d %(name)s | %(message)s", datefmt="%H:%M:%S")
+logging.getLogger("puente").setLevel(os.getenv("PUENTE_LOG", "INFO").upper())
 
 GLOSSES_PATH = Path(os.getenv("GLOSSES_PATH", DEFAULT_PATH))  # el mismo diccionario que usa el traductor
 

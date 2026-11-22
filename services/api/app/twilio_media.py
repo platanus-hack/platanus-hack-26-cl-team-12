@@ -15,6 +15,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from xml.sax.saxutils import escape, quoteattr
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -164,7 +165,13 @@ async def espera(request: Request) -> Response:
     """Mientras el cliente escribe: pausa corta y vuelve a revisar. Cuando hay respuesta, se dice y se escucha."""
     base = public_base(request)
     sala.en_pausa_larga = False  # Twilio volvió a preguntar: ya no está en pausa
+    t = time.perf_counter()
+    n_pedido = request.query_params.get("n", "?")
+    log.info("espera n=%s: llega (cola=%d)", n_pedido, sala.respuestas.qsize())
     respuesta = await sala.respuesta_pendiente(espera_larga_s())
+    log.info("espera n=%s: %s tras %d ms", n_pedido,
+             f"ENTREGA respuesta (audio {(respuesta[1] or '-')[:6]})" if respuesta else "sin respuesta → espera larga",
+             (time.perf_counter() - t) * 1000)
     if respuesta:
         texto, audio_id = respuesta
         log.info("Respuesta del cliente lista: %d caracteres (voz %s)", len(texto), "chilena" if audio_id else "Twilio")
@@ -185,6 +192,7 @@ async def audio(audio_id: str) -> Response:
     """Twilio descarga aquí el audio de <Play>. Sin firma (Twilio no firma estas descargas): el id es aleatorio
     de 128 bits y el audio de una respuesta vence a los pocos minutos (app/voz.py)."""
     mp3 = voz_chilena.audio(audio_id)
+    log.info("Twilio descarga audio %s: %s", audio_id[:6], "ok" if mp3 else "NO EXISTE")
     if mp3 is None:
         raise HTTPException(404, "Audio no disponible")
     return Response(mp3, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})

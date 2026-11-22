@@ -12,6 +12,7 @@ import hmac
 import json
 import logging
 import os
+import time
 from pathlib import Path
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -65,7 +66,12 @@ class Sala:
         """Lo que el cliente dijo ya convertido: queda listo para decirse por voz. La app lo ve cuando empieza a sonar."""
         frase = recortar(frase)
         para_decir = self.traductor.para_voz(frase)
-        await self.respuestas.put((para_decir, frase, await voz.preparar(para_decir)))
+        t = time.perf_counter()
+        audio_id = await voz.preparar(para_decir)
+        await self.respuestas.put((para_decir, frase, audio_id))
+        log.info("respuesta en cola: %d caracteres, voz %s en %d ms (audio %s) | cola=%d | en_pausa_larga=%s",
+                 len(para_decir), "chilena" if audio_id else "Twilio", (time.perf_counter() - t) * 1000,
+                 (audio_id or "-")[:6], self.respuestas.qsize(), self.en_pausa_larga)
         if self.en_pausa_larga:  # Twilio está en <Pause> largo: se interrumpe para que la respuesta suene al tiro
             self.en_pausa_larga = False
             await asyncio.to_thread(interrumpir_pausa, self.call_sid)
@@ -83,8 +89,10 @@ class Sala:
         texto = texto.strip()[:MAX_TEXTO]
         if not texto:
             return
+        t = time.perf_counter()
         try:
             frase = await self.traductor.complejizar(texto)
+            log.info("complejizar: %d → %d caracteres en %d ms", len(texto), len(frase or ""), (time.perf_counter() - t) * 1000)
         except Exception:
             log.exception("No se pudo complejizar; se dice el texto original")
             frase = texto
@@ -95,8 +103,11 @@ class Sala:
         validas = self.traductor.glosas_conocidas(glosas)
         if not validas:
             return
+        log.info("señas recibidas: %d glosas, %d conocidas", len(glosas), len(validas))
+        t = time.perf_counter()
         try:
             frase = await self.traductor.glosas_a_espanol(validas)
+            log.info("glosas_a_espanol: %d caracteres en %d ms", len(frase or ""), (time.perf_counter() - t) * 1000)
         except Exception:
             log.exception("No se pudo convertir las glosas; se dicen tal cual")
             frase = " ".join(g.lower() for g in validas)
@@ -140,6 +151,7 @@ def interrumpir_pausa(call_sid: str | None) -> None:
         from twilio.rest import Client
 
         Client(cuenta, token).calls(call_sid).update(url=f"{base}/twilio/espera?n=0", method="POST")
+        log.info("pausa interrumpida (calls.update → /twilio/espera?n=0) para %s…", call_sid[:8])
     except Exception as e:
         log.warning("No se pudo interrumpir la pausa (%s); la respuesta suena al terminar la pausa", type(e).__name__)
 
@@ -174,6 +186,8 @@ async def cliente(ws: WebSocket) -> None:
                 continue
             if not isinstance(msg, dict):
                 continue
+            if isinstance(msg, dict):
+                log.info("WS ← app: %s%s", msg.get("tipo"), f" ({len(msg['glosas'])} glosas)" if isinstance(msg.get("glosas"), list) else "")
             if msg.get("tipo") == "cliente_dice" and isinstance(msg.get("texto"), str):
                 await sala.cliente_dijo(msg["texto"])
             elif msg.get("tipo") == "glosas_cliente" and isinstance(msg.get("glosas"), list):
