@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   title: "Puente",
   description: "Llamadas telefónicas accesibles para personas sordas",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icons/icon.svg" },
+  icons: { icon: "/icons/icon.svg", apple: "/icons/apple-touch-icon.png" },
+  // iPhone: al agregarla a la pantalla de inicio se abre a pantalla completa, sin la barra de Safari.
+  appleWebApp: { capable: true, title: "Puente", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

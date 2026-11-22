@@ -69,3 +69,7 @@ main.call { height: 100dvh; gap: 10px; padding-block: 10px; }
 .pu-avatar .stage > .senas-foto { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 84px); object-fit: contain; object-position: center top; }
 .pu-avatar .stage > .senas-foto.pausa { opacity: 0.85; }
 .pu-avatar .stage > .senas-palabra { position: absolute; inset: 0 0 84px 0; display: grid; place-items: center; padding: 0 var(--space-4); color: #14171c; font-size: 40px; line-height: 44px; font-weight: 700; letter-spacing: 0.02em; text-align: center; }
+
+/* Botón "Instalar app" (D6): solo aparece cuando Android permite instalar. */
+.instalar { font: inherit; margin-left: auto; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--cliente); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+.instalar:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }

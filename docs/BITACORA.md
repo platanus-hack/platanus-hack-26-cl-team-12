@@ -8,6 +8,13 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4/pwa-instalable) · D6 PWA instalable y sin internet
+- Hice: íconos PNG (192, 512, maskable y apple-touch) desde el SVG; `manifest.webmanifest` completo (id, start_url `/?mock=1`, portrait, colores, atajo "Pedir una ambulancia" con `?llamar=urgencias`); `public/sw.js` que guarda la app, los JS/CSS de Next, los íconos y las fotos de señas, con la portada primero desde la red y los estáticos primero desde la copia (nunca guarda la API ni LiveKit); registro del SW solo en producción; botón "Instalar app" con `beforeinstallprompt` (Chrome y Samsung Internet); metadatos para iPhone. Script `pnpm --filter @puente/web preview` (build + servidor en :3001).
+- Verificado en Edge (CDP, 390×844): manifest sin errores, **instalable sin errores**, SW activo, 126 archivos guardados y **la llamada simulada completa funciona sin internet** (con fotos de señas).
+- Decidí: la app instalada abre en `?mock=1` (no hay backend desplegado). TODO(real-data): cambiar `start_url` a `/` cuando la llamada real esté desplegada.
+- **Probado en el Samsung Galaxy A33 5G de Rafael:** se instala, abre a pantalla completa y la llamada simulada funciona en modo avión. Cómo: platform-tools de Android, `adb devices` (acá sí aparece el aviso de permiso; con edge://inspect no aparecía) y `adb reverse tcp:3001 tcp:3001`, luego Chrome en `localhost:3001/?mock=1`.
+- Falta: probar en iPhone. Capacitor solo si sobra tiempo.
+
 ## 2026-11-21 — Raimundo / Claude (fix/bugs-senas-deletreo)
 - Hice: arreglé 3 bugs que salieron en la revisión de los tests (#17). `@puente/avatar`: `stop()` dejaba `play()` colgado para siempre (pausar un `<video>` no emite `ended`) y un `play()` encima de otro mezclaba clips; ahora cada `play()` tiene generación y las esperas se cancelan. `@puente/signs`: una confianza de exactamente `MIN_CONFIDENCE` se rechazaba por el redondeo de `Float32Array`; ahora se compara con `Math.fround`.
 - Decidí: PR apilado sobre `chore/tests-ci` (necesita Vitest). El deletreo en TS ya estaba arreglado en `dev`.
