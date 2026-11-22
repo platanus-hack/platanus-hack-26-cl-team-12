@@ -5,6 +5,7 @@ En el contenedor de la API el Dockerfile copia `services/agent/translator` a la 
 """
 
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -17,7 +18,12 @@ from translator import SimpleResult, Translator, load_escenario, load_glossary  
 
 MAX_TEXTO = 600  # caracteres por turno: tope de costo y de abuso (A4)
 
-__all__ = ["MAX_TEXTO", "SimpleResult", "Traductor"]
+__all__ = ["MAX_TEXTO", "SimpleResult", "Traductor", "es_produccion"]
+
+
+def es_produccion() -> bool:
+    """Mismo criterio que main.py: API_ENV=production (el Dockerfile lo fija). En producción la auth falla cerrada."""
+    return os.getenv("API_ENV", "development").strip().lower() == "production"
 
 
 class Traductor:

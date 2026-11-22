@@ -16,7 +16,7 @@ from pathlib import Path
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
-from app.traductor import MAX_TEXTO, Traductor
+from app.traductor import MAX_TEXTO, Traductor, es_produccion
 
 log = logging.getLogger("puente.llamada")
 router = APIRouter(prefix="/twilio")
@@ -72,9 +72,12 @@ sala = Sala()
 
 
 def token_valido(token: str | None) -> bool:
-    """`CLIENTE_WS_TOKEN` vacío = modo dev (sin token). Con valor, el WebSocket exige `?token=` igual."""
+    """Con `CLIENTE_WS_TOKEN`, el WebSocket exige `?token=` igual. Vacío: abierto en dev, cerrado en producción."""
     esperado = os.getenv("CLIENTE_WS_TOKEN", "")
     if not esperado:
+        if es_produccion():
+            log.error("CLIENTE_WS_TOKEN vacío en producción: se rechaza el WebSocket /twilio/cliente")
+            return False
         return True
     return hmac.compare_digest((token or "").encode(), esperado.encode())
 

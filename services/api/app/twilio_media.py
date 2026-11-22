@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSo
 from fastapi.responses import Response
 
 from app.llamada import sala
+from app.traductor import es_produccion
 
 log = logging.getLogger("puente.twilio")
 
@@ -42,6 +43,9 @@ async def verificar_firma(request: Request) -> None:
     """Rechaza POST que no vengan de Twilio. La URL firmada es la pública (ngrok/Render), no la interna."""
     auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
     if not auth_token:
+        if es_produccion():  # fallar cerrado: sin token no hay cómo saber que el POST viene de Twilio
+            log.error("TWILIO_AUTH_TOKEN vacío en producción: se rechazan los POST a /twilio/*")
+            raise HTTPException(503, "TWILIO_AUTH_TOKEN no configurado")
         log.warning("TWILIO_AUTH_TOKEN vacío: no se valida X-Twilio-Signature (solo para desarrollo)")
         return
     from twilio.request_validator import RequestValidator

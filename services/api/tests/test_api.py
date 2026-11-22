@@ -91,6 +91,7 @@ def sala_falsa(monkeypatch):
     # main.py carga el .env local: sin esto, un TWILIO_AUTH_TOKEN real haría fallar los POST sin firma.
     monkeypatch.delenv("TWILIO_AUTH_TOKEN", raising=False)
     monkeypatch.delenv("CLIENTE_WS_TOKEN", raising=False)
+    monkeypatch.setenv("API_ENV", "development")
     monkeypatch.setattr(sala, "traductor", FakeTraductor())
     sala.reiniciar()
     return sala
@@ -192,6 +193,17 @@ def test_ws_cliente_exige_token(sala_falsa, monkeypatch):
     with client.websocket_connect("/twilio/cliente?token=abc123") as pwa:
         client.post("/twilio/voz")
         assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
+
+
+def test_en_produccion_sin_secretos_falla_cerrado(sala_falsa, monkeypatch):
+    from starlette.websockets import WebSocketDisconnect
+
+    monkeypatch.setenv("API_ENV", "production")
+    assert client.post("/twilio/voz").status_code == 503
+    with pytest.raises(WebSocketDisconnect) as e:
+        with client.websocket_connect("/twilio/cliente"):
+            pass
+    assert e.value.code == 1008
 
 
 def test_twilio_media_echoes_audio():
