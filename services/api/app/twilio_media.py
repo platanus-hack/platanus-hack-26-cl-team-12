@@ -21,7 +21,7 @@ from xml.sax.saxutils import escape, quoteattr
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 
-from app.config import es_produccion
+from app.config import env, es_produccion
 from app.llamada import sala
 from app.traductor import load_escenario
 from app.voz import voz as voz_chilena
@@ -62,12 +62,12 @@ _tareas: set[asyncio.Task] = set()
 
 def public_base(request: Request) -> str:
     """URL pública de la API (túnel ngrok o deploy). Twilio necesita direcciones absolutas."""
-    return os.getenv("PUBLIC_BASE_URL", "").split("#")[0].strip().rstrip("/") or str(request.base_url).rstrip("/")
+    return env("PUBLIC_BASE_URL").rstrip("/") or str(request.base_url).rstrip("/")
 
 
 async def verificar_firma(request: Request) -> None:
     """Rechaza POST que no vengan de Twilio. La URL firmada es la pública (ngrok/Render), no la interna."""
-    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
+    auth_token = env("TWILIO_AUTH_TOKEN")
     if not auth_token:
         if es_produccion():  # fallar cerrado: sin token no hay cómo saber que el POST viene de Twilio
             log.error("TWILIO_AUTH_TOKEN vacío en producción: se rechazan los POST a /twilio/*")
@@ -89,7 +89,7 @@ async def verificar_firma(request: Request) -> None:
 
 
 def _llamada_propia(params: dict) -> bool:
-    cuenta = os.getenv("TWILIO_ACCOUNT_SID", "")
+    cuenta = env("TWILIO_ACCOUNT_SID")
     return bool(cuenta) and params.get("AccountSid") == cuenta and params.get("CallSid") in sala.llamadas_creadas
 
 

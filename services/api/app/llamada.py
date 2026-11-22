@@ -18,7 +18,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
-from app.config import es_produccion
+from app.config import env, es_produccion
 from app.traductor import MAX_TEXTO, Traductor, recortar
 from app.voz import voz
 
@@ -182,8 +182,8 @@ def interrumpir_pausa(call_sid: str | None) -> None:
 
     Si falla (sin claves, trial que no lo permita), no pasa nada grave: la respuesta suena al terminar la pausa.
     """
-    base = os.getenv("PUBLIC_BASE_URL", "").split("#")[0].strip().rstrip("/")
-    cuenta, token = os.getenv("TWILIO_ACCOUNT_SID", ""), os.getenv("TWILIO_AUTH_TOKEN", "")
+    base = env("PUBLIC_BASE_URL").rstrip("/")
+    cuenta, token = env("TWILIO_ACCOUNT_SID"), env("TWILIO_AUTH_TOKEN")
     if not (call_sid and base and cuenta and token):
         return
     try:
@@ -197,7 +197,7 @@ def interrumpir_pausa(call_sid: str | None) -> None:
 
 def colgar_twilio(call_sid: str | None) -> bool:
     """Termina la llamada en Twilio (el usuario colgó en la app). Antes el teléfono seguía hasta que el ejecutivo cortaba."""
-    cuenta, token = os.getenv("TWILIO_ACCOUNT_SID", ""), os.getenv("TWILIO_AUTH_TOKEN", "")
+    cuenta, token = env("TWILIO_ACCOUNT_SID"), env("TWILIO_AUTH_TOKEN")
     if not (call_sid and cuenta and token):
         return False
     try:
@@ -215,13 +215,13 @@ sala = Sala()
 
 def token_valido(token: str | None) -> bool:
     """Con `CLIENTE_WS_TOKEN`, el WebSocket exige `?token=` igual. Vacío: abierto en dev, cerrado en producción."""
-    esperado = os.getenv("CLIENTE_WS_TOKEN", "")
+    esperado = os.getenv("CLIENTE_WS_TOKEN", "").strip()  # sin cortar en "#": lo elige el equipo
     if not esperado:
         if es_produccion():
             log.error("CLIENTE_WS_TOKEN vacío en producción: se rechaza el WebSocket /twilio/cliente")
             return False
         return True
-    return hmac.compare_digest((token or "").encode(), esperado.encode())
+    return hmac.compare_digest((token or "").strip().encode(), esperado.encode())
 
 
 @router.websocket("/cliente")

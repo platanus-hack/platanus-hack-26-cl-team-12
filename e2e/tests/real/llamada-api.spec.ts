@@ -91,7 +91,7 @@ test("si Twilio falla, la app avisa y vuelve al inicio", async ({ page, request 
   await page.goto("/");
   await page.getByRole("button", { name: /Llamar a mi ejecutivo/ }).click();
 
-  await expect(page.getByText("No se pudo conectar (Twilio no configurado). Revisa tu internet y toca de nuevo.")).toBeVisible();
+  await expect(page.getByText("No se pudo hacer la llamada (Twilio no configurado). El problema es del servidor, no de tu internet.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Hola, Rafael" })).toBeVisible();
   expect(await (await request.get(`${API_URL}/e2e/llamadas`)).json()).toEqual([]);
 });

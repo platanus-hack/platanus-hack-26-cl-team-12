@@ -12,7 +12,7 @@ import {
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
 import { FINGERSPELL_PREFIX, LIMITES, isLiteralGloss, literalText, type MensajePuente } from "@puente/glosses";
-import { despertarServidor, joinCall, type CallHandle } from "@/lib/call";
+import { despertarServidor, ErrorServidor, joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall, type EventoVoz } from "@/lib/mockCall";
 import { URGENCIAS, type Destino } from "@/lib/contactos";
 import { usePreferencias } from "@/lib/preferencias";
@@ -269,7 +269,12 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       setCall(handle);
     } catch (e) {
       setState("idle");
-      setAlert({ message: `No se pudo conectar (${(e as Error).message}). Revisa tu internet y toca de nuevo.`, tone: "error" });
+      // Si el servidor contestó con un error (p. ej. Twilio sin configurar), "revisa tu internet" mandaba a buscar mal.
+      const message =
+        e instanceof ErrorServidor
+          ? `No se pudo hacer la llamada (${e.message}). El problema es del servidor, no de tu internet.`
+          : `No se pudo conectar (${(e as Error).message}). Revisa tu internet y toca de nuevo.`;
+      setAlert({ message, tone: "error" });
     }
   }
 

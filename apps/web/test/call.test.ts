@@ -6,7 +6,7 @@ vi.hoisted(() => {
   delete process.env.NEXT_PUBLIC_CLIENTE_WS_TOKEN;
 });
 
-import { joinCall } from "../src/lib/call";
+import { ErrorServidor, joinCall } from "../src/lib/call";
 
 // Plan C de A: WebSocket /twilio/cliente de services/api.
 class FakeWS {
@@ -77,6 +77,19 @@ describe("joinCall", () => {
     FakeWS.ultimo!.abrir();
     (await p).leave();
     expect(onDesconectado).toHaveBeenCalledTimes(1);
+  });
+
+  it("si el servidor no puede llamar, el error es ErrorServidor con su detalle (no es tu internet)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ detail: "Twilio no configurado: falta TWILIO_PHONE_NUMBER" }), { status: 503 })),
+    );
+    const p = joinCall({ onMessage: () => {}, destino: "clinica" });
+    FakeWS.ultimo!.abrir();
+    const e = await p.catch((err: unknown) => err);
+    expect(e).toBeInstanceOf(ErrorServidor);
+    expect((e as ErrorServidor).status).toBe(503);
+    expect((e as Error).message).toContain("TWILIO_PHONE_NUMBER");
   });
 
   it("falla con un mensaje claro si no puede conectar", async () => {

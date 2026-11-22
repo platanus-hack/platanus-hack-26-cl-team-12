@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
 from app import voz as voz_mod
-from app.config import es_produccion
+from app.config import env, es_produccion
 from app.llamada import router as llamada_router
 from app.llamada import sala, token_valido
 from app.traductor import DEFAULT_PATH
@@ -43,6 +43,7 @@ ROL_CLIENTE = "cliente"
 E164 = re.compile(r"\+[1-9]\d{7,14}")
 
 API_DIR = Path(__file__).resolve().parents[1]
+log = logging.getLogger("puente.api")
 
 
 def docs_habilitados() -> bool:
@@ -124,6 +125,7 @@ def errores(*codigos: int) -> dict:
         403: "No permitido.",
         422: "Datos inválidos.",
         501: "Todavía no implementado.",
+        502: "Twilio rechazó la llamada.",
         503: "Servicio externo no configurado.",
     }
     return {c: {"model": ErrorResponse, "description": textos[c]} for c in codigos}
@@ -239,13 +241,24 @@ def duracion_maxima_s() -> int:
     return max(60, min(minutos * 60, TWILIO_MAX_S))
 
 
+TWILIO_VARS = ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER")
+
+
+def faltan_twilio() -> list[str]:
+    """Qué falta para llamar (solo nombres de variables, nunca valores)."""
+    faltan = [k for k in TWILIO_VARS if not env(k)]
+    if not env("PUBLIC_BASE_URL").startswith("https://"):
+        faltan.append("PUBLIC_BASE_URL (con https://)")
+    return faltan
+
+
 def llamar_con_twilio(numero: str, base: str) -> tuple[str, str]:
     """Twilio llama al ejecutivo; al contestar pide las instrucciones a /twilio/voz (plan C)."""
     from twilio.rest import Client
 
-    llamada = Client(os.environ["TWILIO_ACCOUNT_SID"], os.environ["TWILIO_AUTH_TOKEN"]).calls.create(
+    llamada = Client(env("TWILIO_ACCOUNT_SID"), env("TWILIO_AUTH_TOKEN")).calls.create(
         to=numero,
-        from_=os.environ["TWILIO_PHONE_NUMBER"],
+        from_=env("TWILIO_PHONE_NUMBER"),
         url=f"{base}/twilio/voz",
         status_callback=f"{base}/twilio/estado",
         time_limit=duracion_maxima_s(),
@@ -255,7 +268,7 @@ def llamar_con_twilio(numero: str, base: str) -> tuple[str, str]:
 
 @app.post(
     "/llamadas", tags=["llamada"], summary="Llamar al ejecutivo por teléfono (v1)",
-    response_model=LlamadaResponse, responses=errores(403, 422, 503),
+    response_model=LlamadaResponse, responses=errores(403, 422, 502, 503),
 )
 async def crear_llamada(req: LlamadaRequest, token: str | None = None) -> LlamadaResponse:
     """v1 (plan C): Twilio llama al ejecutivo y la conversación sigue por /twilio/* y el WebSocket /twilio/cliente.
@@ -276,11 +289,46 @@ async def crear_llamada(req: LlamadaRequest, token: str | None = None) -> Llamad
         raise HTTPException(422, "El número debe estar en formato E.164 (+56...)")
     if numero not in permitidos:
         raise HTTPException(403, "Número no permitido (ALLOWED_DESTINATIONS)")
-    base = os.getenv("PUBLIC_BASE_URL", "").split("#")[0].strip().rstrip("/")
-    faltan = [k for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER") if not os.getenv(k)]
-    if faltan or not base.startswith("https://"):
-        raise HTTPException(503, "Twilio no configurado (TWILIO_* y PUBLIC_BASE_URL con https://)")
-    sid, estado = await asyncio.to_thread(llamar_con_twilio, numero, base)
+    if faltan := faltan_twilio():
+        raise HTTPException(503, "Twilio no configurado: falta " + ", ".join(faltan))
+    try:
+        sid, estado = await asyncio.to_thread(llamar_con_twilio, numero, env("PUBLIC_BASE_URL").rstrip("/"))
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Sin esto, un rechazo de Twilio era un 500 sin cabeceras CORS: la app solo veía "Failed to fetch".
+        # Típicos en trial: 21219 (número no verificado), 21215 (Chile sin permiso geográfico), 20003 (credenciales).
+        codigo = getattr(e, "code", None)
+        log.warning("Twilio rechazó la llamada: %s %s", type(e).__name__, codigo)
+        raise HTTPException(502, f"Twilio rechazó la llamada ({codigo or type(e).__name__})") from e
     sala.llamadas_creadas.add(sid)
     sala.ultima_creada = sid
     return LlamadaResponse(sid=sid, estado=estado)
+
+
+class DiagnosticoResponse(BaseModel):
+    lista: bool = Field(description="True si POST /llamadas puede llamar.")
+    faltan: list[str] = Field(description="Variables que faltan (solo nombres).")
+    numero_demo: bool = Field(description="Hay un número al que llamar (NUMERO_DEMO o un único ALLOWED_DESTINATIONS).")
+    voz_chilena: bool = Field(description="ELEVENLABS_API_KEY configurada (si no, voz de Twilio).")
+    claude: bool = Field(description="ANTHROPIC_API_KEY configurada (si no, se manda el texto sin simplificar).")
+
+
+@app.get(
+    "/llamadas/diagnostico", response_model=DiagnosticoResponse, tags=["llamada"],
+    summary="¿Está lista la telefonía?", responses=errores(403),
+)
+def diagnostico(token: str | None = None) -> DiagnosticoResponse:
+    """Para revisar un deploy sin mirar logs: dice QUÉ variables faltan, nunca sus valores. Exige el `?token=` del WS."""
+    if not token_valido(token):
+        raise HTTPException(403, "Token inválido")
+    permitidos = [n for n in env("ALLOWED_DESTINATIONS").split(",") if n.strip()]
+    demo = env("NUMERO_DEMO")
+    numero_ok = (demo in [n.strip() for n in permitidos]) if demo else len(permitidos) == 1
+    faltan = faltan_twilio()
+    if not numero_ok:
+        faltan.append("NUMERO_DEMO dentro de ALLOWED_DESTINATIONS")
+    return DiagnosticoResponse(
+        lista=not faltan, faltan=faltan, numero_demo=numero_ok,
+        voz_chilena=bool(env("ELEVENLABS_API_KEY")), claude=bool(env("ANTHROPIC_API_KEY")),
+    )
