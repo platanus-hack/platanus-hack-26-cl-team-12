@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — r.labbevidal / Claude (v4/vista-web) · vista web en el computador
+- Hice: desde 1024 px la app deja de ser una columna de 560 px. La barra y las pestañas pasan a una barra lateral; el inicio va en dos columnas (contactos frecuentes y acciones a la izquierda, consejos a la derecha, cómo funciona abajo; los carruseles se vuelven grilla). La llamada tiene el intérprete y tu cámara a la izquierda, el chat fijo a la derecha (abierto por defecto en computador) y los controles abajo. Todo en un `@media (min-width: 1024px)` al final de `globals.css`, más `.shell` en `AppShell` y `esEscritorio()` en `CallPanel`. En el celular no cambia nada.
+- Verificado: typecheck, build, vitest `call` (4) y `senas` (3). No probado en el navegador (Chrome DevTools no conecta en este equipo).
+- Falta: mirarlo en el navegador a 1280-1440 px y a 390 px (celular), en tema claro y oscuro.
+
 ## 2026-11-22 — Rafael / Claude (v4/mejoras-chat) · el proyecto pasa a llamarse Bridge
 - Decidí (Rafael): el proyecto se llama **Bridge** (antes Puente). Logo: **un puente simple, sin lo que conecta**.
 - Hice: varias rondas de logo con Rafael. **Logo final: 10 barras cuyas alturas dibujan un puente colgante (altas en las torres, bajas al centro), sin piso** (`apps/web/public/logo/bridge-logo.svg` y `-claro.svg`; componente `Logo`; íconos de la PWA). No había plugin de Figma en la sesión: son SVG, importables a Figma. **Paleta Bridge**: azul `#6E9BFF` (oscuro) / `#2F5BE0` (claro) como marca y color del usuario, ámbar `#FFB547` de acento, rojo urgencia, verde estado, neutros igual (contrastes revisados, todos ≥ 5:1). Nombre visible "Bridge" en la app, manifest, login, calificación y textos; íconos PNG de la PWA regenerados. Los paquetes siguen como `@puente/*` (solo cambia lo que ve el usuario).
