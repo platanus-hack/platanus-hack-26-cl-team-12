@@ -49,6 +49,15 @@ Equivalencias aproximadas (no están probadas; verifica disponibilidad y precios
 
 > El **WAF con límite de tasa** resolvería parte del requerimiento A4 del plan (`/token` sin límite es un riesgo de costo).
 
+## Diagrama ya hecho: Puente en AWS (plan C)
+
+![Puente en AWS](diagramas/arquitectura/04-puente-en-aws.png)
+
+[`04-puente-en-aws.png`](diagramas/arquitectura/04-puente-en-aws.png) (3840×2160, para slides) y su fuente
+[`04-puente-en-aws.svg`](diagramas/arquitectura/04-puente-en-aws.svg) (íconos incrustados: se abre en draw.io, Figma o el navegador).
+Es una **propuesta**: la API pasa a ECS Fargate detrás de WAF y ALB, la PWA a S3 + CloudFront, y Twilio, Claude y ElevenLabs
+quedan como servicios externos. Los logos de Twilio, Anthropic y ElevenLabs vienen de Iconify (`logos`, `simple-icons`).
+
 ## Consejos para el diagrama
 - Una sola dirección de lectura: **izquierda → derecha** (cliente → teléfono/IA → datos).
 - Distingue con color o línea punteada lo **implementado** de lo **plan**, como en [`UML.md`](UML.md).
