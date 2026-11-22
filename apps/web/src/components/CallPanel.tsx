@@ -12,7 +12,7 @@ import {
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
 import { LIMITES, type MensajePuente } from "@puente/glosses";
-import { joinCall, type CallHandle } from "@/lib/call";
+import { despertarServidor, joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall, type EventoVoz } from "@/lib/mockCall";
 import { URGENCIAS, type Destino } from "@/lib/contactos";
 import { usePreferencias } from "@/lib/preferencias";
@@ -124,6 +124,11 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     (window as unknown as { __senas?: (g: string[]) => void }).__senas = (g) => g.forEach(registrarGlosa);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // La API gratis de Render se duerme: se despierta al abrir la app, no recién al llamar.
+  useEffect(() => {
+    if (!mock) despertarServidor();
+  }, [mock]);
 
   // MediaPipe se empieza a bajar al marcar (no al contestar): habla primero la persona sorda.
   useEffect(() => {
