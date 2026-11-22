@@ -129,7 +129,7 @@ function classifySeg(seg){const PL=pool();if(seg.length<10||!PL.length)return;
  const q=resample(seg,N_T),best={};for(const s of PL){const d=dtw(q,s.T);if(!(s.label in best)||d<best[s.label])best[s.label]=d}
  const r=Object.entries(best).sort((a,b)=>a[1]-b[1]);if(r.length<2)return;const [a,b]=r;
  $('top').textContent=r.slice(0,3).map(x=>x[0]+' '+x[1].toFixed(2)).join(' · ');
- if(a[1]<b[1]*0.92)emit(a[0],a[1]/b[1]);else st('No estoy seguro ('+a[0]+' vs '+b[0]+'), repite la palabra')}
+ if(a[1]<b[1]*0.96)emit(a[0],a[1]/b[1]);else{st('⚠ No estoy seguro ('+a[0]+' o '+b[0]+'): repite la palabra');$('res').textContent=out.slice(-12).join(' ')+' ⚠?'}}
 // ── reconocimiento continuo: cada EVAL_EVERY frames se compara cada plantilla con el final del buffer ──
 let nf=0,cand=null,lockUntil=0,hist=[],lastEmit='',moved=true;
 const MOV=0.006; // movimiento medio de muñecas por frame (en anchos de hombro) para considerar que se está señando
@@ -187,7 +187,7 @@ $('tgo').onclick=()=>{if(test||importing)return;test={st:'count'};let n=3;$('tcn
   test={st:'run',frase:selF,exp:FRASES[selF].split(' '),det:[],frames:[],t0:now};running=true;buf=[];cand=null;lastEmit='';lastAct=now;out.length=0;$('res').textContent='—';
   $('run').textContent='⏹ Parar';st('¡Seña la frase '+selF+' ahora! Al terminar baja las manos (o aprieta Terminar)')}},1000)};
 $('tend').onclick=()=>{if(test&&test.st==='run')terminar()};
-setInterval(()=>{if(test&&test.st==='run'){const now=performance.now();if((test.det.length&&now-lastAct>4000)||now-test.t0>60000)terminar()}},300);
+setInterval(()=>{if(test&&test.st==='run'){const now=performance.now();if((test.det.length&&now-lastAct>($('pausa').checked?10000:4000))||now-test.t0>120000)terminar()}},300);
 function terminar(){const T=test;test=null;running=false;$('run').textContent='▶ Reconocer';
  const ops=align(T.exp,T.det),c=t=>ops.filter(o=>o.t===t).length,H=c('ok'),S=c('sub'),D=c('del'),I=c('ins'),N=T.exp.length;
  $('tres').innerHTML=`<div class="box"><b>${selF}: ${H} de ${N} palabras bien (${Math.round(100*H/N)}%)</b> <span class="mut">· ${S} cambiadas · ${D} faltaron · ${I} sobraron</span><br>`+
