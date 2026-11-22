@@ -217,7 +217,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setCall(null);
     setEsperando(false);
     setState("ended");
-    setAlert({ message: "Se cortó la conexión con Puente. Revisa tu internet y vuelve a llamar.", tone: "error" });
+    setAlert({ message: "Se cortó la conexión con Bridge. Revisa tu internet y vuelve a llamar.", tone: "error" });
   }
 
   function eventoVoz(e: EventoVoz) {
@@ -241,7 +241,9 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setChat(false);
     setState("connecting");
     try {
-      const handle = mock ? await joinMockCall({ onMessage, guion: d.guion, onVoz: eventoVoz }) : await joinCall({ onMessage, onDesconectado });
+      const handle = mock
+        ? await joinMockCall({ onMessage, guion: d.guion, onVoz: eventoVoz })
+        : await joinCall({ onMessage, onDesconectado, destino: d.id });
       callRef.current = handle;
       setCall(handle);
     } catch (e) {

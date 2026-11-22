@@ -189,9 +189,13 @@ def token() -> TokenResponse:
 
 
 class LlamadaRequest(BaseModel):
-    numero: str = Field(
-        description="Teléfono del ejecutivo en E.164. Debe estar en ALLOWED_DESTINATIONS.", examples=["+56912345678"]
+    numero: str | None = Field(
+        None,
+        description="Teléfono del ejecutivo en E.164. Debe estar en ALLOWED_DESTINATIONS. "
+        "Si falta, se usa NUMERO_DEMO (los contactos de la app no tienen teléfono).",
+        examples=["+56912345678"],
     )
+    destino: str | None = Field(None, description="Contacto elegido en la app (solo informativo).", examples=["clinica"])
     room: str | None = Field(None, description="Sala de LiveKit (solo plan con SIP; en el plan C no se usa).")
 
 
@@ -222,15 +226,18 @@ async def crear_llamada(req: LlamadaRequest) -> LlamadaResponse:
 
     TODO(auth): exigir el token del cliente y limitar la tasa antes de desplegar (A4).
     """
-    if not E164.fullmatch(req.numero):
+    # Demo: los contactos de la app no tienen teléfono; todos llaman al teléfono de la demo (NUMERO_DEMO).
+    # TODO(real-data): cada contacto con su número real.
+    numero = (req.numero or os.getenv("NUMERO_DEMO", "")).strip()
+    if not E164.fullmatch(numero):
         raise HTTPException(422, "El número debe estar en formato E.164 (+56...)")
     # Anti fraude telefónico: solo se puede llamar a números de una lista explícita (los de la demo).
     permitidos = {n.strip() for n in os.getenv("ALLOWED_DESTINATIONS", "").split(",") if n.strip()}
-    if req.numero not in permitidos:
+    if numero not in permitidos:
         raise HTTPException(403, "Número no permitido (ALLOWED_DESTINATIONS)")
     base = os.getenv("PUBLIC_BASE_URL", "").split("#")[0].strip().rstrip("/")
     faltan = [k for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER") if not os.getenv(k)]
     if faltan or not base.startswith("https://"):
         raise HTTPException(503, "Twilio no configurado (TWILIO_* y PUBLIC_BASE_URL con https://)")
-    sid, estado = await asyncio.to_thread(llamar_con_twilio, req.numero, base)
+    sid, estado = await asyncio.to_thread(llamar_con_twilio, numero, base)
     return LlamadaResponse(sid=sid, estado=estado)

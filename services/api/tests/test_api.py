@@ -353,3 +353,17 @@ def test_glosas_cliente_si_claude_falla_se_dicen_tal_cual(sala_falsa, monkeypatc
         pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "AMBULANCIA"], "confianza": 1})
         assert "hola ambulancia" in _decir_pendiente()
         assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "hola ambulancia"}
+
+
+def test_llamada_sin_numero_usa_el_telefono_de_la_demo(monkeypatch):
+    import app.main as m
+
+    monkeypatch.setenv("NUMERO_DEMO", "+56911111111")
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56911111111")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"):
+        monkeypatch.setenv(k, "x")
+    llamadas = []
+    monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: llamadas.append(numero) or ("CA1", "queued"))
+    assert client.post("/llamadas", json={"destino": "clinica"}).status_code == 200
+    assert llamadas == ["+56911111111"]
