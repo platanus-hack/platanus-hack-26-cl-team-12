@@ -13,7 +13,7 @@ import {
 import type { MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
-import { Inicio, type Destino } from "./Inicio";
+import { Inicio, URGENCIAS, type Destino } from "./Inicio";
 import { SenasFotos, useManifestSenas } from "./SenasFotos";
 
 const AVATAR_MS_POR_SENA = 1300; // igual que el reproductor de fotos de lab/v4_avatar
@@ -26,7 +26,7 @@ let siguienteId = 0;
 const nuevoId = () => `l${++siguienteId}`;
 
 
-export function CallPanel({ mock }: { mock: boolean }) {
+export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLlamar?: boolean }) {
   const [call, setCall] = useState<CallHandle | null>(null);
   const [state, setState] = useState<CallState>("idle");
   const [seconds, setSeconds] = useState(0);
@@ -64,6 +64,16 @@ export function CallPanel({ mock }: { mock: boolean }) {
     const el = chatRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [lines]);
+
+  // Atajo del ícono (?llamar=urgencias): llama apenas abre la app.
+  const autoHecho = useRef(false);
+  useEffect(() => {
+    if (autoLlamar && !autoHecho.current) {
+      autoHecho.current = true;
+      void llamar(URGENCIAS);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLlamar]);
 
   // Cortar la conexión si el usuario cierra la pantalla en medio de una llamada.
   useEffect(() => () => callRef.current?.leave(), []);

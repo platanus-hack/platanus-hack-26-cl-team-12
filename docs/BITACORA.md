@@ -8,6 +8,28 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4/pwa-instalable) · D6 PWA instalable y sin internet
+- Hice: íconos PNG (192, 512, maskable y apple-touch) desde el SVG; `manifest.webmanifest` completo (id, start_url `/?mock=1`, portrait, colores, atajo "Pedir una ambulancia" con `?llamar=urgencias`); `public/sw.js` que guarda la app, los JS/CSS de Next, los íconos y las fotos de señas, con la portada primero desde la red y los estáticos primero desde la copia (nunca guarda la API ni LiveKit); registro del SW solo en producción; botón "Instalar app" con `beforeinstallprompt` (Chrome y Samsung Internet); metadatos para iPhone. Script `pnpm --filter @puente/web preview` (build + servidor en :3001).
+- Verificado en Edge (CDP, 390×844): manifest sin errores, **instalable sin errores**, SW activo, 126 archivos guardados y **la llamada simulada completa funciona sin internet** (con fotos de señas).
+- Decidí: la app instalada abre en `?mock=1` (no hay backend desplegado). TODO(real-data): cambiar `start_url` a `/` cuando la llamada real esté desplegada.
+- **Probado en el Samsung Galaxy A33 5G de Rafael:** se instala, abre a pantalla completa y la llamada simulada funciona en modo avión. Cómo: platform-tools de Android, `adb devices` (acá sí aparece el aviso de permiso; con edge://inspect no aparecía) y `adb reverse tcp:3001 tcp:3001`, luego Chrome en `localhost:3001/?mock=1`.
+- Falta: probar en iPhone. Capacitor solo si sobra tiempo.
+
+## 2026-11-21 — Raimundo / Claude (fix/bugs-senas-deletreo)
+- Hice: arreglé 3 bugs que salieron en la revisión de los tests (#17). `@puente/avatar`: `stop()` dejaba `play()` colgado para siempre (pausar un `<video>` no emite `ended`) y un `play()` encima de otro mezclaba clips; ahora cada `play()` tiene generación y las esperas se cancelan. `@puente/signs`: una confianza de exactamente `MIN_CONFIDENCE` se rechazaba por el redondeo de `Float32Array`; ahora se compara con `Math.fround`.
+- Decidí: PR apilado sobre `chore/tests-ci` (necesita Vitest). El deletreo en TS ya estaba arreglado en `dev`.
+- Verificado: tests nuevos fallaban antes del arreglo y pasan después; `pnpm typecheck` OK.
+
+## 2026-11-21 18:20 — Raimundo / Claude (rama chore/tests-ci)
+- Hice: tests para todas las secciones. JS con Vitest (config única en la raíz, `pnpm test`): `glosses` (contrato `parseMensaje` + integridad del diccionario vs schema), `signs` (reconocedor), `avatar` (`ClipSignPlayer`), `ui` (render accesible), `apps/web` (`joinCall` con LiveKit simulado, incluye anti suplantación `SOLO_AGENTE`). Python: `services/api/tests/test_api_extra.py` (CORS, TTL, E.164, allowlist) y `services/agent/tests/test_agent.py` + `test_glossary.py` (cableado de `agent.py` sin red). CI corre `pnpm test` en el job `web`.
+- Decidí: tests en `<paquete>/test/` (fuera de `src`, no afectan typecheck ni build). Para `ui` se usa `react-dom/server`, sin jsdom.
+- Verificado: 39 tests JS, 24 api, 24 agent, todos OK localmente.
+
+## 2026-11-21 — Raimundo / Claude (chore/deploy-render) · infra Render + CD + APK
+- Hice: `render.yaml` (Blueprint: `puente-api` web Docker, `puente-agent` worker Docker, `puente-web` static, región ohio, secretos `sync: false`). `.github/workflows/cd.yml`: tras CI verde en `main` llama los Deploy Hooks de Render con el commit exacto, espera `/health` y compila la APK de debug (Capacitor) como Release. Proyecto Android versionado en `apps/mobile/android/` con permisos de cámara y micrófono.
+- Decidí: hosting en **Render** (antes Vercel + Fly). Auto-deploy de Render apagado: despliega solo el CD. El CD solo despliega en el espejo `rlabbev/puente` (Render no ve la org). Sin TestFlight: en iPhone, la PWA. `CORS_ORIGINS` incluye `https://localhost` (WebView de Android).
+- Falta: crear el espejo y el Blueprint en Render, cargar los 3 `RENDER_DEPLOY_HOOK_*` (pasos en `docs/DESPLIEGUE.md`). A4 sigue abierto: no compartir las URLs. El agente es plan starter (pago).
+
 ## 2026-11-21 — Rafael / Claude (v4/reproductor-senas) · D5 con fotos del diccionario
 - Hice: `apps/web/scripts/extraer_senas.py` saca del Diccionario LSCh (los 2 PDF + `indice_LSCh.csv`) las fotos de cada seña del vocabulario (81 de hora médica) + las del guion de urgencia (AMBULANCIA, HIJO, SANGRE, RESPIRAR, PÁLIDO, FRÍO, URGENTE…): 91 señas, ~120 fotos, ~1 MB, en `apps/web/public/senas/` con `manifest.json`. Elige la variante numerada según `lexiconId` (gracias-1, poder-2). Reproductor `SenasFotos` en la ventana del intérprete: alterna las 2 o 3 fotos de cada seña (750 ms por foto, 250 ms entre señas), `TEXTO:` y glosas sin foto como palabra grande, y deja una franja para el subtítulo para no tapar las manos. Sin fotos en el computador, sigue el intérprete dibujado.
 - Decidí: las fotos **no se versionan** (derechos UMCE): `apps/web/public/senas/` en `.gitignore`; cada uno las genera con el script (necesita PyMuPDF y los PDF).

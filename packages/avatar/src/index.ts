@@ -18,7 +18,10 @@ export interface ClipPlayerOptions {
 }
 
 export class ClipSignPlayer implements SignPlayer {
-  private stopped = false;
+  /** Cada play() tiene su generación: si cambió, esa secuencia quedó obsoleta y debe salir. */
+  private generation = 0;
+  /** Corta la espera en curso (fin de clip o pausa entre señas). */
+  private cancelWait: (() => void) | null = null;
 
   constructor(
     private readonly video: HTMLVideoElement,
@@ -26,22 +29,52 @@ export class ClipSignPlayer implements SignPlayer {
   ) {}
 
   async play(glosses: string[]): Promise<void> {
-    this.stopped = false;
+    this.interrupt(); // un play() nuevo reemplaza al anterior en vez de mezclarse con él
+    const gen = this.generation;
+    const vigente = () => gen === this.generation;
+
     for (const gloss of glosses) {
-      if (this.stopped) return;
+      if (!vigente()) return;
       const clip = getGloss(gloss)?.clip;
       if (!clip) continue; // TODO(v4): deletreo manual cuando no hay clip
       this.video.src = `${this.opts.baseUrl}/${clip}`;
       await this.video.play();
-      await new Promise<void>((resolve) => {
-        this.video.onended = () => resolve();
+      if (!vigente()) return;
+      await this.wait((done) => {
+        this.video.onended = done;
+        return () => {
+          if (this.video.onended === done) this.video.onended = null;
+        };
       });
-      await new Promise((r) => setTimeout(r, this.opts.gapMs ?? 200));
+      if (!vigente()) return;
+      await this.wait((done) => {
+        const t = setTimeout(done, this.opts.gapMs ?? 200);
+        return () => clearTimeout(t);
+      });
     }
   }
 
   stop(): void {
-    this.stopped = true;
-    this.video.pause();
+    this.interrupt();
+    this.video.pause(); // pause() no emite `ended`: por eso interrupt() resuelve la espera pendiente
+  }
+
+  private interrupt(): void {
+    this.generation++;
+    this.cancelWait?.();
+  }
+
+  /** Espera cancelable: resuelve cuando `start` llama a `done` o cuando se interrumpe. */
+  private wait(start: (done: () => void) => () => void): Promise<void> {
+    return new Promise<void>((resolve) => {
+      let cleanup: (() => void) | undefined;
+      const done = () => {
+        if (this.cancelWait === done) this.cancelWait = null;
+        cleanup?.();
+        resolve();
+      };
+      this.cancelWait = done;
+      cleanup = start(done);
+    });
   }
 }
