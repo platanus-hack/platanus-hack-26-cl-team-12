@@ -35,6 +35,30 @@ jobs:
       - run: uv run pytest -q
         working-directory: services/${{ matrix.service }}
 
+  e2e:
+    # La PWA en Chromium: llamada simulada (?mock=1) y contra la API real con Twilio y Claude falsos (e2e/).
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v5
+      - run: pnpm install --frozen-lockfile
+      - run: uv sync --frozen
+        working-directory: services/api
+      - run: pnpm --filter @puente/e2e exec playwright install --with-deps chromium
+      - run: pnpm --filter @puente/e2e test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
+
   dockerfiles:
     runs-on: ubuntu-latest
     steps:
