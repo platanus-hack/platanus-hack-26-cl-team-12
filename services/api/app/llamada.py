@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse
 
 from app.config import es_produccion
 from app.traductor import MAX_TEXTO, Traductor, recortar
+from app.voz import voz
 
 log = logging.getLogger("puente.llamada")
 router = APIRouter(prefix="/twilio")
@@ -29,7 +30,8 @@ class Sala:
 
     def __init__(self):
         self.clientes: set[WebSocket] = set()
-        self.respuestas: asyncio.Queue[str] = asyncio.Queue()
+        # (texto para <Say>, id del audio chileno o None): el audio se genera apenas responde el cliente.
+        self.respuestas: asyncio.Queue[tuple[str, str | None]] = asyncio.Queue()
         self.traductor = Traductor()
 
     async def enviar(self, msg: dict) -> None:
@@ -70,17 +72,19 @@ class Sala:
         except Exception:
             log.exception("No se pudo complejizar; se dice el texto original")
             frase = texto
-        await self.respuestas.put(self.traductor.para_voz(frase or texto))
+        para_decir = self.traductor.para_voz(frase or texto)
+        await self.respuestas.put((para_decir, await voz.preparar(para_decir)))
 
-    def respuesta_pendiente(self) -> str | None:
+    def respuesta_pendiente(self) -> tuple[str, str | None] | None:
         try:
             return self.respuestas.get_nowait()
         except asyncio.QueueEmpty:
             return None
 
     def reiniciar(self) -> None:
-        """Nueva llamada: se descartan respuestas viejas."""
+        """Nueva llamada: se descartan respuestas viejas y sus audios."""
         self.respuestas = asyncio.Queue()
+        voz.olvidar_respuestas()
 
 
 sala = Sala()

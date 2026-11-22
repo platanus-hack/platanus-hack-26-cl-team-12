@@ -14,12 +14,15 @@ if _AGENT not in sys.path:
     sys.path.insert(0, _AGENT)
 
 from translator import SimpleResult, Translator, load_escenario, load_glossary  # noqa: E402
-from translator.translate import GlossResult  # noqa: E402
 from translator.glossary import DEFAULT_PATH  # noqa: E402
-from translator.translate import MAX_TEXTO, recortar  # noqa: E402  (tope del contrato: contrato.json)
-from translator.voz import normalizar_para_voz  # noqa: E402
+from translator.translate import (  # noqa: E402  (tope del contrato: contrato.json)
+    MAX_TEXTO,
+    GlossResult,  # noqa: E402
+    recortar,
+)
+from translator.voz import VozNoConfigurada, elegir_voz, normalizar_para_voz  # noqa: E402
 
-__all__ = ["DEFAULT_PATH", "GlossResult", "MAX_TEXTO", "SimpleResult", "Traductor", "load_escenario", "normalizar_para_voz", "recortar"]
+__all__ = ["DEFAULT_PATH", "GlossResult", "MAX_TEXTO", "SimpleResult", "Traductor", "load_escenario", "normalizar_para_voz", "recortar", "elegir_voz", "VozNoConfigurada"]
 
 
 class Traductor:

@@ -47,6 +47,13 @@ services:
         sync: false
       - key: CLIENTE_WS_TOKEN
         sync: false
+      # Voz chilena de lo que escucha el ejecutivo (app/voz.py). Sin clave, Twilio usa su voz es-MX.
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        value: Fd38GRHtJllY0CuguAy9 # voz chilena mujer (ADR-0006); no es secreto
+      - key: ELEVENLABS_VOICE_ID_HOMBRE
+        value: 6WgXEzo1HGn3i7ilT4Fh
 
   # ── Agente (LiveKit Agents): proceso largo, sin puerto ──────────────────────
   - type: worker

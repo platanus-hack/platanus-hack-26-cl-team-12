@@ -1,7 +1,10 @@
 """Telefonía de v1 sin LiveKit: Twilio llama al ejecutivo y conversa por turnos (plan C, funciona en trial).
 
 Turno del ejecutivo:  /twilio/escuchar (<Gather speech>) → /twilio/turno con el texto → Claude simplifica → PWA.
-Turno del cliente:    /twilio/espera repite una pausa hasta que el cliente responde en la PWA → <Say> → escuchar.
+Turno del cliente:    /twilio/espera repite una pausa hasta que el cliente responde en la PWA → <Play> → escuchar.
+
+Voz: lo que escucha el ejecutivo es la voz chilena de ElevenLabs (<Play> de /twilio/audio/{id}.mp3, app/voz.py).
+Sin ELEVENLABS_API_KEY o si ElevenLabs falla, se usa la voz de Twilio (<Say> es-MX).
 
 Probado en el trial de Twilio (ver BITACORA): <Say> y <Gather speech> funcionan; Media Streams y SIP no.
 `/twilio/media` (audio en vivo, plan B) queda solo para cuando se pague el upgrade.
@@ -20,6 +23,7 @@ from fastapi.responses import Response
 from app.config import es_produccion
 from app.llamada import sala
 from app.traductor import load_escenario
+from app.voz import voz as voz_chilena
 
 log = logging.getLogger("puente.twilio")
 
@@ -73,6 +77,18 @@ def decir(texto: str) -> str:
     return f"<Say {IDIOMA}>{escape(texto)}</Say>"
 
 
+def reproducir(base: str, texto: str, audio_id: str | None) -> str:
+    """Voz chilena (<Play>) si hay audio de ElevenLabs; si no, la voz de Twilio (<Say>)."""
+    if audio_id:
+        return f"<Play>{escape(f'{base}/twilio/audio/{audio_id}.mp3')}</Play>"
+    return decir(texto)
+
+
+async def hablar(base: str, texto: str) -> str:
+    """Frase fija del sistema (sin datos personales): el audio se genera una vez y se reutiliza."""
+    return reproducir(base, texto, await voz_chilena.preparar(texto, fija=True))
+
+
 def ir_a(base: str, ruta: str) -> str:
     return f'<Redirect method="POST">{escape(base + ruta)}</Redirect>'
 
@@ -93,7 +109,8 @@ async def voz(request: Request) -> Response:
         return twiml(f"<Connect><Stream url={quoteattr(url)}/></Connect>")
     sala.reiniciar()
     await sala.enviar({"tipo": "estado", "valor": "llamada_iniciada"})
-    return twiml(escuchar(public_base(request), decir(SALUDO)))
+    base = public_base(request)
+    return twiml(escuchar(base, await hablar(base, SALUDO)))
 
 
 @router.post("/escuchar", dependencies=FIRMADO)
@@ -114,7 +131,7 @@ async def turno(request: Request) -> Response:
     tarea = asyncio.create_task(sala.ejecutivo_dijo(texto))  # Twilio no espera a Claude
     _tareas.add(tarea)
     tarea.add_done_callback(_tareas.discard)
-    return twiml(decir("Un momento, por favor.") + ir_a(base, "/twilio/espera?n=0"))
+    return twiml(await hablar(base, "Un momento, por favor.") + ir_a(base, "/twilio/espera?n=0"))
 
 
 @router.post("/espera", dependencies=FIRMADO)
@@ -123,14 +140,25 @@ async def espera(request: Request) -> Response:
     base = public_base(request)
     respuesta = sala.respuesta_pendiente()
     if respuesta:
-        log.info("Respuesta del cliente lista: %d caracteres", len(respuesta))
-        return twiml(decir(respuesta) + escuchar(base))
+        texto, audio_id = respuesta
+        log.info("Respuesta del cliente lista: %d caracteres (voz %s)", len(texto), "chilena" if audio_id else "Twilio")
+        return twiml(reproducir(base, texto, audio_id) + escuchar(base))
     try:
         n = int(request.query_params.get("n", "0")) + 1
     except ValueError:
         n = 1
-    aviso = decir("La persona sigue escribiendo, espere por favor.") if n % AVISO_CADA == 0 else ""
+    aviso = await hablar(base, "La persona sigue escribiendo, espere por favor.") if n % AVISO_CADA == 0 else ""
     return twiml(f'{aviso}<Pause length="{ESPERA_S}"/>' + ir_a(base, f"/twilio/espera?n={n}"))
+
+
+@router.get("/audio/{audio_id}.mp3")
+async def audio(audio_id: str) -> Response:
+    """Twilio descarga aquí el audio de <Play>. Sin firma (Twilio no firma estas descargas): el id es aleatorio
+    de 128 bits y el audio de una respuesta vence a los pocos minutos (app/voz.py)."""
+    mp3 = voz_chilena.audio(audio_id)
+    if mp3 is None:
+        raise HTTPException(404, "Audio no disponible")
+    return Response(mp3, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})
 
 
 @router.post("/estado", dependencies=FIRMADO)

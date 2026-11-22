@@ -320,3 +320,58 @@ def test_si_fallan_las_senas_igual_llega_el_texto(sala_falsa):
     with client.websocket_connect("/twilio/cliente") as pwa:
         client.post("/twilio/turno", data={"SpeechResult": "hola"})
         assert pwa.receive_json()["tipo"] == "ejecutivo_dice"
+
+
+@pytest.fixture
+def voz_falsa(monkeypatch, sala_falsa):
+    """ElevenLabs falso: devuelve un 'mp3' con el texto, sin red ni costo."""
+    from app.voz import voz
+
+    async def generar(texto):
+        return b"MP3:" + texto.encode()
+
+    monkeypatch.setattr(voz, "activa", lambda: True)
+    monkeypatch.setattr(voz, "_generar", generar)
+    voz._fijas.clear(), voz._id_fija.clear(), voz.olvidar_respuestas()
+    return voz
+
+
+def test_voz_chilena_en_el_saludo_y_twilio_baja_el_audio(voz_falsa):
+    import re
+
+    r = client.post("/twilio/voz")
+    assert "<Say" not in r.text
+    url = re.search(r"<Play>(https://abc\.ngrok-free\.app/twilio/audio/[\w-]+\.mp3)</Play>", r.text)
+    assert url, r.text
+    audio = client.get(url.group(1).replace("https://abc.ngrok-free.app", ""))
+    assert audio.status_code == 200 and audio.headers["content-type"] == "audio/mpeg"
+    assert audio.content.startswith(b"MP3:Hola. Le habla Puente")
+
+
+def test_respuesta_del_cliente_con_voz_chilena_y_se_borra_en_otra_llamada(voz_falsa):
+    import re
+
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+        for _ in range(50):
+            r = client.post("/twilio/espera?n=1")
+            if "<Play>" in r.text and "audio" in r.text:
+                break
+    ruta = re.search(r"/twilio/audio/[\w-]+\.mp3", r.text.split("<Gather")[0]).group(0)
+    assert client.get(ruta).content == b"MP3:formal(martes bueno)"
+    client.post("/twilio/voz")  # empieza otra llamada: el audio con datos de la anterior ya no existe
+    assert client.get(ruta).status_code == 404
+
+
+def test_si_elevenlabs_falla_se_usa_la_voz_de_twilio(voz_falsa, monkeypatch):
+    async def falla(_texto):
+        return None
+
+    monkeypatch.setattr(voz_falsa, "_generar", falla)
+    r = client.post("/twilio/voz")
+    assert '<Say language="es-MX">Hola. Le habla Puente' in r.text and "<Play>" not in r.text
+
+
+def test_audio_inexistente_da_404():
+    assert client.get("/twilio/audio/no-existe.mp3").status_code == 404
