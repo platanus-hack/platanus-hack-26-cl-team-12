@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Raimundo / Claude (chore/deploy-render) · infra Render + CD + APK
+- Hice: `render.yaml` (Blueprint: `puente-api` web Docker, `puente-agent` worker Docker, `puente-web` static, región ohio, secretos `sync: false`). `.github/workflows/cd.yml`: tras CI verde en `main` llama los Deploy Hooks de Render con el commit exacto, espera `/health` y compila la APK de debug (Capacitor) como Release. Proyecto Android versionado en `apps/mobile/android/` con permisos de cámara y micrófono.
+- Decidí: hosting en **Render** (antes Vercel + Fly). Auto-deploy de Render apagado: despliega solo el CD. El CD solo despliega en el espejo `rlabbev/puente` (Render no ve la org). Sin TestFlight: en iPhone, la PWA. `CORS_ORIGINS` incluye `https://localhost` (WebView de Android).
+- Falta: crear el espejo y el Blueprint en Render, cargar los 3 `RENDER_DEPLOY_HOOK_*` (pasos en `docs/DESPLIEGUE.md`). A4 sigue abierto: no compartir las URLs. El agente es plan starter (pago).
+
 ## 2026-11-21 — Rafael / Claude (v4/reproductor-senas) · D5 con fotos del diccionario
 - Hice: `apps/web/scripts/extraer_senas.py` saca del Diccionario LSCh (los 2 PDF + `indice_LSCh.csv`) las fotos de cada seña del vocabulario (81 de hora médica) + las del guion de urgencia (AMBULANCIA, HIJO, SANGRE, RESPIRAR, PÁLIDO, FRÍO, URGENTE…): 91 señas, ~120 fotos, ~1 MB, en `apps/web/public/senas/` con `manifest.json`. Elige la variante numerada según `lexiconId` (gracias-1, poder-2). Reproductor `SenasFotos` en la ventana del intérprete: alterna las 2 o 3 fotos de cada seña (750 ms por foto, 250 ms entre señas), `TEXTO:` y glosas sin foto como palabra grande, y deja una franja para el subtítulo para no tapar las manos. Sin fotos en el computador, sigue el intérprete dibujado.
 - Decidí: las fotos **no se versionan** (derechos UMCE): `apps/web/public/senas/` en `.gitignore`; cada uno las genera con el script (necesita PyMuPDF y los PDF).
