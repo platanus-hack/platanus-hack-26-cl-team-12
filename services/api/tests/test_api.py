@@ -381,6 +381,24 @@ def test_llamada_sin_numero_usa_el_telefono_de_la_demo(monkeypatch):
     assert llamadas == ["+56911111111"]
 
 
+def test_sin_numero_demo_usa_el_unico_numero_permitido(monkeypatch):
+    import app.main as m
+
+    monkeypatch.delenv("NUMERO_DEMO", raising=False)
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", " +56922222222 ")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"):
+        monkeypatch.setenv(k, "x")
+    llamadas = []
+    monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: llamadas.append(numero) or ("CA1", "queued"))
+    assert client.post("/llamadas", json={"destino": "clinica"}).status_code == 200
+    assert llamadas == ["+56922222222"]
+
+    # Con varios permitidos no se adivina: sigue pidiendo NUMERO_DEMO.
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56922222222,+56933333333")
+    assert client.post("/llamadas", json={"destino": "clinica"}).status_code == 422
+
+
 
 def test_si_fallan_las_senas_igual_llega_el_texto(sala_falsa):
     async def falla(_texto):
