@@ -37,7 +37,9 @@ small,.mut{color:#999}.ok{color:#5d8}.bad{color:#f66}.ins{color:#fb4}.fb.sel{bac
  <details><summary>Usar las grabaciones del avatar (importar)</summary>
   <p><button id="imp" class="go">📥 Importar grabaciones del avatar</button> <span id="impst" class="mut"></span></p>
   <p><button id="eval">📊 Evaluar</button></p><div id="evalr"></div></details>
- <details><summary>Grabar más muestras</summary>
+ <details open><summary>Grabar más muestras</summary>
+  <p><button id="gbtn" class="go">🎯 Grabación guiada (palabras flojas ×3)</button> <button id="gstop">■ Detener</button></p>
+  <div class="box"><div id="gst" class="big" style="font-size:22px">—</div><small>Cada toma: baja las manos, espera la cuenta, seña la palabra y vuelve a bajarlas. Hazlo como en la demo (misma distancia y postura).</small></div>
   <div id="chips" style="margin-top:8px"></div>
   <p><input id="otra" placeholder="otra etiqueta (ej. HOLA)" size="16"> <button id="add">+</button></p>
   <p><button id="rec">⏺ Grabar muestra (cuenta 3 s)</button> <span id="cnt" class="mut"></span></p>
@@ -95,8 +97,8 @@ function chips(){$('chips').innerHTML='';labels.forEach(l=>{const b=document.cre
  b.textContent=l+' ('+samples.filter(s=>s.label===l).length+')';b.onclick=()=>{cur=l;chips()};$('chips').append(b)});
  const L=$('lib');L.innerHTML=samples.length?'':'—';samples.forEach(s=>{const sp=document.createElement('span');sp.textContent=s.file+' ('+s.frames.length+'f) ';
  const x=document.createElement('a');x.textContent='✕';x.style.cursor='pointer';x.onclick=async()=>{await fetch('/api/borrar?file='+s.file,{method:'POST'});await load()};sp.append(x,' · ');L.append(sp)})}
-async function load(){samples=(await (await fetch('/api/muestras')).json()).filter(s=>isW(s.label)).map(prep).filter(Boolean);
- for(const s of samples)if(!labels.includes(s.label))labels.push(s.label);calib();chips()}
+async function load(nocal){samples=(await (await fetch('/api/muestras')).json()).filter(s=>isW(s.label)).map(prep).filter(Boolean);
+ for(const s of samples)if(!labels.includes(s.label))labels.push(s.label);if(!nocal)calib();chips()}
 $('add').onclick=()=>{const v=$('otra').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'-');if(v&&!labels.includes(v))labels.push(v);if(v)cur=v;$('otra').value='';chips()};
 $('sens').oninput=e=>{sens=+e.target.value;$('sv').textContent=sens};
 const out=[];$('clr').onclick=()=>{out.length=0;$('res').textContent='—'};
@@ -111,8 +113,15 @@ $('eval').onclick=()=>{let ok=0,tot=0;const conf={};
  $('evalr').innerHTML=tot?`<h3>${ok} de ${tot} tomas bien identificadas (${Math.round(100*ok/tot)}%)</h3><div class="mut">Se esconde cada toma y se adivina con las demás.</div>`+Object.entries(conf).map(([k,v])=>`<div class="mut">confunde ${k} ×${v}</div>`).join(''):'<p class="mut">Necesitas ≥2 muestras por palabra.</p>'};
 
 function finishRec(){const seg=buf;buf=[];$('rec').classList.remove('on');mode='idle';
- if(seg.length<MIN_FR){st('Muy corta ('+seg.length+' frames), repite');return}
- fetch('/api/muestra?label='+cur,{method:'POST',body:JSON.stringify({frames:seg.map(f=>f.map(x=>+x.toFixed(4)))})}).then(load).then(()=>st('Muestra de '+cur+' guardada ✔ ('+seg.length+' frames)'))}
+ if(seg.length<MIN_FR){st('Muy corta ('+seg.length+' frames), repite');if(guided)setTimeout(guidedStep,900);return}
+ fetch('/api/muestra?label='+cur,{method:'POST',body:JSON.stringify({frames:seg.map(f=>f.map(x=>+x.toFixed(4)))})}).then(()=>load(!!guided)).then(()=>{st('Muestra de '+cur+' guardada ✔ ('+seg.length+' frames)');if(guided){guided.i++;setTimeout(guidedStep,1000)}})}
+// grabación guiada: cada palabra floja ×3, avanza sola
+const FLOJAS=['IR','BIEN','HUESO','CODO','PERO','POCO-A','CAER-PERSONA','HOSPITAL','NECESITAR'];let guided=null;
+function guidedStep(){if(!guided||mode!=='idle')return;
+ if(guided.i>=guided.q.length){guided=null;$('gst').textContent='Listo ✔ (recalibrando…)';setTimeout(()=>{calib();$('gst').textContent='Listo ✔';st('Muestras guardadas. Repite las pruebas P1–P3.')},50);return}
+ cur=guided.q[guided.i];chips();$('gst').textContent=cur+'  (toma '+(guided.i%3+1)+'/3 · '+(guided.i+1)+' de '+guided.q.length+')';$('rec').click()}
+$('gbtn').onclick=()=>{if(guided||mode!=='idle'||running||test)return;guided={q:FLOJAS.flatMap(w=>[w,w,w]),i:0};guidedStep()};
+$('gstop').onclick=()=>{if(guided){guided=null;$('gst').textContent='Detenido';calib()}};
 
 // ── reconocimiento continuo: cada EVAL_EVERY frames se compara cada plantilla con el final del buffer ──
 let nf=0,cand=null,lockUntil=0,hist=[],lastEmit='',moved=true;
