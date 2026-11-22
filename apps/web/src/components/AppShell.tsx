@@ -35,7 +35,8 @@ export function AppShell({ onLlamar, aviso }: { onLlamar: (d: Destino) => void; 
   const oscuro = tema === "oscuro";
 
   return (
-    <>
+    // En el computador (≥1024 px) .shell pone la barra y las pestañas a la izquierda y el contenido a la derecha.
+    <div className="shell">
       <header className="barra">
         <div className="barra-izq">
           <button type="button" className="perfil-btn" onClick={() => {
@@ -85,6 +86,6 @@ export function AppShell({ onLlamar, aviso }: { onLlamar: (d: Destino) => void; 
       </nav>
 
       <MenuPerfil abierto={menu} onCerrar={cerrarMenu} vistaInicial={vistaMenu} />
-    </>
+    </div>
   );
 }

@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import es_produccion
 from app.llamada import router as llamada_router
+from app.llamada import sala
 from app.traductor import DEFAULT_PATH
 from app.twilio_media import router as twilio_router
 
@@ -240,4 +241,5 @@ async def crear_llamada(req: LlamadaRequest) -> LlamadaResponse:
     if faltan or not base.startswith("https://"):
         raise HTTPException(503, "Twilio no configurado (TWILIO_* y PUBLIC_BASE_URL con https://)")
     sid, estado = await asyncio.to_thread(llamar_con_twilio, numero, base)
+    sala.llamadas_creadas.add(sid)
     return LlamadaResponse(sid=sid, estado=estado)

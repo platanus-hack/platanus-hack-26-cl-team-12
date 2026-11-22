@@ -97,6 +97,12 @@ class FakeTraductor:
     async def complejizar(self, texto):
         return f"formal({texto})"
 
+    async def glosas_a_espanol(self, glosas):
+        return f"formal({' '.join(glosas)})"
+
+    def glosas_conocidas(self, glosas):
+        return [g for g in glosas if isinstance(g, str) and g != "INVENTADA"]
+
     async def a_glosas(self, texto):
         from app.traductor import GlossResult
 
@@ -296,6 +302,68 @@ def test_logs_no_guardan_lo_que_se_dice(sala_falsa, caplog):
     assert "11.111.111-1" not in caplog.text
 
 
+def _decir_pendiente():
+    """Twilio vuelve a preguntar si hay respuesta: ahí empieza a sonar y la app recibe `cliente_dijo`."""
+    for _ in range(50):
+        r = client.post("/twilio/espera?n=1")
+        if "<Say" in r.text:
+            return r.text
+    return r.text
+
+
+def test_glosas_cliente_se_convierten_en_frase_se_dicen_y_se_muestran_al_sonar(sala_falsa):
+    """v3: lo que firma el cliente (glosas) se convierte y se dice por voz; la app recibe la frase recién cuando suena."""
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "INVENTADA", "AMBULANCIA"], "confianza": 1})
+        assert "formal(HOLA AMBULANCIA)" in _decir_pendiente()
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(HOLA AMBULANCIA)"}
+
+
+def test_cliente_dice_tambien_muestra_la_frase_convertida_al_sonar(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        assert "formal(martes bueno)" in _decir_pendiente()
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(martes bueno)"}
+
+
+def test_cliente_dijo_no_se_manda_antes_de_que_suene(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+        assert sala_falsa.respuestas.qsize() in (0, 1)  # aún en cola (o recién convertida): la app no recibe nada todavía
+        _decir_pendiente()
+        assert pwa.receive_json()["tipo"] == "cliente_dijo"
+
+
+def test_glosas_cliente_sin_glosas_validas_no_hace_nada(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["INVENTADA"], "confianza": 1})
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": "no-es-lista", "confianza": 1})
+        pwa.send_json({"tipo": "cliente_dice", "texto": "hola"})
+        assert "formal(hola)" in _decir_pendiente()  # lo único que se dice es lo válido
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(hola)"}
+
+
+def test_glosas_cliente_si_claude_falla_se_dicen_tal_cual(sala_falsa, monkeypatch):
+    async def falla(glosas):
+        raise RuntimeError("sin Claude")
+
+    monkeypatch.setattr(sala_falsa.traductor, "glosas_a_espanol", falla)
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "AMBULANCIA"], "confianza": 1})
+        assert "hola ambulancia" in _decir_pendiente()
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "hola ambulancia"}
+
 
 def test_llamada_sin_numero_usa_el_telefono_de_la_demo(monkeypatch):
     import app.main as m
@@ -320,3 +388,88 @@ def test_si_fallan_las_senas_igual_llega_el_texto(sala_falsa):
     with client.websocket_connect("/twilio/cliente") as pwa:
         client.post("/twilio/turno", data={"SpeechResult": "hola"})
         assert pwa.receive_json()["tipo"] == "ejecutivo_dice"
+
+
+@pytest.fixture
+def voz_falsa(monkeypatch, sala_falsa):
+    """ElevenLabs falso: devuelve un 'mp3' con el texto, sin red ni costo."""
+    from app.voz import voz
+
+    async def generar(texto):
+        return b"MP3:" + texto.encode()
+
+    monkeypatch.setattr(voz, "activa", lambda: True)
+    monkeypatch.setattr(voz, "_generar", generar)
+    voz._fijas.clear(), voz._id_fija.clear(), voz.olvidar_respuestas()
+    return voz
+
+
+def test_voz_chilena_en_el_saludo_y_twilio_baja_el_audio(voz_falsa):
+    import re
+
+    r = client.post("/twilio/voz")
+    assert "<Say" not in r.text
+    url = re.search(r"<Play>(https://abc\.ngrok-free\.app/twilio/audio/[\w-]+\.mp3)</Play>", r.text)
+    assert url, r.text
+    audio = client.get(url.group(1).replace("https://abc.ngrok-free.app", ""))
+    assert audio.status_code == 200 and audio.headers["content-type"] == "audio/mpeg"
+    assert audio.content.startswith(b"MP3:Hola. Le habla Puente")
+
+
+def test_respuesta_del_cliente_con_voz_chilena_y_se_borra_en_otra_llamada(voz_falsa):
+    import re
+
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+        for _ in range(50):
+            r = client.post("/twilio/espera?n=1")
+            if "<Play>" in r.text and "audio" in r.text:
+                break
+    ruta = re.search(r"/twilio/audio/[\w-]+\.mp3", r.text.split("<Gather")[0]).group(0)
+    assert client.get(ruta).content == b"MP3:formal(martes bueno)"
+    client.post("/twilio/voz")  # empieza otra llamada: el audio con datos de la anterior ya no existe
+    assert client.get(ruta).status_code == 404
+
+
+def test_si_elevenlabs_falla_se_usa_la_voz_de_twilio(voz_falsa, monkeypatch):
+    async def falla(_texto):
+        return None
+
+    monkeypatch.setattr(voz_falsa, "_generar", falla)
+    r = client.post("/twilio/voz")
+    assert '<Say language="es-MX">Hola. Le habla Puente' in r.text and "<Play>" not in r.text
+
+
+def test_audio_inexistente_da_404():
+    assert client.get("/twilio/audio/no-existe.mp3").status_code == 404
+
+
+def test_trial_primer_pedido_sin_firma_solo_para_llamadas_propias(sala_falsa, monkeypatch):
+    """El trial de Twilio manda /voz por TwilioProxy sin X-Twilio-Signature: se acepta solo con un CallSid nuestro."""
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token-de-prueba")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC_nuestra")
+    sala_falsa.llamadas_creadas.add("CA_nuestra")
+    try:
+        propia = {"CallSid": "CA_nuestra", "AccountSid": "AC_nuestra"}
+        assert client.post("/twilio/voz", data=propia).status_code == 200
+        assert client.post("/twilio/voz", data={**propia, "CallSid": "CA_ajena"}).status_code == 403
+        assert client.post("/twilio/voz", data={**propia, "AccountSid": "AC_otra"}).status_code == 403
+        # Con firma presente (aunque sea de una llamada propia), se valida la firma como siempre.
+        assert client.post("/twilio/voz", data=propia, headers={"X-Twilio-Signature": "falsa"}).status_code == 403
+    finally:
+        sala_falsa.llamadas_creadas.discard("CA_nuestra")
+
+
+def test_llamadas_registra_el_callsid(monkeypatch):
+    import app.main as m
+    from app.llamada import sala
+
+    monkeypatch.setenv("ALLOWED_DESTINATIONS", "+56911111111")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"):
+        monkeypatch.setenv(k, "x")
+    monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: ("CA_registrada", "queued"))
+    client.post("/llamadas", json={"numero": "+56911111111"})
+    assert "CA_registrada" in sala.llamadas_creadas
+    sala.llamadas_creadas.discard("CA_registrada")

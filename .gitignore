@@ -123,6 +123,10 @@ lab/v4_avatar/live/models/*.vrm
 # Modelo del avatar 3D: lo baja apps/web/scripts/descargar_avatar.mjs (predev/prebuild)
 apps/web/public/models/
 
+# Muestras de reconocimiento (landmarks propios, locales)
+data/reco/
+data/signs-video
+
 # Animaciones del avatar copiadas desde data/signs/anim (apps/web/scripts/copiar_animaciones.mjs)
 apps/web/public/anim/
 
