@@ -135,7 +135,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setCall(null);
     setEsperando(false);
     setState("ended");
-    setAlert({ message: "Se cortó la conexión con Puente. Revisa tu internet y vuelve a llamar.", tone: "error" });
+    setAlert({ message: "Se cortó la conexión con Bridge. Revisa tu internet y vuelve a llamar.", tone: "error" });
   }
 
   async function llamar(d: Destino) {

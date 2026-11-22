@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Rafael / Claude (v4/mejoras-chat) · el proyecto pasa a llamarse Bridge
+- Decidí (Rafael): el proyecto se llama **Bridge** (antes Puente). Logo: **un puente simple, sin lo que conecta**.
+- Hice: 4 versiones del logo en `apps/web/public/logo/` (A arco, **B colgante (elegido)**, C arco con tirantes, D viaducto) y `hoja-logos.svg` con la paleta. No había plugin de Figma en la sesión: son SVG, importables a Figma. **Paleta Bridge**: azul `#6E9BFF` (oscuro) / `#2F5BE0` (claro) como marca y color del usuario, ámbar `#FFB547` de acento, rojo urgencia, verde estado, neutros igual (contrastes revisados, todos ≥ 5:1). Nombre visible "Bridge" en la app, manifest, login, calificación y textos; íconos PNG de la PWA regenerados. Los paquetes siguen como `@puente/*` (solo cambia lo que ve el usuario).
+- Falta: actualizar `project-description.md` y `platanus-hack-project.jsonc` (los arma A) y el pitch con el nombre nuevo.
+
 ## 2026-11-22 — Rafael / Claude (v4/avatar-3d-app-general) · última iteración antes del PR
 - Decidí (Rafael): sin pestaña Emergencias (se cubre en el inicio). Inicio con la ubicación en chico y **"Pedir una ambulancia" destacado en rojo**. Solo la llamada de ambulancia tiene guion completo (es la que se prueba); las demás son un ejemplo corto. **Logo nuevo** (guiones celestes que pasan a ondas de sonido amarillas). La calificación es sobre Puente (avatar, subtítulos, lectura de señas), no sobre la clínica.
 - Hice: lo anterior; íconos PNG de la PWA regenerados con el logo nuevo. **Rendimiento**: el avatar 3D dibuja solo mientras hace señas (antes 60 cuadros por segundo siempre), resolución 1,5× máx. y cámara a 480×640 y 24 fps. 45 tests OK.
