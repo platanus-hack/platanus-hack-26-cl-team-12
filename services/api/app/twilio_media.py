@@ -107,7 +107,8 @@ async def turno(request: Request) -> Response:
     form = await request.form()
     texto = str(form.get("SpeechResult", "")).strip()
     base = public_base(request)
-    log.warning("Ejecutivo dijo: %r (confianza %s)", texto, form.get("Confidence"))
+    # Sin el texto: puede traer RUT o datos de salud (seguridad-datos-cl, art. 14 bis).
+    log.info("Turno del ejecutivo: %d caracteres (confianza %s)", len(texto), form.get("Confidence"))
     if not texto:
         return twiml(escuchar(base))
     tarea = asyncio.create_task(sala.ejecutivo_dijo(texto))  # Twilio no espera a Claude
@@ -122,7 +123,7 @@ async def espera(request: Request) -> Response:
     base = public_base(request)
     respuesta = sala.respuesta_pendiente()
     if respuesta:
-        log.warning("Se le dice al ejecutivo: %r", respuesta)
+        log.info("Respuesta del cliente lista: %d caracteres", len(respuesta))
         return twiml(decir(respuesta) + escuchar(base))
     try:
         n = int(request.query_params.get("n", "0")) + 1
