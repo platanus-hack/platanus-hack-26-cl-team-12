@@ -15,10 +15,14 @@ Las entradas nuevas van **arriba**. Formato:
 - **Probado en el Samsung Galaxy A33 5G de Rafael:** se instala, abre a pantalla completa y la llamada simulada funciona en modo avión. Cómo: platform-tools de Android, `adb devices` (acá sí aparece el aviso de permiso; con edge://inspect no aparecía) y `adb reverse tcp:3001 tcp:3001`, luego Chrome en `localhost:3001/?mock=1`.
 - Falta: probar en iPhone. Capacitor solo si sobra tiempo.
 
+## 2026-11-21 — Raimundo / Claude (fix/bugs-senas-deletreo)
+- Hice: arreglé 3 bugs que salieron en la revisión de los tests (#17). `@puente/avatar`: `stop()` dejaba `play()` colgado para siempre (pausar un `<video>` no emite `ended`) y un `play()` encima de otro mezclaba clips; ahora cada `play()` tiene generación y las esperas se cancelan. `@puente/signs`: una confianza de exactamente `MIN_CONFIDENCE` se rechazaba por el redondeo de `Float32Array`; ahora se compara con `Math.fround`.
+- Decidí: PR apilado sobre `chore/tests-ci` (necesita Vitest). El deletreo en TS ya estaba arreglado en `dev`.
+- Verificado: tests nuevos fallaban antes del arreglo y pasan después; `pnpm typecheck` OK.
+
 ## 2026-11-21 18:20 — Raimundo / Claude (rama chore/tests-ci)
 - Hice: tests para todas las secciones. JS con Vitest (config única en la raíz, `pnpm test`): `glosses` (contrato `parseMensaje` + integridad del diccionario vs schema), `signs` (reconocedor), `avatar` (`ClipSignPlayer`), `ui` (render accesible), `apps/web` (`joinCall` con LiveKit simulado, incluye anti suplantación `SOLO_AGENTE`). Python: `services/api/tests/test_api_extra.py` (CORS, TTL, E.164, allowlist) y `services/agent/tests/test_agent.py` + `test_glossary.py` (cableado de `agent.py` sin red). CI corre `pnpm test` en el job `web`.
 - Decidí: tests en `<paquete>/test/` (fuera de `src`, no afectan typecheck ni build). Para `ui` se usa `react-dom/server`, sin jsdom.
-- Ojo: `Float32Array` guarda 0.7 como 0.69999998, así que una probabilidad "exactamente" `MIN_CONFIDENCE` se rechaza en `@puente/signs`.
 - Verificado: 39 tests JS, 24 api, 24 agent, todos OK localmente.
 
 ## 2026-11-21 — Rafael / Claude (v4/reproductor-senas) · D5 con fotos del diccionario

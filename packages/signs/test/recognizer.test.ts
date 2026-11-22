@@ -45,9 +45,9 @@ describe("createRecognizer", () => {
     expect(r.push(frame(0))).toBeNull();
   });
 
-  it("acepta confianza justo sobre MIN_CONFIDENCE", () => {
-    // Ojo: Float32Array guarda 0.7 como 0.6999999881, así que "exactamente 0.7" queda bajo el umbral.
-    const r = createRecognizer(fakeClassifier(0, MIN_CONFIDENCE + 0.001), 1);
+  it("acepta exactamente MIN_CONFIDENCE aunque Float32Array lo redondee hacia abajo", () => {
+    // Float32Array guarda 0.7 como 0.6999999881: el umbral debe compararse en la misma precisión.
+    const r = createRecognizer(fakeClassifier(0, MIN_CONFIDENCE), 1);
     expect(r.push(frame(0))).not.toBeNull();
   });
 

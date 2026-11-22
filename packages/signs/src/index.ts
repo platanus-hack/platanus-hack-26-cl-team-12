@@ -50,7 +50,8 @@ export function createRecognizer(classifier: Classifier, windowSize = 30): SignR
       const confidence = probs[best] ?? 0;
       const entry = glossFromLabel(best);
 
-      if (!entry || confidence < MIN_CONFIDENCE) return null;
+      // El clasificador entrega Float32Array (0.7 → 0.6999999881): comparar en la misma precisión.
+      if (!entry || confidence < Math.fround(MIN_CONFIDENCE)) return null;
       return { gloss: entry.gloss, confidence };
     },
     reset() {

@@ -25,6 +25,8 @@ function fakeVideo() {
 
 afterEach(() => vi.useRealTimers());
 
+const timeout = (ms: number) => new Promise<"timeout">((r) => setTimeout(() => r("timeout"), ms));
+
 describe("ClipSignPlayer", () => {
   it("reproduce los clips en orden con la URL base", async () => {
     const { video, played } = fakeVideo();
@@ -58,14 +60,38 @@ describe("ClipSignPlayer", () => {
   it("stop() pausa el video y corta la secuencia", async () => {
     const { video, played } = fakeVideo();
     const p = new ClipSignPlayer(video as unknown as HTMLVideoElement, { baseUrl: "b", gapMs: 0 });
+    // Un <video> real no emite `ended` al pausarse: play() debe resolver igual.
     video.play.mockImplementationOnce(async () => {
       played.push(video.src);
-      p.stop();
-      setTimeout(() => video.onended?.(), 0);
     });
-    await p.play(["HOLA", "GRACIAS"]);
+    const done = p.play(["HOLA", "GRACIAS"]);
+    await Promise.resolve();
+    await Promise.resolve();
+    p.stop();
+    await expect(Promise.race([done.then(() => "resuelto"), timeout(50)])).resolves.toBe("resuelto");
     expect(video.pause).toHaveBeenCalled();
     expect(played).toEqual(["b/hola.mp4"]);
+  });
+
+  it("stop() durante la pausa entre señas corta sin esperar el gap", async () => {
+    const { video, played } = fakeVideo();
+    const p = new ClipSignPlayer(video as unknown as HTMLVideoElement, { baseUrl: "b", gapMs: 10_000 });
+    const done = p.play(["HOLA", "GRACIAS"]);
+    await timeout(5); // termina HOLA y entra a la pausa de 10 s
+    p.stop();
+    await expect(Promise.race([done.then(() => "resuelto"), timeout(50)])).resolves.toBe("resuelto");
+    expect(played).toEqual(["b/hola.mp4"]);
+  });
+
+  it("un play() nuevo corta el anterior y no se mezclan clips", async () => {
+    const { video, played } = fakeVideo();
+    const p = new ClipSignPlayer(video as unknown as HTMLVideoElement, { baseUrl: "b", gapMs: 20 });
+    const primero = p.play(["HOLA", "GRACIAS"]);
+    await timeout(5); // HOLA terminó; el primero está en la pausa antes de GRACIAS
+    p.stop();
+    const segundo = p.play(["SIN_CLIP", "HOLA"]);
+    await Promise.all([primero, segundo]);
+    expect(played).toEqual(["b/hola.mp4", "b/hola.mp4"]); // GRACIAS del primer play nunca suena
   });
 
   it("play() después de stop() vuelve a reproducir", async () => {
