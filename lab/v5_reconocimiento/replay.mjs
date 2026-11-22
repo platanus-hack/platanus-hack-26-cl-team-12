@@ -36,7 +36,7 @@ function run(frames){let buf=[],nf=0,cand=null,lock=0,lastEmit='',lastAct=0,det=
   else if(buf.length&&now-lastAct>END_MS){buf=[];cand=null}});
  return det.map(d=>d.l)}
 let tH=0,tN=0,tI=0;
-for(const f of fs.readdirSync(path.join(RECO,'runs')).sort()){const d=JSON.parse(fs.readFileSync(path.join(RECO,'runs',f)));
+const DESDE=arg('desde',0);for(const f of fs.readdirSync(path.join(RECO,'runs')).sort().filter(f=>+f.split('_')[0]>DESDE)){const d=JSON.parse(fs.readFileSync(path.join(RECO,'runs',f)));
  const det=run(d.frames),ops=align(d.exp,det),H=ops.filter(o=>o.startsWith('ok')).length,I=ops.filter(o=>o.startsWith('ins')).length;tH+=H;tN+=d.exp.length;tI+=I;
  console.log(f.replace('.json',''),`${H}/${d.exp.length} bien, ${I} sobran`);if(V)console.log('  '+ops.join(' | '))}
 console.log(`TOTAL ${tH}/${tN} = ${Math.round(100*tH/tN)}%  sobran ${tI}  (sens ${SENS}, dedupe ${DEDUPE}, cool ${COOL}, mov ${MOV}, margin ${MARGIN})`);
