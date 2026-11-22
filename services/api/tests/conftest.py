@@ -10,3 +10,4 @@ def sin_llamadas_reales(monkeypatch):
         raise AssertionError("Un test intentó hacer una llamada real con Twilio")
 
     monkeypatch.setattr(main, "llamar_con_twilio", prohibido)
+    monkeypatch.delenv("NUMERO_DEMO", raising=False)  # que el .env local no cambie los tests
