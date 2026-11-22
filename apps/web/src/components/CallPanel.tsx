@@ -58,6 +58,12 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   // Tus señas y la frase en que se convirtieron: se mantienen a la vista el tiempo de leerlas aunque el otro lado ya responda.
   const [conversion, setConversion] = useState<Conversion | null>(null);
   const timerConv = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ?debug en la dirección: muestra qué glosas consideró el reconocedor en cada seña (para ensayar).
+  const [debug, setDebug] = useState<string | null>(null);
+  const debugActivo = useRef(false);
+  useEffect(() => {
+    debugActivo.current = new URLSearchParams(window.location.search).has("debug");
+  }, []);
   const [chat, setChat] = useState(false);
   // true desde que el cliente responde hasta que el otro lado vuelve a hablar.
   const [esperando, setEsperando] = useState(false);
@@ -105,6 +111,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       },
       onDuda: (a, b) => setAlert({ message: `No se distingue: ${a} o ${b}. Repite la seña.`, tone: "info" }),
       onError: (e) => console.error("reconocimiento de señas", e),
+      onRanking: (r) => debugActivo.current && setDebug(r.map((x) => `${x.gloss} ${x.dist.toFixed(2)}`).join(" · ")),
     })
       .then((r) => (cancelado ? r.detener() : (rec = r)))
       .catch(() => setAlert({ message: "No se pudo iniciar la lectura de señas. Puedes responder en el chat.", tone: "error" }));
@@ -311,6 +318,11 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       <CamaraPropia encendida={camara && state !== "ended"} lectura={lecturaVisible} onVideo={RECONOCER_SENAS ? setVideo : undefined} mostrarTexto={RECONOCER_SENAS} conversion={RECONOCER_SENAS ? conversion : null} />
 
       <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
+      {debug && (
+        <p style={{ position: "fixed", left: 8, right: 8, bottom: 8, margin: 0, padding: "6px 10px", borderRadius: 8, background: "rgba(0,0,0,0.8)", color: "#9f9", font: "12px monospace", zIndex: 50 }}>
+          candidatas: {debug}
+        </p>
+      )}
 
       {/* Modo chat: conversación, respuestas sugeridas y teclado */}
       {chat && (

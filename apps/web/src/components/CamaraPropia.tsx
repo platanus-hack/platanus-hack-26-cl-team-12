@@ -24,6 +24,17 @@ type EstadoCamara = "pidiendo" | "activa" | "apagada" | "sin-permiso";
 /** esperando: no te toca. leyendo: mirando tus señas. listo: reconoció una frase (sin mostrarla). enviado: ya se mandó. */
 export type Lectura = { estado: "esperando" } | { estado: "leyendo" } | { estado: "listo"; texto: string } | { estado: "enviado"; texto: string; convertido?: string };
 
+/**
+ * Con lectura real de señas, en computador se pide la cámara horizontal (como se grabaron las plantillas) para no recortar brazos y manos;
+ * en celular se mantiene vertical.
+ */
+function videoPedido(lecturaReal: boolean): MediaTrackConstraints {
+  const movil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  return lecturaReal && !movil
+    ? { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }
+    : { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 }, frameRate: { ideal: 24 } };
+}
+
 export function CamaraPropia({
   encendida,
   lectura,
@@ -56,7 +67,7 @@ export function CamaraPropia({
       return;
     }
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 }, frameRate: { ideal: 24 } }, audio: false })
+      .getUserMedia({ video: videoPedido(mostrarTexto), audio: false })
       .then((s) => {
         if (!vivo) {
           s.getTracks().forEach((t) => t.stop());

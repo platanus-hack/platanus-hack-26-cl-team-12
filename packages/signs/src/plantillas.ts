@@ -93,6 +93,8 @@ export interface PauseRecognizer {
   push(frame: FeatureFrame): Recognition | null;
   /** Última seña terminada que NO se pudo reconocer con seguridad (para pedir "repite"): mejor y segunda opción. */
   readonly dudosa: { a: string; b: string } | null;
+  /** Última clasificación: glosas candidatas de mejor a peor con su distancia (para depurar). `n` sube con cada seña clasificada. */
+  readonly ultima: { n: number; ranking: { gloss: string; dist: number }[] };
   reset(): void;
 }
 
@@ -110,6 +112,7 @@ export function createPauseRecognizer(set: TemplateSet, opts: PauseOptions = {})
   let ultimoActivo = 0;
   let dudosa: { a: string; b: string } | null = null;
   let ultima: { gloss: string; t: number } | null = null;
+  const clasif = { n: 0, ranking: [] as { gloss: string; dist: number }[] };
 
   function clasificar(seg: number[][]): Recognition | null {
     const q = resample(seg, nT), mejor = new Map<string, number>();
@@ -118,6 +121,8 @@ export function createPauseRecognizer(set: TemplateSet, opts: PauseOptions = {})
       if (!mejor.has(p.gloss) || d < (mejor.get(p.gloss) as number)) mejor.set(p.gloss, d);
     }
     const r = [...mejor.entries()].sort((x, y) => x[1] - y[1]);
+    clasif.n += 1;
+    clasif.ranking = r.slice(0, 4).map(([gloss, dist]) => ({ gloss, dist }));
     const [primera, segunda] = r;
     if (!primera || !segunda) return null;
     const ratio = primera[1] / segunda[1];
@@ -140,6 +145,7 @@ export function createPauseRecognizer(set: TemplateSet, opts: PauseOptions = {})
       return null;
     },
     get dudosa() { return dudosa; },
+    get ultima() { return clasif; },
     reset() { buf = []; dudosa = null; ultima = null; },
   };
 }

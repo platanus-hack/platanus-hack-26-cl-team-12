@@ -117,11 +117,12 @@ function finishRec(){const seg=buf;buf=[];$('rec').classList.remove('on');mode='
  if(seg.length<MIN_FR){st('Muy corta ('+seg.length+' frames), repite');if(guided)setTimeout(guidedStep,900);return}
  fetch('/api/muestra?label='+cur,{method:'POST',body:JSON.stringify({frames:seg.map(f=>f.map(x=>+x.toFixed(4)))})}).then(()=>load(!!guided)).then(()=>{st('Muestra de '+cur+' guardada ✔ ('+seg.length+' frames)');if(guided){guided.i++;setTimeout(guidedStep,1000)}})}
 // grabación guiada: cada palabra floja ×3, avanza sola
-const FLOJAS=['IR','BIEN','HUESO','CODO','PERO','POCO-A','CAER-PERSONA','HOSPITAL','NECESITAR'];let guided=null;
+const QS=new URLSearchParams(location.search),NTOMAS=+QS.get('n')||3;   // ?palabras=BRAZO,MANO&n=6
+const FLOJAS=QS.get('palabras')?QS.get('palabras').toUpperCase().split(','):['IR','BIEN','HUESO','CODO','PERO','POCO-A','CAER-PERSONA','HOSPITAL','NECESITAR'];let guided=null;
 function guidedStep(){if(!guided||mode!=='idle')return;
  if(guided.i>=guided.q.length){guided=null;$('gst').textContent='Listo ✔ (recalibrando…)';setTimeout(()=>{calib();$('gst').textContent='Listo ✔';st('Muestras guardadas. Repite las pruebas P1–P3.')},50);return}
- cur=guided.q[guided.i];chips();$('gst').textContent=cur+'  (toma '+(guided.i%3+1)+'/3 · '+(guided.i+1)+' de '+guided.q.length+')';$('rec').click()}
-$('gbtn').onclick=()=>{if(guided||mode!=='idle'||running||test)return;guided={q:FLOJAS.flatMap(w=>[w,w,w]),i:0};guidedStep()};
+ cur=guided.q[guided.i];chips();$('gst').textContent=cur+'  (toma '+(guided.i%NTOMAS+1)+'/'+NTOMAS+' · '+(guided.i+1)+' de '+guided.q.length+')';$('rec').click()}
+$('gbtn').onclick=()=>{if(guided||mode!=='idle'||running||test)return;guided={q:FLOJAS.flatMap(w=>Array(NTOMAS).fill(w)),i:0};guidedStep()};
 $('gstop').onclick=()=>{if(guided){guided=null;$('gst').textContent='Detenido';calib()}};
 
 // ── modo con pausa: al bajar las manos se cierra el segmento y se clasifica como palabra aislada ──

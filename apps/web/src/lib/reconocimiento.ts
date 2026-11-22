@@ -17,6 +17,8 @@ export interface OpcionesReconocedor {
   /** Terminó una seña pero no se pudo decidir entre dos glosas: conviene pedir "repite". */
   onDuda?: (a: string, b: string) => void;
   onError?: (e: unknown) => void;
+  /** Depuración (?debug): las glosas candidatas de cada seña clasificada, de mejor a peor, con su distancia. */
+  onRanking?: (ranking: { gloss: string; dist: number }[]) => void;
 }
 
 export interface Reconocedor {
@@ -50,6 +52,7 @@ export async function iniciarReconocedor(video: HTMLVideoElement, o: OpcionesRec
   let vivo = true;
   let ultimoTiempo = -1;
   let ultimaDuda: unknown = null;
+  let ultimaN = 0;
   const paso = () => {
     if (!vivo) return;
     requestAnimationFrame(paso);
@@ -74,6 +77,7 @@ export async function iniciarReconocedor(video: HTMLVideoElement, o: OpcionesRec
       const ff = extractFeatures(P, H, ahora, video.videoWidth / video.videoHeight);
       if (!ff) return;
       const r = rec.push(ff);
+      if (rec.ultima.n !== ultimaN) { ultimaN = rec.ultima.n; o.onRanking?.(rec.ultima.ranking); }
       if (r) { ultimaDuda = null; o.onGlosa(r.gloss, r.confidence); }
       else if (rec.dudosa && rec.dudosa !== ultimaDuda) { ultimaDuda = rec.dudosa; o.onDuda?.(rec.dudosa.a, rec.dudosa.b); }
     } catch (e) {
