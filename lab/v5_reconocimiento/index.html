@@ -91,23 +91,26 @@ $('eval').onclick=()=>{let ok=0,tot=0;const conf={};
  for(const s of samples){const others=samples.filter(x=>x!==s);if(!others.some(x=>x.label===s.label))continue;
   const best={};for(const o of others){const d=dtw(resample(s.frames,N_T),o.T);if(!(o.label in best)||d<best[o.label])best[o.label]=d}
   const r=Object.entries(best).sort((a,b)=>a[1]-b[1]);tot++;if(r[0][0]===s.label)ok++;else{const k=s.label+' → '+r[0][0];conf[k]=(conf[k]||0)+1}}
- $('evalr').innerHTML=tot?`<h3>Palabras aisladas: ${ok}/${tot} = ${Math.round(100*ok/tot)}%</h3>`+Object.entries(conf).map(([k,v])=>`<div class="mut">confunde ${k} ×${v}</div>`).join(''):'<p class="mut">Necesitas ≥2 muestras por palabra.</p>'};
+ $('evalr').innerHTML=tot?`<h3>${ok} de ${tot} tomas bien identificadas (${Math.round(100*ok/tot)}%)</h3><div class="mut">Se esconde cada toma y se adivina con las demás.</div>`+Object.entries(conf).map(([k,v])=>`<div class="mut">confunde ${k} ×${v}</div>`).join(''):'<p class="mut">Necesitas ≥2 muestras por palabra.</p>'};
 
 function finishRec(){const seg=buf;buf=[];$('rec').classList.remove('on');mode='idle';
  if(seg.length<MIN_FR){st('Muy corta ('+seg.length+' frames), repite');return}
  fetch('/api/muestra?label='+cur,{method:'POST',body:JSON.stringify({frames:seg.map(f=>f.map(x=>+x.toFixed(4)))})}).then(load).then(()=>st('Muestra de '+cur+' guardada ✔ ('+seg.length+' frames)'))}
 
 // ── reconocimiento continuo: cada EVAL_EVERY frames se compara cada plantilla con el final del buffer ──
-let nf=0,cand=null,lockUntil=0,hist=[];
+let nf=0,cand=null,lockUntil=0,hist=[],lastEmit='',moved=true;
+const MOV=0.006; // movimiento medio de muñecas por frame (en anchos de hombro) para considerar que se está señando
+function motion(B){const n=Math.min(8,B.length-1);if(n<3)return 0;let t=0;for(let k=B.length-n;k<B.length;k++)for(const i of [4,5,6,7])t+=Math.abs(B[k][i]-B[k-1][i]);return t/(n*4)}
 function evalStream(now){if(!samples.length)return;const B=buf.slice(-WIN);if(B.length<MIN_FR)return;
+ if(motion(B)<MOV){cand=null;lastEmit='';$('top').textContent='quieto (mueve las manos para señar)';return}
  const best={};for(const s of samples){const c=subDtw(s.T,B);if(!(s.label in best)||c<best[s.label])best[s.label]=c}
  const r=Object.entries(best).map(([l,c])=>({l,c,r:c/(thr[l].base||1)})).sort((a,b)=>a.r-b.r);
  $('top').textContent=r.slice(0,3).map(x=>x.l+' '+x.r.toFixed(2)).join(' · ')+'  (≤'+sens+' = acepta)';
- const a=r[0],b=r[1],ok=a.r<=sens&&(!b||a.r<b.r*0.85)&&now>lockUntil;
+ const a=r[0],b=r[1],ok=a.r<=sens&&(!b||a.r<b.r*0.85)&&now>lockUntil&&a.l!==lastEmit;
  if(ok){if(!cand||cand.l!==a.l||a.r<cand.r)cand={l:a.l,r:a.r,n:0,t:now};else cand.n++}
  else if(cand){cand.n++}
  // emitir cuando el candidato dejó de mejorar (mínimo local) o ya no cumple
- if(cand&&(cand.n>=3||(!ok&&cand.n>=1))){emit(cand.l,cand.r);cand=null;lockUntil=now+250;buf=buf.slice(-5)}}
+ if(cand&&(cand.n>=3||(!ok&&cand.n>=1))){emit(cand.l,cand.r);lastEmit=cand.l;cand=null;lockUntil=now+500;buf=[]}}
 // ── salida: palabras → sim_llamada (cliente): v2 las arma en frase natural, v1 (TTS) la dice al ejecutivo ──
 let pending=[],lastWord=0,ws=null;
 const showPend=()=>$('pend').textContent=pending.join(' ')||'—';
@@ -135,18 +138,19 @@ await load();st('Listo. Graba 3+ muestras por palabra y prueba.');
 let importing=false;
 $('imp').onclick=async()=>{if(importing)return;importing=true;running=false;
  const names=await (await fetch('/api/videos')).json(),have=new Set(samples.map(s=>s.src).filter(Boolean)),todo=names.filter(n=>!have.has(n));
- const vi=document.createElement('video');vi.muted=true;vi.playsInline=true;let ok=0,sk=0;
+ const vi=document.createElement('video');vi.muted=true;vi.playsInline=true;let ok=0,sk=0;const bad=[];
  for(let k=0;k<todo.length;k++){const n=todo[k];$('impst').textContent=`procesando ${k+1}/${todo.length}: ${n}`;
   const seq=[];vi.src='/video/'+n+'.webm';try{await vi.play()}catch(e){continue}vi.playbackRate=2;
   await new Promise(res=>{const step=()=>{if(vi.ended)return res();
     const t=performance.now(),pr=pose.detectForVideo(vi,t),hr=hands.detectForVideo(vi,t+0.01),P=pr.landmarks[0];
-    if(P&&[11,12,13,14,15,16].every(i=>(P[i].visibility??1)>0.3)){const H={};hr.landmarks.forEach((h,i)=>{H[hr.handednesses[i][0].categoryName]=h});seq.push({a:active(P),f:feat(P,H)})}
+    if(P&&[11,12].every(i=>(P[i].visibility??1)>0.3)){const H={};hr.landmarks.forEach((h,i)=>{H[hr.handednesses[i][0].categoryName]=h});seq.push({a:active(P),f:feat(P,H)})}
     vi.requestVideoFrameCallback(step)};vi.onended=res;vi.requestVideoFrameCallback(step)});
   const ia=seq.map(x=>x.a),i0=ia.indexOf(true),i1=ia.lastIndexOf(true);
-  if(i0<0||i1-i0<MIN_FR){sk++;continue}
+  if(seq.length<MIN_FR){sk++;bad.push(n+': no se vio el cuerpo ('+seq.length+' frames)');continue}
+  if(i0<0||i1-i0<MIN_FR){sk++;bad.push(n+': manos nunca arriba ('+seq.length+' frames)');continue}
   const fr=seq.slice(Math.max(0,i0-2),i1+3).map(x=>x.f.map(v=>+v.toFixed(4)));
   await fetch('/api/muestra?label='+n.replace(/__\d+$/,''),{method:'POST',body:JSON.stringify({frames:fr,src:n})});ok++}
- importing=false;await load();$('impst').textContent=`listo: ${ok} importadas, ${sk} descartadas (sin manos arriba)`;st('Importación lista. Aprieta Reconocer.')};
+ importing=false;await load();$('impst').innerHTML=`listo: ${ok} importadas, ${sk} descartadas`+(bad.length?'<br><small>'+bad.join('<br>')+'</small>':'');console.log(bad.join('\n'));st('Importación lista. Aprieta Reconocer.')};
 let last=-1;
 (function loop(){requestAnimationFrame(loop);if(importing||video.readyState<2||video.currentTime===last)return;last=video.currentTime;const now=performance.now();
  const pr=pose.detectForVideo(video,now),hr=hands.detectForVideo(video,now);ctx.clearRect(0,0,cv.width,cv.height);
@@ -154,7 +158,7 @@ let last=-1;
  const H={};hr.landmarks.forEach((h,i)=>{H[hr.handednesses[i][0].categoryName]=h});
  ctx.fillStyle='#4f8';for(const i of [11,12,13,14,15,16])ctx.fillRect(P[i].x*cv.width-3,P[i].y*cv.height-3,6,6);
  ctx.fillStyle='#fc4';for(const h of Object.values(H))for(const p of h)ctx.fillRect(p.x*cv.width-2,p.y*cv.height-2,4,4);
- if(![11,12,13,14,15,16].every(i=>(P[i].visibility??1)>0.3))return;
+ if(![11,12].every(i=>(P[i].visibility??1)>0.3))return;
  const act=active(P);
  if(mode==='rec'){if(act){lastAct=now;buf.push(feat(P,H))}else if(buf.length){buf.push(feat(P,H));if(now-lastAct>END_MS)finishRec()}}
  else if(running){
