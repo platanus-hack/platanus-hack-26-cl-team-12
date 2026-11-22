@@ -77,11 +77,14 @@ def test_llamada_with_empty_allowlist_blocks_everything(monkeypatch):
 
 def test_llamada_allowlist_trims_spaces(monkeypatch):
     monkeypatch.setenv("ALLOWED_DESTINATIONS", " +56911111111 , ,+56922222222")
-    assert client.post("/llamadas", json={"room": "x", "numero": "+56922222222"}).status_code == 501
+    monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
+    # Pasa la lista permitida (con espacios) y llega a la configuración de Twilio, que falta: 503.
+    assert client.post("/llamadas", json={"room": "x", "numero": "+56922222222"}).status_code == 503
 
 
 def test_llamada_requires_body_fields():
-    assert client.post("/llamadas", json={"numero": "+56911111111"}).status_code == 422
+    # `room` es opcional desde el plan C (Twilio sin LiveKit); `numero` sigue siendo obligatorio.
+    assert client.post("/llamadas", json={"room": "x"}).status_code == 422
     assert client.post("/llamadas", json={}).status_code == 422
 
 
