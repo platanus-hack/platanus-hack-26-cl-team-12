@@ -41,13 +41,16 @@ El CD corre en `rlabbev/puente` y en **cualquier repo con la variable `CD_DEPLOY
    puede conectar a repos de la organización salvo que un admin de `platanus-hack` instale su GitHub App ahí. Si no se
    puede, usa un espejo propio con doble push (§1) y conecta ese.
 2. En Render: New → **Blueprint** → ese repo (rama `main`) → carga los secretos, incluidos `TWILIO_AUTH_TOKEN` y
-   `CLIENTE_WS_TOKEN` (sin ellos la API en producción rechaza `/twilio/*`).
+   `CLIENTE_WS_TOKEN` (sin ellos la API en producción rechaza `/twilio/*`), y `NUMERO_DEMO` (debe estar en
+   `ALLOWED_DESTINATIONS`; sin él `POST /llamadas` responde 422). En `puente-web`, `NEXT_PUBLIC_CLIENTE_WS_TOKEN` con
+   el **mismo valor** que `CLIENTE_WS_TOKEN` (se hornea en el build: si cambia, redesplegar la web).
 3. En GitHub, en el repo donde corre el CD:
    ```bash
    gh variable set CD_DEPLOY --body true --repo <repo>
    gh secret set RENDER_DEPLOY_HOOK_API   --repo <repo>
    gh secret set RENDER_DEPLOY_HOOK_AGENT --repo <repo>
    gh secret set RENDER_DEPLOY_HOOK_WEB   --repo <repo>
+   gh secret set CLIENTE_WS_TOKEN         --repo <repo>   # la APK lo hornea al compilar
    gh variable set PUBLIC_API_URL --repo <repo> --body https://<tu-api>.onrender.com   # si no es puente-api
    ```
 4. Primera vez a mano: `gh workflow run CD --repo <repo>`. Después despliega solo con cada CI verde en `main`.
