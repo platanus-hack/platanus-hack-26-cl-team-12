@@ -37,7 +37,10 @@ class Traductor:
             import anthropic
 
             # Lee ANTHROPIC_API_KEY, TRANSLATOR_MODEL, GLOSSES_PATH y ESCENARIO del entorno.
-            self._translator = Translator(anthropic.Anthropic(), load_glossary(), load_escenario())
+            self._translator = Translator(
+                # Sin esto el SDK espera hasta 10 min con 2 reintentos: la llamada quedaba muerta si Claude se colgaba.
+                anthropic.Anthropic(timeout=10, max_retries=1), load_glossary(), load_escenario()
+            )
         return self._translator
 
     async def simplificar(self, texto: str) -> SimpleResult:

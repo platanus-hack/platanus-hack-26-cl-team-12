@@ -350,6 +350,9 @@ main.vl { position: relative; max-width: 560px; height: 100dvh; margin: 0 auto; 
 .vl-avatar { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; }
 .vl-avatar > svg { height: 112%; width: auto; margin-top: -4%; }
 .vl-cabeza { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; }
+/* Datos sin seña (hora, RUT, nombre): grandes y legibles sobre el avatar */
+.vl-datos { position: absolute; top: 56px; right: 10px; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; max-width: 70%; }
+.vl-datos li { padding: 6px 14px; border-radius: 14px; background: rgba(0, 0, 0, 0.7); color: #fff; font-size: clamp(1.4rem, 5vw, 2rem); font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .vl-cabeza .row-txt { padding: 6px 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(8px); color: #fff; width: fit-content; }
 .vl-cabeza .row-txt strong { font-size: 0.92rem; font-weight: 700; }
 .vl-cabeza .row-txt span { color: rgba(255, 255, 255, 0.82); font-size: 0.78rem; font-variant-numeric: tabular-nums; }

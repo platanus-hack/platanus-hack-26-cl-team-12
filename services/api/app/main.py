@@ -17,21 +17,21 @@ import os
 import re
 import tomllib
 import uuid
+from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
+from app import voz as voz_mod
 from app.config import es_produccion
 from app.llamada import router as llamada_router
-from app.llamada import sala
+from app.llamada import sala, token_valido
 from app.traductor import DEFAULT_PATH
+from app.twilio_media import FRASES_FIJAS
 from app.twilio_media import router as twilio_router
-
-load_dotenv()
 
 # Registro de la llamada (sin datos personales: largos, tiempos e ids). PUENTE_LOG=WARNING para silenciarlo.
 logging.basicConfig(format="%(asctime)s.%(msecs)03d %(name)s | %(message)s", datefmt="%H:%M:%S")
@@ -78,7 +78,18 @@ TAGS = [
 ]
 
 _docs = docs_habilitados()
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # La voz de las frases fijas se genera en segundo plano: el arranque no espera a ElevenLabs y la primera llamada
+    # ya no paga el TTS dentro del webhook de Twilio.
+    tarea = asyncio.create_task(voz_mod.voz.precalentar(FRASES_FIJAS))
+    yield
+    tarea.cancel()
+    await voz_mod.cerrar()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Puente - llamadas accesibles",
     description=DESCRIPCION,
     version=version_api(),
@@ -243,11 +254,13 @@ def llamar_con_twilio(numero: str, base: str) -> tuple[str, str]:
     "/llamadas", tags=["llamada"], summary="Llamar al ejecutivo por teléfono (v1)",
     response_model=LlamadaResponse, responses=errores(403, 422, 503),
 )
-async def crear_llamada(req: LlamadaRequest) -> LlamadaResponse:
+async def crear_llamada(req: LlamadaRequest, token: str | None = None) -> LlamadaResponse:
     """v1 (plan C): Twilio llama al ejecutivo y la conversación sigue por /twilio/* y el WebSocket /twilio/cliente.
 
-    TODO(auth): exigir el token del cliente y limitar la tasa antes de desplegar (A4).
+    Exige el mismo `?token=` que el WebSocket (A4). TODO(auth): limitar la tasa y token por sesión.
     """
+    if not token_valido(token):
+        raise HTTPException(403, "Token inválido")
     # Demo: los contactos de la app no tienen teléfono; todos llaman al teléfono de la demo (NUMERO_DEMO).
     # TODO(real-data): cada contacto con su número real.
     numero = (req.numero or os.getenv("NUMERO_DEMO", "")).strip()
@@ -263,4 +276,5 @@ async def crear_llamada(req: LlamadaRequest) -> LlamadaResponse:
         raise HTTPException(503, "Twilio no configurado (TWILIO_* y PUBLIC_BASE_URL con https://)")
     sid, estado = await asyncio.to_thread(llamar_con_twilio, numero, base)
     sala.llamadas_creadas.add(sid)
+    sala.ultima_creada = sid
     return LlamadaResponse(sid=sid, estado=estado)

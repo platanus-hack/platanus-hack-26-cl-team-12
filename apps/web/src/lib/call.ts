@@ -18,7 +18,9 @@ export interface CallOpts {
   destino?: string;
 }
 
-const ESPERA_CONEXION_MS = 8000;
+// La API en el plan gratis de Render se duerme y tarda ~30-60 s en despertar: con 8 s la primera llamada fallaba.
+// Además la app la despierta al abrirse (despertarServidor).
+const ESPERA_CONEXION_MS = 20_000;
 
 /**
  * Dirección del servidor. En desarrollo, si no está configurada, usa el de tu computador (localhost:8000).
@@ -31,12 +33,23 @@ function apiUrl(): string {
   throw new Error("la app no tiene configurado el servidor (NEXT_PUBLIC_API_URL)");
 }
 
+/** Pide /health sin esperar la respuesta: si la API estaba dormida, empieza a despertar antes de que el usuario llame. */
+export function despertarServidor(): void {
+  try {
+    void fetch(apiUrl() + "/health", { cache: "no-store" }).catch(() => {});
+  } catch {
+    // sin NEXT_PUBLIC_API_URL en producción: el error se muestra al llamar
+  }
+}
+
 export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Promise<CallHandle> {
   // A4: la API exige `?token=CLIENTE_WS_TOKEN` cuando está configurado. Es una clave de demo compartida (queda en el
   // navegador), no un secreto de usuario. TODO(real-data): token por sesión cuando haya login real.
   const token = process.env.NEXT_PUBLIC_CLIENTE_WS_TOKEN?.trim();
   const ws = new WebSocket(apiUrl().replace(/^http/, "ws") + "/twilio/cliente" + (token ? `?token=${encodeURIComponent(token)}` : ""));
   let colgo = false;
+  let sid: string | null = null; // CallSid de POST /llamadas: lo exige /twilio/colgar
+  let abierto = false; // si nunca abrió, el error lo informa reject (no hay llamada que "se cortó")
 
   return new Promise((resolve, reject) => {
     const plazo = setTimeout(() => {
@@ -46,15 +59,17 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
 
     ws.onopen = async () => {
       clearTimeout(plazo);
+      abierto = true;
       // Con el canal abierto (para no perder el `estado` inicial), la API hace sonar el teléfono del ejecutivo.
       if (destino) {
         try {
-          const r = await fetch(apiUrl() + "/llamadas", {
+          const r = await fetch(apiUrl() + "/llamadas" + (token ? `?token=${encodeURIComponent(token)}` : ""), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ destino }),
           });
           if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { detail?: string }).detail ?? `error ${r.status}`);
+          sid = ((await r.json().catch(() => ({}))) as { sid?: string }).sid ?? null;
         } catch (e) {
           colgo = true;
           ws.close();
@@ -69,8 +84,15 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
         },
         leave() {
           colgo = true;
-          // TODO(v1, A): la API todavía no tiene un endpoint para cortar la llamada de Twilio; hoy solo se cierra
-          // el canal con la app y el teléfono sigue hasta que el ejecutivo corta.
+          // Corta también el teléfono (antes seguía hasta que el ejecutivo cortaba y sus frases se colaban en la
+          // llamada siguiente). keepalive: el pedido sale aunque se cierre la pantalla.
+          if (sid) {
+            const q = new URLSearchParams({ sid, ...(token ? { token } : {}) });
+            void fetch(apiUrl() + "/twilio/colgar?" + q.toString(), {
+              method: "POST",
+              keepalive: true,
+            }).catch(() => {});
+          }
           ws.close();
         },
       });
@@ -86,7 +108,8 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
     ws.onclose = () => {
       clearTimeout(plazo);
       // Revisión de código (D, punto 5): sin esto, si se cae la conexión la app queda en "En llamada" para siempre.
-      if (!colgo) onDesconectado?.();
+      // Solo si la llamada alcanzó a abrir: si no, quedaba en "Califica tu llamada" de una llamada que nunca existió.
+      if (abierto && !colgo) onDesconectado?.();
     };
   });
 }

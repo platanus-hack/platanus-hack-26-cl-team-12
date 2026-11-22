@@ -5,7 +5,7 @@
   "description": "Llamadas telefónicas para personas sordas: lo que te dicen en lengua de señas y subtítulos, y lo que respondes en voz.",
   "lang": "es-CL",
   "dir": "ltr",
-  "start_url": "/?mock=1",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -52,7 +52,7 @@
     {
       "name": "Pedir una ambulancia",
       "short_name": "Ambulancia",
-      "url": "/?mock=1&llamar=urgencias",
+      "url": "/?llamar=urgencias",
       "icons": [
         {
           "src": "/icons/icon-192.png",
