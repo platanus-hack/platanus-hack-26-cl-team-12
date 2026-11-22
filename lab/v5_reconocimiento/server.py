@@ -7,6 +7,7 @@ from urllib.parse import urlparse, parse_qs
 
 HERE = Path(__file__).resolve().parent
 RECO = HERE.parents[1] / "data" / "reco"; RECO.mkdir(parents=True, exist_ok=True)
+VID = HERE.parents[1] / "data" / "signs-video"   # symlink a los videos crudos del avatar (no se versionan)
 OK = re.compile(r"[A-Z0-9_-]{1,40}")
 
 class H(SimpleHTTPRequestHandler):
@@ -17,6 +18,12 @@ class H(SimpleHTTPRequestHandler):
     def do_GET(self):
         if urlparse(self.path).path == "/api/muestras":
             return self._json([dict(json.loads(f.read_text()), file=f.stem) for f in sorted(RECO.glob("*.json"))])
+        if urlparse(self.path).path == "/api/videos":   # tomas del avatar disponibles para importar como plantillas
+            return self._json([f.stem for f in sorted(VID.glob("*.webm")) if not f.stem.startswith("FRASE")])
+        m = re.fullmatch(r"/video/([A-Z0-9_-]+)\.webm", urlparse(self.path).path)
+        if m and (VID / f"{m.group(1)}.webm").exists():
+            b = (VID / f"{m.group(1)}.webm").read_bytes(); self.send_response(200); self.send_header("Content-Type", "video/webm")
+            self.send_header("Content-Length", str(len(b))); self.end_headers(); return self.wfile.write(b)
         return super().do_GET()
     def do_POST(self):
         u = urlparse(self.path); q = parse_qs(u.query)

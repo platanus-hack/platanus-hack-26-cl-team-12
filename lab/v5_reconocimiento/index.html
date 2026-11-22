@@ -15,7 +15,7 @@ small,.mut{color:#999}table{border-collapse:collapse}td{padding:2px 8px;border-b
 <div class="cam"><video id="v" playsinline muted></video><canvas id="c"></canvas></div>
 <div class="panel">
  <div id="st">Iniciando…</div>
- <h3>1 · Grabar palabras <small>(una seña por muestra: sube las manos, seña, bájalas)</small></h3>
+ <h3>0 · Usar las grabaciones del avatar</h3><p><button id="imp" class="go">📥 Importar grabaciones del avatar</button> <span id="impst" class="mut"></span></p><h3>1 · (opcional) Grabar más palabras <small>(una seña por muestra: sube las manos, seña, bájalas)</small></h3>
  <div id="chips"></div>
  <p><input id="otra" placeholder="otra etiqueta (ej. HOLA)" size="16"> <button id="add">+</button></p>
  <p><button id="rec">⏺ Grabar muestra (cuenta 3 s)</button> <span id="cnt" class="mut"></span></p>
@@ -58,7 +58,7 @@ function subDtw(T,B){const n=T.length,m=B.length;let pc=new Float64Array(m+1),pl
    cc[j]=d+bc;cl[j]=bl+1}
   pc=cc;pl=cl}
  return pc[m]/pl[m]}
-const prep=s=>({label:s.label,file:s.file,frames:s.frames,T:resample(s.frames,N_T)});
+const prep=s=>({label:s.label,file:s.file,src:s.src,frames:s.frames,T:resample(s.frames,N_T)});
 
 // ── umbrales por palabra: costo típico entre muestras de la misma palabra ──
 function calib(){for(const k in thr)delete thr[k];const W=samples.filter(s=>isW(s.label));
@@ -115,8 +115,24 @@ const G='https://storage.googleapis.com/mediapipe-models/';
 const pose=await mk(PoseLandmarker,G+'pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',{numPoses:1});
 const hands=await mk(HandLandmarker,G+'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',{numHands:2});
 await load();st('Listo. Graba 3+ muestras por palabra y prueba.');
+// importar videos ya grabados: se procesan con los mismos modelos y se guardan como muestras
+let importing=false;
+$('imp').onclick=async()=>{if(importing)return;importing=true;running=false;
+ const names=await (await fetch('/api/videos')).json(),have=new Set(samples.map(s=>s.src).filter(Boolean)),todo=names.filter(n=>!have.has(n));
+ const vi=document.createElement('video');vi.muted=true;vi.playsInline=true;let ok=0,sk=0;
+ for(let k=0;k<todo.length;k++){const n=todo[k];$('impst').textContent=`procesando ${k+1}/${todo.length}: ${n}`;
+  const seq=[];vi.src='/video/'+n+'.webm';try{await vi.play()}catch(e){continue}vi.playbackRate=2;
+  await new Promise(res=>{const step=()=>{if(vi.ended)return res();
+    const t=performance.now(),pr=pose.detectForVideo(vi,t),hr=hands.detectForVideo(vi,t+0.01),P=pr.landmarks[0];
+    if(P&&[11,12,13,14,15,16,23,24].every(i=>(P[i].visibility??1)>0.3)){const H={};hr.landmarks.forEach((h,i)=>{H[hr.handednesses[i][0].categoryName]=h});seq.push({a:active(P),f:feat(P,H)})}
+    vi.requestVideoFrameCallback(step)};vi.onended=res;vi.requestVideoFrameCallback(step)});
+  const ia=seq.map(x=>x.a),i0=ia.indexOf(true),i1=ia.lastIndexOf(true);
+  if(i0<0||i1-i0<MIN_FR){sk++;continue}
+  const fr=seq.slice(Math.max(0,i0-2),i1+3).map(x=>x.f.map(v=>+v.toFixed(4)));
+  await fetch('/api/muestra?label='+n.replace(/__\d+$/,''),{method:'POST',body:JSON.stringify({frames:fr,src:n})});ok++}
+ importing=false;await load();$('impst').textContent=`listo: ${ok} importadas, ${sk} descartadas (sin manos arriba)`;st('Importación lista. Aprieta Reconocer.')};
 let last=-1;
-(function loop(){requestAnimationFrame(loop);if(video.readyState<2||video.currentTime===last)return;last=video.currentTime;const now=performance.now();
+(function loop(){requestAnimationFrame(loop);if(importing||video.readyState<2||video.currentTime===last)return;last=video.currentTime;const now=performance.now();
  const pr=pose.detectForVideo(video,now),hr=hands.detectForVideo(video,now);ctx.clearRect(0,0,cv.width,cv.height);
  const P=pr.landmarks[0];if(!P)return;
  const H={};hr.landmarks.forEach((h,i)=>{H[hr.handednesses[i][0].categoryName]=h});

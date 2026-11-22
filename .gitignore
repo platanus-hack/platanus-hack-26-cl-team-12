@@ -125,3 +125,4 @@ apps/web/public/models/
 
 # Muestras de reconocimiento (landmarks propios, locales)
 data/reco/
+data/signs-video
