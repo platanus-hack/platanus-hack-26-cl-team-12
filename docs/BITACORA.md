@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Tomás / Claude (v1/turnos-cliente-primero) · la llamada parte con la persona sorda y los turnos alternan
+- Hice: `/twilio/voz` ya no escucha al ejecutivo tras el saludo: saluda y va a `/twilio/espera` hasta que la persona sorda envíe su primer mensaje. Antes (ejecutivo primero) el primer mensaje del cliente quedaba en cola sin que nadie lo dijera y solo salía cuando el ejecutivo hablaba, desordenando los turnos. Saludo ajustado ("La persona le hablará en unos segundos…"). Test actualizado; pytest api 57 OK.
+- Decidí: orden estricto cliente → ejecutivo → cliente… (espera → dice → escucha → turno → espera).
+- Falta / bloqueado: probar con llamada real (no probado en Twilio); redesplegar `puente-api`. Si el ejecutivo habla durante el turno del cliente, `ejecutivo_dice` borra las glosas que llevaba señadas (CallPanel).
+
 ## 2026-11-22 — Tomás / Claude (v3/senas-reales) · la lectura real de señas pasa a ser la de por defecto
 - Hice: `RECONOCER_SENAS` ahora está activa salvo `NEXT_PUBLIC_RECONOCER_SENAS=0`. Antes exigía `=1`: en el deploy de `main` (que ni siquiera tiene aún el PR #35) la app usaba la lectura simulada y **Enviar mandaba la respuesta completa del guion (todo P1) aunque la persona no hubiera señado nada**.
 - Decidí: la simulación solo por opt-in explícito; así un build sin variable nunca envía lo que no se señó.
