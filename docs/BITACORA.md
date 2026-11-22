@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4/llamada-real) · la app se conecta a la llamada real de Martín
+- Hice: `apps/web/src/lib/call.ts` se conecta por defecto al WebSocket `/twilio/cliente` de `services/api` (plan C de A); LiveKit queda detrás de `NEXT_PUBLIC_TRANSPORTE=livekit`. Arreglos de la revisión de código (D): **5** la app detecta cuando se corta la conexión (aviso y "Llamada terminada", también con LiveKit vía `Disconnected`) y **8** en la app publicada ya no apunta a `localhost:8000` si falta `NEXT_PUBLIC_API_URL` (avisa en vez de fallar en silencio).
+- Verificado sin claves: levanté `services/api` en local y simulé a Twilio con POST a `/twilio/voz`, `/twilio/turno`, `/twilio/espera` y `/twilio/estado`: la app pasa a "En llamada", muestra lo que dice el ejecutivo, la frase del cliente le llega a Twilio para decirla y al cortar queda "Llamada terminada". Apagando el servidor a mitad de llamada, la app avisa el corte.
+- Falta: **A (Martín):** endpoint para que Colgar corte la llamada de Twilio (hoy solo cierra el canal con la app) y token en `/twilio/cliente` (A4). Probar con una llamada real: Martín levanta la API con ngrok y la app usa `NEXT_PUBLIC_API_URL=<url de ngrok>`. Sin `ANTHROPIC_API_KEY` la API manda el texto sin simplificar.
+
 ## 2026-11-21 — Rafael / Claude (v4/pwa-instalable) · D6 PWA instalable y sin internet
 - Hice: íconos PNG (192, 512, maskable y apple-touch) desde el SVG; `manifest.webmanifest` completo (id, start_url `/?mock=1`, portrait, colores, atajo "Pedir una ambulancia" con `?llamar=urgencias`); `public/sw.js` que guarda la app, los JS/CSS de Next, los íconos y las fotos de señas, con la portada primero desde la red y los estáticos primero desde la copia (nunca guarda la API ni LiveKit); registro del SW solo en producción; botón "Instalar app" con `beforeinstallprompt` (Chrome y Samsung Internet); metadatos para iPhone. Script `pnpm --filter @puente/web preview` (build + servidor en :3001).
 - Verificado en Edge (CDP, 390×844): manifest sin errores, **instalable sin errores**, SW activo, 126 archivos guardados y **la llamada simulada completa funciona sin internet** (con fotos de señas).

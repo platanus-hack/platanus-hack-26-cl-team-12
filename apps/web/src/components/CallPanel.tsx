@@ -109,6 +109,15 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     }
   }
 
+  // Se cortó la conexión sin que el usuario colgara: se avisa y la llamada termina (no queda en "En llamada").
+  function onDesconectado() {
+    callRef.current = null;
+    setCall(null);
+    setEsperando(false);
+    setState("ended");
+    setAlert({ message: "Se cortó la conexión con Puente. Revisa tu internet y vuelve a llamar.", tone: "error" });
+  }
+
   async function llamar(d: Destino) {
     setDestino(d);
     destinoRef.current = d;
@@ -120,7 +129,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setAlert(null);
     setState("connecting");
     try {
-      const handle = mock ? await joinMockCall({ onMessage }) : await joinCall({ onMessage });
+      const handle = mock ? await joinMockCall({ onMessage }) : await joinCall({ onMessage, onDesconectado });
       callRef.current = handle;
       setCall(handle);
     } catch (e) {
