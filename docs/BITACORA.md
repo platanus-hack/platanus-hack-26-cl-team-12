@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — r.labbevidal / Claude (v4/senas-s3) · fotos de señas desde S3
+- Hice: la web lee las fotos del Diccionario LSCh desde `NEXT_PUBLIC_SENAS_URL` (bucket S3); si falta, usa `/senas` local como antes (`apps/web/src/lib/senas.ts`). El service worker recibe esa URL al registrarse (`/sw.js?senas=…`) y sigue guardando las fotos para usarlas sin internet (VERSION `puente-v3`). `make senas-push` las sube y `make senas-pull` las baja (combinado con chore/senas-s3).
+- Decidí: fotos con caché larga e inmutable; `manifest.json` sin caché. El bucket necesita lectura pública de `senas/*` y CORS con GET para el origen de la web.
+- Falta: subir las fotos al bucket, configurar CORS y poner `NEXT_PUBLIC_SENAS_URL` en `puente-web` (Render) y redesplegar. Ojo derechos UMCE: el bucket queda público, igual que si la web las sirviera.
+
 ## 2026-11-22 — Rafael / Claude (v4/avatar-3d-app-general) · última iteración antes del PR
 - Decidí (Rafael): sin pestaña Emergencias (se cubre en el inicio). Inicio con la ubicación en chico y **"Pedir una ambulancia" destacado en rojo**. Solo la llamada de ambulancia tiene guion completo (es la que se prueba); las demás son un ejemplo corto. **Logo nuevo** (guiones celestes que pasan a ondas de sonido amarillas). La calificación es sobre Puente (avatar, subtítulos, lectura de señas), no sobre la clínica.
 - Hice: lo anterior; íconos PNG de la PWA regenerados con el logo nuevo. **Rendimiento**: el avatar 3D dibuja solo mientras hace señas (antes 60 cuadros por segundo siempre), resolución 1,5× máx. y cámara a 480×640 y 24 fps. 45 tests OK.
@@ -209,5 +214,5 @@ Las entradas nuevas van **arriba**. Formato:
 
 ## 2026-11-22 — Claude (chore/senas-s3) · fotos de señas en S3 privado
 - Hice: `make senas-pull` / `make senas-push` (`aws s3 sync` de `apps/web/public/senas/` ↔ `s3://$SENAS_S3_BUCKET/senas/`) y las variables `SENAS_S3_BUCKET`, `AWS_REGION`, `AWS_PROFILE` en `.env.example`.
-- Decidí: bucket PRIVADO (derechos UMCE): cada persona baja las fotos con sus credenciales en vez de correr `extraer_senas.py` con los PDF. Sin fotos la app sigue usando el avatar de palitos.
+- Decidí: bucket PRIVADO (derechos UMCE): cada persona baja las fotos con sus credenciales en vez de correr `extraer_senas.py` con los PDF. **Cambió después:** `senas/*` quedó de lectura pública para que la web desplegada muestre las fotos (ver v4/senas-s3). Sin fotos la app sigue usando el avatar de palitos.
 - Falta: crear el bucket (la sesión de AWS había expirado) y que alguien con las fotos generadas corra `make senas-push`.
