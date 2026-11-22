@@ -8,6 +8,15 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — r.labbevidal / Claude (v4/vista-web) · vista web en el computador
+- Hice: desde 1024 px la app deja de ser una columna de 560 px. La barra y las pestañas pasan a una barra lateral; el inicio va en dos columnas (contactos frecuentes y acciones a la izquierda, consejos a la derecha, cómo funciona abajo; los carruseles se vuelven grilla). La llamada tiene el intérprete y tu cámara a la izquierda, el chat fijo a la derecha (abierto por defecto en computador) y los controles abajo. Todo en un `@media (min-width: 1024px)` al final de `globals.css`, más `.shell` en `AppShell` y `esEscritorio()` en `CallPanel`. En el celular no cambia nada.
+- Verificado: typecheck, build, vitest `call` (4) y `senas` (3). No probado en el navegador (Chrome DevTools no conecta en este equipo).
+- Falta: mirarlo en el navegador a 1280-1440 px y a 390 px (celular), en tema claro y oscuro.
+
+## 2026-11-22 — r.labbevidal / Claude (docs/entrega-platanus) · entrega
+- Hice: `deploy-url` en `platanus-hack-project.jsonc` → https://puente-web.onrender.com/. `project-logo.png` ahora es el logo final de Rafael (10 barras = puente colgante), dibujado desde `apps/web/public/icons/icon.svg` a 1000×1000 (10 KB); antes era el logo genérico de Platanus.
+- Falta: README del proyecto (sigue la plantilla de Platanus).
+
 ## 2026-11-22 — Tomás / Claude (feature/v5-reconocimiento) · lectura de señas de la persona sorda (v3) conectada a la llamada
 - Hice: **la cámara lee las señas y las manda al agente** (ADR-0002). `packages/signs`: reconocedor de señas *aisladas* por plantillas (DTW) con pausa entre señas (`createPauseRecognizer`, `extractFeatures`). `apps/web`: `lib/reconocimiento.ts` (MediaPipe pose+manos desde CDN) enganchado a `CallPanel`/`CamaraPropia` **solo con `NEXT_PUBLIC_RECONOCER_SENAS=1`** (sin eso sigue la lectura simulada). Las glosas se acumulan sobre la cámara y se envían **solo al tocar Enviar** como `glosas_cliente`. Vocabulario cerrado: las 22 glosas de P1–P3 (`apps/web/public/reco/templates.json`, 137 plantillas de Tomás; salen de `data/reco` con `lab/v5_reconocimiento/export_templates.mjs`).
 - Hice (backend, **revisar Rai/Martín**): `services/api/app/llamada.py` **ignoraba `glosas_cliente`** (solo entendía `cliente_dice`): ahora lo convierte con `Translator.glosas_a_espanol` (el del agente) y lo dice por voz. Mensaje nuevo del contrato **`cliente_dijo {texto}`** (backend → app): la frase en español en que se convirtió; se manda **justo cuando empieza a sonar** (cuando `/twilio/espera` la saca de la cola). La app la muestra escrita a la par del audio (`lib/voz.ts`; en el mock sigue los eventos reales de la voz del navegador). El subtítulo del ejecutivo aparece a medida que el avatar firma. Fondo del ejecutivo más oscuro.

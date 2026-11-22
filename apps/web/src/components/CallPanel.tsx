@@ -33,6 +33,8 @@ const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", min
 
 // Id local de cada línea de subtítulo. No se usa crypto.randomUUID: solo existe con HTTPS y falla al probar
 // desde el celular por http://192.168.x.x:3000. (Aporte de Raimundo.)
+const esEscritorio = () => typeof window !== "undefined" && window.matchMedia?.("(min-width: 1024px)").matches === true;
+
 let siguienteId = 0;
 const nuevoId = () => `l${++siguienteId}`;
 
@@ -68,7 +70,8 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   useEffect(() => {
     debugActivo.current = new URLSearchParams(window.location.search).has("debug");
   }, []);
-  const [chat, setChat] = useState(false);
+  // En el computador el chat queda abierto al lado (hay espacio); en el celular es una hoja que se abre.
+  const [chat, setChat] = useState(esEscritorio);
   // true desde que el cliente responde hasta que el otro lado vuelve a hablar.
   const [esperando, setEsperando] = useState(false);
   const esperandoRef = useRef(false);
@@ -238,7 +241,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setAlert(null);
     setLectura({ estado: "esperando" });
     setConversion(null);
-    setChat(false);
+    setChat(esEscritorio());
     setState("connecting");
     try {
       const handle = mock
