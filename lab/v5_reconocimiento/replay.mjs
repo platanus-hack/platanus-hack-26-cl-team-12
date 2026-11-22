@@ -3,7 +3,7 @@
 import fs from 'fs';import path from 'path';import {fileURLToPath} from 'url';
 const HERE=path.dirname(fileURLToPath(import.meta.url)),RECO=path.join(HERE,'../../data/reco');
 const arg=(k,d)=>{const i=process.argv.indexOf('--'+k);return i<0?d:(process.argv[i+1]===undefined||process.argv[i+1].startsWith('--')?true:+process.argv[i+1])};
-const SENS=arg('sens',0.55),DEDUPE=arg('dedupe',0),COOL=arg('cool',500),MOV=arg('mov',0.006),MARGIN=arg('margin',0.85),V=process.argv.includes('--verbose'),FPS=30;
+const CTX=arg('ctx',0),SENS=arg('sens',0.55),DEDUPE=arg('dedupe',0),COOL=arg('cool',500),MOV=arg('mov',0.006),MARGIN=arg('margin',0.85),V=process.argv.includes('--verbose'),FPS=30;
 const MIN_FR=6,N_T=24,WIN=100,EVAL_EVERY=3,END_MS=600;
 const FR={P1:'HOLA AMBULANCIA NECESITAR HIJO-A CAER-PERSONA CODO HUESO ROMPER',P2:'SI HIJO-A DESPERTAR-SE PERO BRAZO APOYAR NO-PODER CODO HINCHADO-A',P3:'SANGRE POCO-A PERO MANO BIEN URGENTE NECESITAR HOSPITAL IR'};
 const DEMO=new Set(Object.values(FR).join(' ').split(' '));
@@ -21,12 +21,15 @@ const motion=B=>{const n=Math.min(8,B.length-1);if(n<3)return 0;let t=0;for(let 
 function align(E,D){const n=E.length,m=D.length,C=Array.from({length:n+1},()=>new Array(m+1).fill(0));for(let i=0;i<=n;i++)C[i][0]=i;for(let j=0;j<=m;j++)C[0][j]=j;
  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)C[i][j]=Math.min(C[i-1][j]+1,C[i][j-1]+1,C[i-1][j-1]+(E[i-1]===D[j-1]?0:1));
  const ops=[];let i=n,j=m;while(i>0||j>0){if(i>0&&j>0&&C[i][j]===C[i-1][j-1]+(E[i-1]===D[j-1]?0:1)){ops.push(E[i-1]===D[j-1]?'ok '+E[i-1]:'sub '+E[i-1]+'→'+D[j-1]);i--;j--}else if(i>0&&C[i][j]===C[i-1][j]+1){ops.push('del '+E[i-1]);i--}else{ops.push('ins '+D[j-1]);j--}}return ops.reverse()}
+const FSETS=Object.fromEntries(Object.entries(FR).map(([k,v])=>[k,new Set(v.split(' '))]));
+function allowedSet(det){if(!CTX)return null;const votes={};for(const k in FSETS)votes[k]=det.filter(d=>FSETS[k].has(d.l)).length;
+ const top=Object.entries(votes).sort((a,b)=>b[1]-a[1]);return top[0][1]>=CTX&&(top[0][1]>top[1][1])?FSETS[top[0][0]]:null}
 function run(frames){let buf=[],nf=0,cand=null,lock=0,lastEmit='',lastAct=0,det=[];
  const emit=(l,t)=>{const p=det[det.length-1];if(DEDUPE&&p&&p.l===l&&t-p.t<DEDUPE)return;det.push({l,t})};
  frames.forEach((fr,k)=>{const now=k*1000/FPS,act=fr[0]===1,f=fr.slice(2);
   if(act){lastAct=now;buf.push(f);if(buf.length>WIN*2)buf=buf.slice(-WIN);if(++nf%EVAL_EVERY===0){
     const B=buf.slice(-WIN);if(B.length<MIN_FR)return;if(motion(B)<MOV){cand=null;lastEmit='';return}
-    const best={};for(const s of samples){const c=subDtw(s.T,B);if(!(s.label in best)||c<best[s.label])best[s.label]=c}
+    const al=allowedSet(det),best={};for(const s of samples){if(al&&!al.has(s.label))continue;const c=subDtw(s.T,B);if(!(s.label in best)||c<best[s.label])best[s.label]=c}
     const r=Object.entries(best).map(([l,c])=>({l,r:c/thr[l]})).sort((a,b)=>a.r-b.r),a=r[0],b=r[1],ok=a.r<=SENS&&(!b||a.r<b.r*MARGIN)&&now>lock&&a.l!==lastEmit;
     if(ok){if(!cand||cand.l!==a.l||a.r<cand.r)cand={l:a.l,r:a.r,n:0};else cand.n++}else if(cand)cand.n++;
     if(cand&&(cand.n>=3||(!ok&&cand.n>=1))){emit(cand.l,now);lastEmit=cand.l;cand=null;lock=now+COOL;buf=[]}}}

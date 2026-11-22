@@ -24,7 +24,7 @@ small,.mut{color:#999}.ok{color:#5d8}.bad{color:#f66}.ins{color:#fb4}.fb.sel{bac
 <div class="panel">
  <h3 style="margin-top:0">Reconocer</h3>
  <p><button id="run" class="go">▶ Reconocer</button> <button id="clr">limpiar</button></p>
- <p>Sensibilidad <input id="sens" type="range" min="0.2" max="1" step="0.05" value="0.65"> <span id="sv">0.65</span><br>
+ <p>Sensibilidad <input id="sens" type="range" min="0.2" max="1" step="0.05" value="0.8"> <span id="sv">0.8</span><br>
  <small>Si no detecta nada, súbela. Si inventa palabras, bájala. (0 = idéntico, 1 = como una palabra cualquiera)</small></p>
  <h3>Prueba guiada <small>(las frases exactas de la demo)</small></h3>
  <p><label><input type="checkbox" id="demo" checked> reconocer solo el vocabulario de la demo (P1–P3)</label></p>
@@ -47,7 +47,7 @@ small,.mut{color:#999}.ok{color:#5d8}.bad{color:#f66}.ins{color:#fb4}.fb.sel{bac
 import {FilesetResolver,PoseLandmarker,HandLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 const $=id=>document.getElementById(id),st=t=>$('st').textContent=t;
 const P1='HOLA AMBULANCIA NECESITAR HIJO-A CAER-PERSONA CODO HUESO ROMPER'.split(' ');
-let labels=[...P1],cur=labels[0],samples=[],mode='idle',buf=[],lastAct=0,running=false,sens=0.65;
+let labels=[...P1],cur=labels[0],samples=[],mode='idle',buf=[],lastAct=0,running=false,sens=0.8;
 const MIN_FR=6,END_MS=600,N_T=24,WIN=100,EVAL_EVERY=3,thr={};
 const isW=l=>!l.startsWith('FRASE');
 const FRASES={P1:'HOLA AMBULANCIA NECESITAR HIJO-A CAER-PERSONA CODO HUESO ROMPER',P2:'SI HIJO-A DESPERTAR-SE PERO BRAZO APOYAR NO-PODER CODO HINCHADO-A',P3:'SANGRE POCO-A PERO MANO BIEN URGENTE NECESITAR HOSPITAL IR'};
@@ -123,7 +123,7 @@ function evalStream(now){const PL=pool();if(!PL.length)return;const B=buf.slice(
  const best={};for(const s of PL){const c=subDtw(s.T,B);if(!(s.label in best)||c<best[s.label])best[s.label]=c}
  const r=Object.entries(best).map(([l,c])=>({l,c,r:c/(thr[l].imp||1)})).sort((a,b)=>a.r-b.r);
  $('top').textContent=r.slice(0,3).map(x=>x.l+' '+x.r.toFixed(2)).join(' · ')+'  (≤'+sens+' = acepta)';
- const a=r[0],b=r[1],ok=a.r<=sens&&(!b||a.r<b.r*0.85)&&now>lockUntil&&a.l!==lastEmit;
+ const a=r[0],b=r[1],ok=a.r<=sens&&(!b||a.r<b.r*0.95)&&now>lockUntil&&a.l!==lastEmit;
  if(ok){if(!cand||cand.l!==a.l||a.r<cand.r)cand={l:a.l,r:a.r,n:0,t:now};else cand.n++}
  else if(cand){cand.n++}
  // emitir cuando el candidato dejó de mejorar (mínimo local) o ya no cumple
