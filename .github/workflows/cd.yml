@@ -1,0 +1,129 @@
+name: CD
+
+# Despliegue continuo. Infra: render.yaml (Blueprint) + apps/mobile/android (Capacitor).
+# - deploy-render: solo en el espejo personal (Render no ve el repo de la org), tras CI verde en main.
+# - android-apk: APK de debug instalable, publicada como Release del repo donde corre.
+# Guía y secretos: docs/DESPLIEGUE.md.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Desplegar en Render
+        type: boolean
+        default: true
+      apk:
+        description: Generar APK Android
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  API_URL: ${{ vars.PUBLIC_API_URL || 'https://puente-api.onrender.com' }}
+  # Commit a desplegar: el que pasó el CI (workflow_run) o el actual (manual).
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  deploy-render:
+    if: >-
+      github.repository == 'rlabbev/puente' &&
+      (github.event_name == 'workflow_dispatch' && inputs.deploy ||
+       github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Disparar Deploy Hooks de Render
+        env:
+          HOOK_API: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+          HOOK_AGENT: ${{ secrets.RENDER_DEPLOY_HOOK_AGENT }}
+          HOOK_WEB: ${{ secrets.RENDER_DEPLOY_HOOK_WEB }}
+        run: |
+          set -euo pipefail
+          for name in API AGENT WEB; do
+            var="HOOK_${name}"
+            hook="${!var}"
+            if [ -z "$hook" ]; then
+              echo "::error::Falta el secreto RENDER_DEPLOY_HOOK_${name} (Render → servicio → Settings → Deploy Hook)"
+              exit 1
+            fi
+            # ref=<sha> despliega exactamente el commit que pasó el CI.
+            code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "${hook}&ref=${SHA}")
+            echo "${name}: HTTP ${code}"
+            case "$code" in 200|202) ;; *) echo "::error::Deploy hook ${name} respondió ${code}"; exit 1 ;; esac
+          done
+
+      - name: Esperar /health de la API (hasta 15 min)
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS --max-time 10 "${API_URL}/health"; then echo; echo "API OK"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::${API_URL}/health no respondió"; exit 1
+
+  android-apk:
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.apk ||
+      github.repository == 'rlabbev/puente' &&
+      github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # crear el Release con la APK
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      # El SDK de Android ya viene en ubuntu-latest ($ANDROID_HOME); setup-android@v3 falla con el sdkmanager actual.
+      - run: echo "sdk.dir=$ANDROID_HOME" > apps/mobile/android/local.properties
+
+      - run: pnpm install --frozen-lockfile
+      - name: Build web (con la URL pública de la API)
+        run: pnpm --filter @puente/web build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ env.API_URL }}
+      - name: Copiar web al proyecto Android
+        run: pnpm exec cap sync android
+        working-directory: apps/mobile
+      - name: Compilar APK (debug)
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: apps/mobile/android
+
+      - name: Nombre del build
+        id: meta
+        run: echo "tag=apk-$(date -u +%Y%m%d-%H%M)-${SHA::7}" >> "$GITHUB_OUTPUT"
+      - run: cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk "puente-${{ steps.meta.outputs.tag }}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: puente-apk
+          path: puente-*.apk
+      - name: Publicar Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          gh release create "$TAG" puente-*.apk \
+            --repo "${{ github.repository }}" --target "$SHA" --prerelease \
+            --title "Puente Android ${TAG#apk-}" \
+            --notes "APK de debug para pruebas. API: ${API_URL}. Instalar: abrir el .apk en el celular y permitir 'orígenes desconocidos'."

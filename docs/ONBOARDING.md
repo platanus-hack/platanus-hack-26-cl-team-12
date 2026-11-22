@@ -53,9 +53,9 @@ Las decisiones técnicas y sus alternativas están en `docs/adr/`.
 ## 4. Repos y cómo se hacen los pushes
 Hay **dos repos con el mismo código**:
 - **Organización (oficial, lo que ve el jurado):** `platanus-hack/platanus-hack-26-cl-team-12`
-- **Personal de Raimundo (desde aquí se despliega):** `<usuario>/<repo>` (por crear; pasos en el README raíz, sección "Deploying & integrations")
+- **Personal de Raimundo (desde aquí se despliega):** `rlabbev/puente` (espejo; Render + CD + APK, ver `docs/DESPLIEGUE.md`)
 
-Por qué: Vercel/Render no pueden conectarse a repos de la organización, solo a repos propios.
+Por qué: Vercel/Render no pueden conectarse a repos de la organización, solo a repos propios. La infra (`render.yaml`, `.github/workflows/cd.yml`, `apps/mobile/android/`) vive en este repo; el CD solo despliega cuando corre en el espejo.
 
 **Reglas:**
 - **Todos** hacen push solo al repo de la **organización** (`origin` normal). No configuren doble push ni creen repos personales.
