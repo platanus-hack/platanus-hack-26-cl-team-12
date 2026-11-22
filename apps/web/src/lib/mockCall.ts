@@ -82,6 +82,18 @@ export async function joinMockCall(opts: {
   let terminada = false;
 
   const later = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
+  if (typeof speechSynthesis !== "undefined") speechSynthesis.getVoices(); // algunos navegadores cargan las voces recién al pedirlas
+
+  /** La voz del navegador más cercana al español chileno: es-CL, luego latinoamericano; nunca la de España si hay otra. */
+  function elegirVoz(): SpeechSynthesisVoice | undefined {
+    const voces = speechSynthesis.getVoices();
+    const lang = (v: SpeechSynthesisVoice) => v.lang.replace("_", "-").toLowerCase();
+    for (const l of ["es-cl", "es-419", "es-mx", "es-us", "es-ar", "es-co"]) {
+      const v = voces.find((x) => lang(x) === l);
+      if (v) return v;
+    }
+    return voces.find((x) => lang(x).startsWith("es") && lang(x) !== "es-es");
+  }
 
   /** Simula el audio que oye el hospital con la voz del navegador (en la llamada real lo dice Twilio). */
   function hablar(texto: string) {
@@ -89,6 +101,8 @@ export async function joinMockCall(opts: {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(texto);
     u.lang = "es-CL";
+    const voz = elegirVoz();
+    if (voz) u.voice = voz;
     const t0 = performance.now();
     u.onstart = () => opts.onVoz?.({ tipo: "inicio" });
     u.onboundary = (e) => opts.onVoz?.({ tipo: "palabra", charIndex: e.charIndex });
