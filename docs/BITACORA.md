@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Rafael / Claude (v4/sin-livekit) · sin LiveKit en la app y revisión de lo comprometido
+- Hice: la app se conecta solo por `/twilio/cliente` (sin LiveKit): fuera el camino de LiveKit de `call.ts`, `livekit-client`, sus pruebas y `NEXT_PUBLIC_TRANSPORTE` (45 tests OK). Revisión de accesibilidad pantalla por pantalla (nombres de botones y campos, alt, tamaño táctil, ids, idioma, títulos): arreglados los puntitos de los carruseles (zona de 24×24, WCAG 2.5.8) y los títulos de videollamada y calificación. `Composer` no manda con Enter mientras el teclado compone (Samsung).
+- Estado frente D: D2, D3, D6 (Android) ✅; D1 sin errores en la revisión propia (falta lector de pantalla real); D5 ⚠️ el avatar dibujado mueve las manos pero no hace las señas reales (las fotos sí); D4 ❌; D7 espera a C.
+- Falta (otros dueños): LiveKit sigue en `services/api` (`/token`, `livekit-api`) y `services/agent` (agente sobre LiveKit Agents) y en los docs/ADR-0005: decidir si se elimina (A y B).
+
 ## 2026-11-22 — Rafael / Claude (v4/navegacion-tema) · llamada como videollamada (FaceTime)
 - Decidí (Rafael): la llamada es una **videollamada**: arriba el **avatar del ejecutivo** haciendo señas (reemplaza las fotos del diccionario) con subtítulos grandes; abajo **la cámara del usuario**, que leerá sus señas, con sus subtítulos. En el menú, el editor pasa a "Elegir avatar del intérprete" (es el avatar que muestra la llamada, no el del usuario).
 - Hice: `CamaraPropia` (cámara frontal espejada con `getUserMedia`, aviso si no hay permiso; no graba ni sale del celular). Las respuestas sugeridas simulan responder con señas ("Leyendo tus señas…" y luego el texto). Controles abajo: Conversación (historial del chat en una hoja), Escribir (teclado de respaldo), Cámara y Colgar. Probado en Edge con cámara de prueba a 390×844.
