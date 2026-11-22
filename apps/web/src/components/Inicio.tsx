@@ -1,8 +1,8 @@
 "use client";
 
-// Pantalla de inicio. Enfoque de la demo: pedir una ambulancia a urgencias de la clínica.
-import { Icon, Logo, type IconName } from "@puente/ui";
-import { BotonInstalar } from "./AppInstalable";
+// Pestaña central: pedir ayuda. Enfoque de la demo: pedir una ambulancia a urgencias de la clínica.
+import { Icon, type IconName } from "@puente/ui";
+import { PERFIL } from "./MenuPerfil";
 
 export interface Destino {
   id: string;
@@ -29,21 +29,12 @@ const PASOS: { icon: IconName; titulo: string; texto: string }[] = [
   { icon: "escribir", titulo: "Respondes con un toque", texto: "Puente se lo dice con voz" },
 ];
 
-const TABS: { icon: IconName; label: string }[] = [
-  { icon: "inicio", label: "Inicio" },
-  { icon: "historial", label: "Historial" },
-  { icon: "avatar", label: "Perfil" },
-];
-
 export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
+  const nombre = PERFIL.nombre.split(" ")[0];
   return (
-    <div className="home">
-      <header className="large-title">
-        <Logo variant="mark" size={34} />
-        <h1>Puente</h1>
-        <BotonInstalar />
-      </header>
-      <p className="lede">Llamadas por teléfono, en texto y lengua de señas.</p>
+    <div className="seccion">
+      <h1 className="titulo-seccion">Hola, {nombre}</h1>
+      <p className="lede">¿Necesitas ayuda? Puente llama por ti.</p>
 
       <button type="button" className="sos" onClick={() => onLlamar(URGENCIAS)}>
         <span className="sos-ico" aria-hidden>
@@ -59,9 +50,9 @@ export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
         <h2 id="t-pasos" className="group-title">Cómo funciona</h2>
         <ul className="group">
           {PASOS.map((p) => (
-            <li key={p.titulo}>
+            <li key={p.titulo} className="fila">
               <span className="row-ico" aria-hidden>
-                <Icon name={p.icon} size={20} />
+                <Icon name={p.icon} size={18} />
               </span>
               <span className="row-txt">
                 <strong>{p.titulo}</strong>
@@ -71,16 +62,6 @@ export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
           ))}
         </ul>
       </section>
-
-      {/* TODO(real-data): Historial y Perfil (frases guardadas, dirección, datos médicos) todavía no existen. */}
-      <nav className="tabbar" aria-label="Secciones">
-        {TABS.map((t, i) => (
-          <button key={t.label} type="button" className={i === 0 ? "tab on" : "tab"} aria-current={i === 0 ? "page" : undefined} aria-disabled={i !== 0 || undefined}>
-            <Icon name={t.icon} size={24} />
-            <span>{t.label}</span>
-          </button>
-        ))}
-      </nav>
     </div>
   );
 }

@@ -1,12 +1,16 @@
 // Intérprete de LSCh dibujado (marcador de posición del reproductor real).
 // Como los intérpretes reales: ropa oscura y fondo liso, para que las manos se lean bien.
 // Mientras `signing` es true, las manos se mueven. TODO(v4): reemplazar por fotos/clips de packages/avatar.
-const PIEL = "#c68863";
-const PIEL_SOMBRA = "#a96f4f";
+const TONOS = {
+  clara: ["#f1c7a5", "#d9a37f"],
+  media: ["#c68863", "#a96f4f"],
+  oscura: ["#7a4b2e", "#5e3720"],
+} as const;
+export type TonoPiel = keyof typeof TONOS;
 const PELO = "#2e211a";
 const ROPA = "#1f232b";
 
-function Mano({ x, y, abierta }: { x: number; y: number; abierta: boolean }) {
+function Mano({ x, y, abierta, PIEL, PIEL_SOMBRA }: { x: number; y: number; abierta: boolean; PIEL: string; PIEL_SOMBRA: string }) {
   return (
     <g transform={`translate(${x} ${y})`}>
       <rect x={-16} y={-20} width={32} height={34} rx={13} fill={PIEL} />
@@ -26,7 +30,8 @@ function Mano({ x, y, abierta }: { x: number; y: number; abierta: boolean }) {
   );
 }
 
-export function Interprete({ signing = false }: { signing?: boolean }) {
+export function Interprete({ signing = false, piel = "media" }: { signing?: boolean; piel?: TonoPiel }) {
+  const [PIEL, PIEL_SOMBRA] = TONOS[piel];
   return (
     <svg className="pu-interprete" viewBox="0 0 300 260" data-signing={signing || undefined} aria-hidden>
       {/* torso y cuello */}
@@ -49,11 +54,11 @@ export function Interprete({ signing = false }: { signing?: boolean }) {
       {/* brazos y manos */}
       <g className="brazo-a">
         <path d="M80 236q-12-46 22-80" fill="none" stroke={ROPA} strokeWidth={34} strokeLinecap="round" />
-        <Mano x={104} y={150} abierta />
+        <Mano x={104} y={150} abierta PIEL={PIEL} PIEL_SOMBRA={PIEL_SOMBRA} />
       </g>
       <g className="brazo-b">
         <path d="M220 236q16-36-12-62" fill="none" stroke={ROPA} strokeWidth={34} strokeLinecap="round" />
-        <Mano x={204} y={170} abierta={false} />
+        <Mano x={204} y={170} abierta={false} PIEL={PIEL} PIEL_SOMBRA={PIEL_SOMBRA} />
       </g>
     </svg>
   );

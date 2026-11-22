@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Interprete } from "./Interprete";
+import { Interprete, type TonoPiel } from "./Interprete";
 
 export interface SignAvatarProps {
   /** De `glosas_para_senar.glosas`. Las usa el reproductor real; no se muestran como texto. */
@@ -10,16 +10,18 @@ export interface SignAvatarProps {
   subtitle?: string;
   /** Si está haciendo señas ahora (mueve las manos del intérprete de ejemplo). */
   signing?: boolean;
+  /** Tono de piel del intérprete dibujado (preferencia del usuario). */
+  piel?: TonoPiel;
   /** El reproductor real (packages/avatar). Sin él se muestra el intérprete de ejemplo. */
   player?: ReactNode;
 }
 
 /** Ventana de video del intérprete (v4), con el subtítulo encima como en una videollamada. */
-export function SignAvatar({ subtitle, signing = false, player }: SignAvatarProps) {
+export function SignAvatar({ subtitle, signing = false, piel, player }: SignAvatarProps) {
   return (
     <section className="pu-avatar" aria-label="Intérprete de lengua de señas">
       <div className="stage">
-        {player ?? <Interprete signing={signing} />}
+        {player ?? <Interprete signing={signing} piel={piel} />}
         <span className="tag">
           <span className="dot" aria-hidden /> Intérprete LSCh
         </span>

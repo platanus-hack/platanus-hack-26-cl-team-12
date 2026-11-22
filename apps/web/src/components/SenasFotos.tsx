@@ -36,9 +36,14 @@ interface Props {
   /** Cambia con cada frase nueva (aunque las glosas se repitan) para reiniciar la secuencia. */
   frase: number;
   onSenando?: (senando: boolean) => void;
+  /** Preferencia del menú: multiplica los tiempos. */
+  velocidad?: "lenta" | "normal" | "rapida";
 }
 
-export function SenasFotos({ manifest, glosas, frase, onSenando }: Props) {
+const FACTOR = { lenta: 1.6, normal: 1, rapida: 0.65 } as const;
+
+export function SenasFotos({ manifest, glosas, frase, onSenando, velocidad = "normal" }: Props) {
+  const f = FACTOR[velocidad];
   const [paso, setPaso] = useState({ i: 0, foto: 0, pausa: false });
 
   useEffect(() => {
@@ -56,16 +61,16 @@ export function SenasFotos({ manifest, glosas, frase, onSenando }: Props) {
   useEffect(() => {
     if (terminado) return;
     if (paso.pausa) {
-      const id = setTimeout(() => setPaso((p) => ({ i: p.i + 1, foto: 0, pausa: false })), MS_PAUSA);
+      const id = setTimeout(() => setPaso((p) => ({ i: p.i + 1, foto: 0, pausa: false })), MS_PAUSA * f);
       return () => clearTimeout(id);
     }
     const hayOtraFoto = paso.foto < fotos.length - 1;
     const id = setTimeout(
       () => setPaso((p) => (hayOtraFoto ? { ...p, foto: p.foto + 1 } : { ...p, pausa: true })),
-      fotos.length ? MS_POR_FOTO : MS_PALABRA,
+      (fotos.length ? MS_POR_FOTO : MS_PALABRA) * f,
     );
     return () => clearTimeout(id);
-  }, [paso, fotos.length, terminado]);
+  }, [paso, fotos.length, terminado, f]);
 
   // Al terminar se queda en la última foto de la última seña.
   const visible = terminado ? glosas[glosas.length - 1] : glosa;

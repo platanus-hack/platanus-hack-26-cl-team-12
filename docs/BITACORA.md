@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · tema oscuro, menú de perfil y pestañas
+- Decidí (Rafael): **oscuro por defecto** con botón sol/luna arriba a la izquierda; la foto de perfil también arriba a la izquierda y abre un **menú desde la derecha** (perfil, personalizar intérprete, accesibilidad, cerrar sesión); abajo **Historial · Llamar (centro) · Emergencias**. LiveKit no se usará.
+- Hice: paleta oscura nueva (contrastes revisados, todo texto ≥ 4,5:1); `lib/preferencias.ts` (se guardan en el celular) con tema, tipo de intérprete (fotos/dibujado), velocidad de señas, tono de piel del intérprete dibujado, texto grande, reducir movimiento, ver texto original y vibrar; script en `<head>` para que no destelle el tema al abrir. `AppShell` (barras), `MenuPerfil`, `Historial` (simulado, con resumen al tocar), `Emergencias` (131 SAMU llama con Puente; 132/133/134 "Pronto"; clínica de ejemplo). Perfil de ejemplo: Camila Rojas. Revisado con capturas en 390×844, oscuro y claro.
+- Falta: perfil, historial e inicio de sesión reales (TODO(real-data)). Sacar el código de LiveKit (`call.ts`, `livekit-client`) en un PR aparte.
+
 ## 2026-11-21 — Rafael / Claude (v4/llamada-real) · la app se conecta a la llamada real de Martín
 - Hice: `apps/web/src/lib/call.ts` se conecta por defecto al WebSocket `/twilio/cliente` de `services/api` (plan C de A); LiveKit queda detrás de `NEXT_PUBLIC_TRANSPORTE=livekit`. Arreglos de la revisión de código (D): **5** la app detecta cuando se corta la conexión (aviso y "Llamada terminada", también con LiveKit vía `Disconnected`) y **8** en la app publicada ya no apunta a `localhost:8000` si falta `NEXT_PUBLIC_API_URL` (avisa en vez de fallar en silencio).
 - Verificado sin claves: levanté `services/api` en local y simulé a Twilio con POST a `/twilio/voz`, `/twilio/turno`, `/twilio/espera` y `/twilio/estado`: la app pasa a "En llamada", muestra lo que dice el ejecutivo, la frase del cliente le llega a Twilio para decirla y al cortar queda "Llamada terminada". Apagando el servidor a mitad de llamada, la app avisa el corte.

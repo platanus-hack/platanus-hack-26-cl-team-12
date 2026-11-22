@@ -13,7 +13,9 @@ import {
 import type { MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
-import { Inicio, URGENCIAS, type Destino } from "./Inicio";
+import { URGENCIAS, type Destino } from "./Inicio";
+import { AppShell } from "./AppShell";
+import { usePreferencias } from "@/lib/preferencias";
 import { SenasFotos, useManifestSenas } from "./SenasFotos";
 
 const AVATAR_MS_POR_SENA = 1300; // igual que el reproductor de fotos de lab/v4_avatar
@@ -36,7 +38,9 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
   const [destino, setDestino] = useState<Destino | null>(null);
   // Fotos de señas (D5). null = no están en este computador: se usa el intérprete dibujado.
-  const manifest = useManifestSenas();
+  const prefs = usePreferencias();
+  const manifestCargado = useManifestSenas();
+  const manifest = prefs.interprete === "fotos" ? manifestCargado : null;
   const [frase, setFrase] = useState(0); // sube con cada glosas_para_senar para reiniciar el reproductor
   const [senando, setSenando] = useState(false);
   // true desde que el cliente responde hasta que el otro lado vuelve a hablar: no se ofrecen respuestas.
@@ -167,10 +171,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   // Inicio (antes de llamar).
   if (state === "idle") {
     return (
-      <main className="inicio-main">
-        <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
-        <Inicio onLlamar={llamar} />
-      </main>
+      <AppShell onLlamar={llamar} aviso={<VisualAlert message={alert?.message ?? null} tone={alert?.tone} />} />
     );
   }
 
@@ -197,13 +198,14 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         current={senas?.actual}
         subtitle={subtitulo}
         signing={manifest ? senando : !!senas && senas.actual < senas.glosas.length}
+        piel={prefs.piel}
         player={
-          manifest ? <SenasFotos manifest={manifest} glosas={senas?.glosas ?? []} frase={frase} onSenando={setSenando} /> : undefined
+          manifest ? <SenasFotos manifest={manifest} glosas={senas?.glosas ?? []} frase={frase} onSenando={setSenando} velocidad={prefs.velocidad} /> : undefined
         }
       />
 
       <div className="chat" ref={chatRef}>
-        {lines.length > 0 && <Subtitles lines={lines} showOriginal otherName={destino?.corto ?? "Ejecutivo"} />}
+        {lines.length > 0 && <Subtitles lines={lines} showOriginal={prefs.verOriginal} otherName={destino?.corto ?? "Ejecutivo"} />}
         {esperando && enLlamada && (
           <p className="typing" aria-live="polite">
             <span className="dots" aria-hidden>

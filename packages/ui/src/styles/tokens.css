@@ -1,7 +1,29 @@
 /* Puente: generado desde tokens.json. Tipografía del sistema (San Francisco en iPhone, Roboto en Android), como una app nativa. */
 
-/* Claro es el tema por defecto; Noche con data-theme="dark" en <html>. */
-:root, [data-theme="light"] {
+/* Oscuro es el tema por defecto (Rafael, 21-11-2026); claro con data-theme="light" en <html> (botón de tema). */
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1116;
+  --surface: #171b22;
+  --surface-raised: #232833;
+  --line: #2c323d;
+  --line-strong: #6f7889;
+  --fg: #f2f4f7;
+  --muted: #a2abb9;
+  --accent: #ffd34d;
+  --brand: #ffd34d;
+  --on-accent: #111111;
+  --accent-soft: #3a3214;
+  --cliente: #7cc4ff;
+  --cliente-soft: #1c3350;
+  --live: #4ade80;
+  --live-soft: #13301f;
+  --danger: #d93b42;
+  --on-danger: #ffffff;
+  --focus: var(--fg);
+}
+
+[data-theme="light"] {
   color-scheme: light;
   --bg: #f2f3f6;
   --surface: #ffffff;
@@ -20,28 +42,6 @@
   --live-soft: #d9f5e5;
   --danger: #c9333a;
   --on-danger: #ffffff;
-  --focus: var(--fg);
-}
-
-[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #0b1220;
-  --surface: #131c2e;
-  --surface-raised: #1c2740;
-  --line: #2c3a57;
-  --line-strong: #5d6f92;
-  --fg: #f5f7fb;
-  --muted: #9aa4b8;
-  --accent: #ffd34d;
-  --brand: #ffd34d;
-  --on-accent: #111111;
-  --accent-soft: #3a3214;
-  --cliente: #7dd3fc;
-  --cliente-soft: #0f2c40;
-  --live: #4ade80;
-  --live-soft: #0f2e1c;
-  --danger: #ff8a80;
-  --on-danger: #0b1220;
 }
 
 :root {
