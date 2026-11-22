@@ -14,7 +14,7 @@ import logging
 import os
 from pathlib import Path
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
 from app.config import es_produccion
@@ -39,7 +39,11 @@ class Sala:
         self.llamadas_creadas: set[str] = set()
         # Llamada en curso y si Twilio está en una pausa larga esperando al cliente (ver interrumpir_pausa).
         self.call_sid: str | None = None
+        self.ultima_creada: str | None = None  # CallSid de POST /llamadas: para colgar aunque aún no contesten
         self.en_pausa_larga = False
+        # Sube con cada llamada nueva: lo que termine de traducirse después (Claude/ElevenLabs en vuelo) y sea de la
+        # llamada anterior se descarta, en vez de colarse en la nueva.
+        self.gen = 0
 
     async def enviar(self, msg: dict) -> None:
         for ws in list(self.clientes):
@@ -50,57 +54,74 @@ class Sala:
 
     async def ejecutivo_dijo(self, texto: str) -> None:
         """Texto simple (v2) y señas (v4) en paralelo, como el agente: el texto no espera a las señas."""
-        await asyncio.gather(self._texto_simple(texto), self._senas(texto))
+        gen = self.gen
+        await asyncio.gather(self._texto_simple(texto, gen), self._senas(texto, gen))
 
-    async def _texto_simple(self, texto: str) -> None:
+    async def _enviar_si_vigente(self, gen: int, msg: dict) -> None:
+        if gen != self.gen:
+            log.info("Se descarta un %s de la llamada anterior", msg.get("tipo"))
+            return
+        await self.enviar(msg)
+
+    async def _texto_simple(self, texto: str, gen: int) -> None:
         simple, opciones = None, []
         try:
             r = await self.traductor.simplificar(texto)
             simple, opciones = recortar(r.simple), list(r.opciones)
         except Exception:
             log.exception("No se pudo simplificar; se manda el texto original")
-        await self.enviar({"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": simple, "opciones": opciones})
+        await self._enviar_si_vigente(
+            gen, {"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": simple, "opciones": opciones}
+        )
 
-    async def _cliente_dice_frase(self, frase: str) -> None:
+    async def _cliente_dice_frase(self, frase: str, gen: int) -> None:
         """Lo que el cliente dijo ya convertido: queda listo para decirse por voz. La app lo ve cuando empieza a sonar."""
         frase = recortar(frase)
         para_decir = self.traductor.para_voz(frase)
-        await self.respuestas.put((para_decir, frase, await voz.preparar(para_decir)))
+        audio_id = await voz.preparar(para_decir)
+        if gen != self.gen:  # empezó otra llamada mientras se traducía: no decirla en la nueva
+            log.info("Se descarta una respuesta del cliente de la llamada anterior")
+            return
+        await self.respuestas.put((para_decir, frase, audio_id))
         if self.en_pausa_larga:  # Twilio está en <Pause> largo: se interrumpe para que la respuesta suene al tiro
             self.en_pausa_larga = False
             await asyncio.to_thread(interrumpir_pausa, self.call_sid)
 
-    async def _senas(self, texto: str) -> None:
+    async def _senas(self, texto: str, gen: int) -> None:
         try:
             r = await self.traductor.a_glosas(texto)
         except Exception:
             log.exception("No se pudo traducir a señas; queda solo el texto")
             return
         if r.glosas:
-            await self.enviar({"tipo": "glosas_para_senar", "glosas": r.glosas, "subtitulo": recortar(r.subtitulo)})
+            await self._enviar_si_vigente(
+                gen, {"tipo": "glosas_para_senar", "glosas": r.glosas, "subtitulo": recortar(r.subtitulo)}
+            )
 
     async def cliente_dijo(self, texto: str) -> None:
         texto = texto.strip()[:MAX_TEXTO]
         if not texto:
             return
+        gen = self.gen
         try:
             frase = await self.traductor.complejizar(texto)
         except Exception:
             log.exception("No se pudo complejizar; se dice el texto original")
             frase = texto
-        await self._cliente_dice_frase(frase or texto)
+        await self._cliente_dice_frase(frase or texto, gen)
 
     async def cliente_senio(self, glosas: list[str]) -> None:
         """v3: el cliente firmó frente a la cámara (`glosas_cliente`). Las glosas se convierten en una frase y se dice por voz."""
         validas = self.traductor.glosas_conocidas(glosas)
         if not validas:
             return
+        gen = self.gen
         try:
             frase = await self.traductor.glosas_a_espanol(validas)
         except Exception:
             log.exception("No se pudo convertir las glosas; se dicen tal cual")
             frase = " ".join(g.lower() for g in validas)
-        await self._cliente_dice_frase(frase or " ".join(g.lower() for g in validas))
+        await self._cliente_dice_frase(frase or " ".join(g.lower() for g in validas), gen)
 
     async def respuesta_pendiente(self, esperar_s: float = 0) -> tuple[str, str | None] | None:
         """La siguiente respuesta del cliente para decir por voz, esperando hasta `esperar_s` a que llegue.
@@ -123,6 +144,7 @@ class Sala:
     def reiniciar(self) -> None:
         """Nueva llamada: se descartan respuestas viejas y sus audios."""
         self.respuestas = asyncio.Queue()
+        self.gen += 1
         self.call_sid, self.en_pausa_larga = None, False
         voz.olvidar_respuestas()
 
@@ -142,6 +164,21 @@ def interrumpir_pausa(call_sid: str | None) -> None:
         Client(cuenta, token).calls(call_sid).update(url=f"{base}/twilio/espera?n=0", method="POST")
     except Exception as e:
         log.warning("No se pudo interrumpir la pausa (%s); la respuesta suena al terminar la pausa", type(e).__name__)
+
+
+def colgar_twilio(call_sid: str | None) -> bool:
+    """Termina la llamada en Twilio (el usuario colgó en la app). Antes el teléfono seguía hasta que el ejecutivo cortaba."""
+    cuenta, token = os.getenv("TWILIO_ACCOUNT_SID", ""), os.getenv("TWILIO_AUTH_TOKEN", "")
+    if not (call_sid and cuenta and token):
+        return False
+    try:
+        from twilio.rest import Client
+
+        Client(cuenta, token).calls(call_sid).update(status="completed")
+        return True
+    except Exception as e:
+        log.warning("No se pudo colgar la llamada en Twilio (%s)", type(e).__name__)
+        return False
 
 
 sala = Sala()
@@ -165,6 +202,14 @@ async def cliente(ws: WebSocket) -> None:
         await ws.close(code=1008)  # policy violation
         return
     await ws.accept()
+    # Un solo cliente a la vez (demo): con dos pestañas abiertas, ambas veían todo y una respuesta de la otra se
+    # colaba fuera de turno. La conexión nueva reemplaza a la anterior.
+    for viejo in list(sala.clientes):
+        sala.clientes.discard(viejo)
+        try:
+            await viejo.close(code=4000, reason="Otra pantalla tomó la llamada")
+        except Exception:
+            pass
     sala.clientes.add(ws)
     try:
         while True:
@@ -182,6 +227,16 @@ async def cliente(ws: WebSocket) -> None:
         pass
     finally:
         sala.clientes.discard(ws)
+
+
+@router.post("/colgar", status_code=204)
+async def colgar(token: str | None = None) -> None:
+    """La app colgó: se corta la llamada en Twilio. Exige el mismo `?token=` que el WebSocket."""
+    if not token_valido(token):
+        raise HTTPException(403, "Token inválido")
+    sid = sala.call_sid or sala.ultima_creada
+    sala.reiniciar()
+    await asyncio.to_thread(colgar_twilio, sid)
 
 
 @router.get("/prueba")

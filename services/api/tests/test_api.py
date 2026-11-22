@@ -547,3 +547,73 @@ def test_duracion_maxima_de_la_llamada(monkeypatch, valor, esperado):
     else:
         monkeypatch.setenv("LLAMADA_MAX_MIN", valor)
     assert duracion_maxima_s() == esperado
+
+
+
+# ── Llamadas seguidas: lo de la llamada anterior no se cuela en la nueva ───────
+def test_respuesta_traducida_tras_empezar_otra_llamada_se_descarta(sala_falsa, monkeypatch):
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+
+    class Lento(FakeTraductor):
+        async def complejizar(self, texto):
+            sala_falsa.reiniciar()  # empieza otra llamada mientras Claude responde
+            return f"formal({texto})"
+
+    monkeypatch.setattr(sala_falsa, "traductor", Lento())
+    asyncio.run(sala_falsa.cliente_dijo("martes bueno"))
+    assert sala_falsa.respuestas.qsize() == 0
+
+
+def test_ejecutivo_dice_de_la_llamada_anterior_no_llega_a_la_nueva(sala_falsa, monkeypatch):
+    enviados = []
+
+    async def enviar(msg):
+        enviados.append(msg)
+
+    class Lento(FakeTraductor):
+        async def simplificar(self, texto):
+            sala_falsa.reiniciar()
+            return await super().simplificar(texto)
+
+    monkeypatch.setattr(sala_falsa, "enviar", enviar)
+    monkeypatch.setattr(sala_falsa, "traductor", Lento())
+    asyncio.run(sala_falsa.ejecutivo_dijo("hola"))
+    assert not [m for m in enviados if m["tipo"] == "ejecutivo_dice"]
+
+
+def test_estado_de_otra_llamada_no_corta_la_actual(sala_falsa, monkeypatch):
+    enviados = []
+
+    async def enviar(msg):
+        enviados.append(msg)
+
+    monkeypatch.setattr(sala_falsa, "enviar", enviar)
+    sala_falsa.call_sid = "CA_nueva"
+    client.post("/twilio/estado", data={"CallSid": "CA_vieja", "CallStatus": "completed"})
+    assert enviados == []
+    client.post("/twilio/estado", data={"CallSid": "CA_nueva", "CallStatus": "completed"})
+    assert enviados == [{"tipo": "estado", "valor": "llamada_terminada"}]
+
+
+def test_una_pantalla_nueva_reemplaza_a_la_anterior(sala_falsa):
+    from starlette.websockets import WebSocketDisconnect
+
+    with client.websocket_connect("/twilio/cliente") as vieja:
+        with client.websocket_connect("/twilio/cliente") as nueva:
+            with pytest.raises(WebSocketDisconnect) as e:
+                vieja.receive_json()
+            assert e.value.code == 4000
+            client.post("/twilio/estado", data={"CallStatus": "completed"})
+            assert nueva.receive_json() == {"tipo": "estado", "valor": "llamada_terminada"}
+
+
+def test_colgar_corta_en_twilio_y_exige_token(sala_falsa, monkeypatch):
+    import app.llamada as llamada
+
+    cortadas = []
+    monkeypatch.setattr(llamada, "colgar_twilio", lambda sid: cortadas.append(sid) or True)
+    monkeypatch.setenv("CLIENTE_WS_TOKEN", "abc123")
+    sala_falsa.ultima_creada = "CA_demo"
+    assert client.post("/twilio/colgar").status_code == 403
+    assert client.post("/twilio/colgar?token=abc123").status_code == 204
+    assert cortadas == ["CA_demo"]

@@ -197,6 +197,11 @@ async def audio(audio_id: str) -> Response:
 async def estado(request: Request) -> Response:
     """statusCallback de Twilio: avisa a la PWA cuando la llamada termina."""
     form = await request.form()
+    sid = str(form.get("CallSid") or "")
+    if sala.call_sid and sid and sid != sala.call_sid:
+        # Un "completed" atrasado de la llamada anterior cortaba en la app la llamada nueva.
+        log.info("statusCallback de otra llamada: se ignora")
+        return Response(status_code=204)
     if form.get("CallStatus") in {"completed", "busy", "failed", "no-answer", "canceled"}:
         await sala.enviar({"tipo": "estado", "valor": "llamada_terminada"})
     return Response(status_code=204)

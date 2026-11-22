@@ -82,8 +82,14 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
         },
         leave() {
           colgo = true;
-          // TODO(v1, A): la API todavía no tiene un endpoint para cortar la llamada de Twilio; hoy solo se cierra
-          // el canal con la app y el teléfono sigue hasta que el ejecutivo corta.
+          // Corta también el teléfono (antes seguía hasta que el ejecutivo cortaba y sus frases se colaban en la
+          // llamada siguiente). keepalive: el pedido sale aunque se cierre la pantalla.
+          if (destino) {
+            void fetch(apiUrl() + "/twilio/colgar" + (token ? `?token=${encodeURIComponent(token)}` : ""), {
+              method: "POST",
+              keepalive: true,
+            }).catch(() => {});
+          }
           ws.close();
         },
       });

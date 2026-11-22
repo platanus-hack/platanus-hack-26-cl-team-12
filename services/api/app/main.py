@@ -274,4 +274,5 @@ async def crear_llamada(req: LlamadaRequest) -> LlamadaResponse:
         raise HTTPException(503, "Twilio no configurado (TWILIO_* y PUBLIC_BASE_URL con https://)")
     sid, estado = await asyncio.to_thread(llamar_con_twilio, numero, base)
     sala.llamadas_creadas.add(sid)
+    sala.ultima_creada = sid
     return LlamadaResponse(sid=sid, estado=estado)
