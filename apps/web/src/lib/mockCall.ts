@@ -6,6 +6,10 @@
 // TODO(real-data): las glosas las genera el agente (espanol_a_glosas) en la llamada real.
 import type { MensajePuente } from "@puente/glosses";
 import type { CallHandle } from "./call";
+import { msVoz } from "./voz";
+
+/** Lo que va pasando con la voz que simula lo que oye el hospital: cuándo parte, qué palabra dice (índice del carácter) y cuándo termina. */
+export type EventoVoz = { tipo: "inicio" } | { tipo: "palabra"; charIndex: number } | { tipo: "fin"; ms: number };
 
 export type TipoGuion = "urgencia" | "general";
 
@@ -56,16 +60,55 @@ const GUIONES: Record<TipoGuion, Turno[]> = {
   ],
 };
 
+/** Glosas que se esperan en cada respuesta del cliente (P1, P2, P3 de docs/GUION-1.md), para el mock. */
+const GLOSAS_ESPERADAS: string[][] = [
+  ["HOLA", "AMBULANCIA", "NECESITAR", "HIJO", "CAER-PERSONA", "CODO", "HUESO", "ROMPER"],
+  ["SÍ", "HIJO", "DESPERTAR", "PERO", "BRAZO", "APOYAR", "NO-PODER", "CODO", "HINCHADO"],
+  ["SANGRE", "POCO", "PERO", "MANO", "BIEN", "URGENTE", "NECESITAR", "HOSPITAL", "IR"],
+];
+
 const ESPERA_RESPUESTA_MS = 2000; // lo que "tarda" el ejecutivo en contestar
 const PIDE_REPETIR = /repit|otra vez|no entend/i;
 
-export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void; guion?: TipoGuion }): Promise<CallHandle> {
+export async function joinMockCall(opts: {
+  onMessage: (m: MensajePuente) => void;
+  guion?: TipoGuion;
+  /** Eventos de la voz simulada, para mostrar el texto exactamente a la par del audio. */
+  onVoz?: (e: EventoVoz) => void;
+}): Promise<CallHandle> {
   const GUION = GUIONES[opts.guion ?? "general"];
   const timers: ReturnType<typeof setTimeout>[] = [];
   let turno = 0;
   let terminada = false;
 
   const later = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
+  if (typeof speechSynthesis !== "undefined") speechSynthesis.getVoices(); // algunos navegadores cargan las voces recién al pedirlas
+
+  /** La voz del navegador más cercana al español chileno: es-CL, luego latinoamericano; nunca la de España si hay otra. */
+  function elegirVoz(): SpeechSynthesisVoice | undefined {
+    const voces = speechSynthesis.getVoices();
+    const lang = (v: SpeechSynthesisVoice) => v.lang.replace("_", "-").toLowerCase();
+    for (const l of ["es-cl", "es-419", "es-mx", "es-us", "es-ar", "es-co"]) {
+      const v = voces.find((x) => lang(x) === l);
+      if (v) return v;
+    }
+    return voces.find((x) => lang(x).startsWith("es") && lang(x) !== "es-es");
+  }
+
+  /** Simula el audio que oye el hospital con la voz del navegador (en la llamada real lo dice Twilio). */
+  function hablar(texto: string) {
+    if (typeof speechSynthesis === "undefined") return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = "es-CL";
+    const voz = elegirVoz();
+    if (voz) u.voice = voz;
+    const t0 = performance.now();
+    u.onstart = () => opts.onVoz?.({ tipo: "inicio" });
+    u.onboundary = (e) => opts.onVoz?.({ tipo: "palabra", charIndex: e.charIndex });
+    u.onend = () => opts.onVoz?.({ tipo: "fin", ms: Math.round(performance.now() - t0) });
+    speechSynthesis.speak(u);
+  }
 
   function decirTurno(t: Turno) {
     opts.onMessage({ tipo: "ejecutivo_dice", texto: t.texto, simple: t.simple, ...(t.opciones && { opciones: t.opciones }) });
@@ -98,11 +141,26 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
     async send(msg) {
       // Si el cliente pide que repita, repite; si no, el ejecutivo dice la siguiente línea del guion.
       if (msg.tipo === "cliente_dice") later(ESPERA_RESPUESTA_MS, PIDE_REPETIR.test(msg.texto) ? repetir : siguiente);
-      if (msg.tipo === "glosas_cliente") later(ESPERA_RESPUESTA_MS, siguiente);
+      if (msg.tipo === "glosas_cliente") {
+        // TODO(real-data): en la llamada real la API convierte las glosas con v2 y manda `cliente_dijo`.
+        // Aquí se simula: si señaste casi todo lo esperado se muestra la frase del guion; si no, solo lo que señaste (nada se "autocompleta").
+        const frase = turno === 0 ? FRASE_INICIAL[opts.guion ?? "general"] : GUION[turno - 1]?.opciones?.[0];
+        const esperadas = (opts.guion === "urgencia" ? GLOSAS_ESPERADAS[turno] : undefined) ?? [];
+        const aciertos = esperadas.filter((g) => msg.glosas.includes(g)).length;
+        const completa = esperadas.length > 0 && aciertos / esperadas.length >= 0.7;
+        const texto = completa && frase ? frase : msg.glosas.join(" ").toLowerCase();
+        // Como en la llamada real: la frase llega a la app justo cuando empieza a sonar. Aquí suena con la voz del navegador.
+        later(700, () => {
+          opts.onMessage({ tipo: "cliente_dijo", texto });
+          hablar(texto);
+        });
+        later(700 + msVoz(texto) + ESPERA_RESPUESTA_MS, siguiente); // el hospital contesta cuando terminó de oír
+      }
     },
     leave() {
       terminada = true;
       timers.forEach(clearTimeout);
+      if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
     },
   };
 }

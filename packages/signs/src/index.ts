@@ -59,3 +59,5 @@ export function createRecognizer(classifier: Classifier, windowSize = 30): SignR
     },
   };
 }
+
+export * from "./plantillas";

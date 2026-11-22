@@ -39,6 +39,7 @@ export function AvatarVRM({
   frase,
   velocidad = "normal",
   onSenando,
+  onProgreso,
   onFalla,
 }: {
   glosas: string[];
@@ -46,14 +47,16 @@ export function AvatarVRM({
   frase: number;
   velocidad?: keyof typeof FACTOR;
   onSenando?: (senando: boolean) => void;
+  /** Avance de la frase de 0 a 1 mientras el avatar firma (en 24 pasos): el subtítulo va apareciendo a la par. */
+  onProgreso?: (fraccion: number) => void;
   onFalla?: () => void;
 }) {
   const lienzo = useRef<HTMLCanvasElement>(null);
   const motor = useRef<{
     reproducir: (glosas: string[], factor: number) => void;
   } | null>(null);
-  const callbacks = useRef({ onSenando, onFalla });
-  callbacks.current = { onSenando, onFalla };
+  const callbacks = useRef({ onSenando, onProgreso, onFalla });
+  callbacks.current = { onSenando, onProgreso, onFalla };
 
   // Escena, modelo y bucle de dibujo (una sola vez).
   useEffect(() => {
@@ -95,6 +98,7 @@ export function AvatarVRM({
     let linea: { items: { c: Clip; d: number; s: number; e: number }[]; total: number; factor: number } | null = null;
     let t0 = 0;
     let senando = false;
+    let ultimoPaso = -1; // último paso (de 24) de progreso informado
     let pendiente: [string[], number] | null = null; // frase que llegó antes de que cargara el modelo
 
     const hueso = (n: string) => vrm?.humanoid.getNormalizedBoneNode(n as never) ?? null;
@@ -147,6 +151,7 @@ export function AvatarVRM({
         });
         linea = { items, total: items[items.length - 1]!.e, factor };
         t0 = performance.now();
+        ultimoPaso = -1;
         despertar((linea.total + 0.6) * 1000);
       },
     };
@@ -209,6 +214,12 @@ export function AvatarVRM({
           P = pose(A).map((q, k) => q.slerp(pb[k]!, w));
         } else if (act.length === 1) P = pose(act[0]!);
         BONES.forEach((b, k) => hueso(b)?.quaternion.copy(P[k]!));
+        const f = Math.min(1, t / Math.max(0.001, linea.total));
+        const paso = Math.floor(f * 24);
+        if (paso !== ultimoPaso) {
+          ultimoPaso = paso;
+          callbacks.current.onProgreso?.(f);
+        }
         const ahora = t < linea.total;
         if (ahora !== senando) {
           senando = ahora;

@@ -121,7 +121,7 @@ async def turno(request: Request) -> Response:
 async def espera(request: Request) -> Response:
     """Mientras el cliente escribe: pausa corta y vuelve a revisar. Cuando hay respuesta, se dice y se escucha."""
     base = public_base(request)
-    respuesta = sala.respuesta_pendiente()
+    respuesta = await sala.respuesta_pendiente()
     if respuesta:
         log.info("Respuesta del cliente lista: %d caracteres", len(respuesta))
         return twiml(decir(respuesta) + escuchar(base))
