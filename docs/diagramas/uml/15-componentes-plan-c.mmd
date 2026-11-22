@@ -36,7 +36,6 @@ flowchart LR
         Voz["«componente»<br/><b>voz.py</b><br/><i>mp3 de voz chilena</i>"]
     end
 
-    Agent["«componente» services/agent<br/><i>LiveKit · en pausa (requiere SIP)</i>"]
 
     Claude[["«sistema externo»<br/><b>Anthropic</b><br/>Claude Haiku 5.5"]]
     Eleven[["«sistema externo»<br/><b>ElevenLabs</b><br/>texto a voz"]]
@@ -54,7 +53,6 @@ flowchart LR
     Media --> Sala
     Sala --> Trad
     Sala --> Voz
-    Agent -.-> |reutiliza| Trad
 
     Trad -- "Messages API" --> Claude
     Voz -- "TTS" --> Eleven
@@ -63,8 +61,6 @@ flowchart LR
     Twilio <-- "voz" --> actorE
 
     classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111827
-    classDef pausa fill:#ffffff,stroke:#9ca3af,stroke-dasharray:6 4,color:#6b7280
     classDef actor fill:#fef3c7,stroke:#b45309,color:#111827
     class Claude,Eleven,Twilio ext
-    class Agent pausa
     class actorS,actorE actor
