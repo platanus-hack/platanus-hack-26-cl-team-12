@@ -19,6 +19,7 @@ import { AppShell } from "./AppShell";
 import { AvatarVRM } from "./AvatarVRM";
 import { Calificacion } from "./Calificacion";
 import { RECONOCER_SENAS, iniciarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
+import { mensajeCliente } from "@/lib/respuesta";
 import { CamaraPropia, type Conversion, type Lectura, type Voz } from "./CamaraPropia";
 import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
@@ -269,7 +270,8 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setDestino(null);
   }
 
-  async function decir(texto: string) {
+  // `deSenas`: solo el botón Enviar de la cámara. El chat y las sugerencias siempre mandan su texto (ver lib/respuesta).
+  async function decir(texto: string, deSenas = false) {
     if (!callRef.current) return;
     setLectura({ estado: "enviado", texto });
     setLines((l) => [...l, { id: nuevoId(), who: "cliente", time: hora(), text: texto }]);
@@ -277,13 +279,13 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setEsperando(true);
     try {
       // Con lectura real de señas se mandan las glosas (el agente las convierte en una frase y la dice); si no, el texto.
-      const glosas = RECONOCER_SENAS ? glosasRef.current : [];
-      if (glosas.length) {
+      const msg = mensajeCliente(texto, RECONOCER_SENAS ? glosasRef.current : [], deSenas);
+      if (msg.tipo === "glosas_cliente") {
         setConversion({ glosas: texto });
         if (timerConv.current) clearTimeout(timerConv.current);
         timerConv.current = setTimeout(() => setConversion(null), CONVERSION_MAX_MS); // respaldo si la frase convertida nunca llega
       }
-      await callRef.current.send(glosas.length ? { tipo: "glosas_cliente", glosas, confianza: 1 } : { tipo: "cliente_dice", texto });
+      await callRef.current.send(msg);
       glosasRef.current = [];
     } catch {
       setAlert({ message: "No se pudo enviar tu mensaje. Inténtalo de nuevo.", tone: "error" });
@@ -391,7 +393,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
             type="button"
             className={listoParaEnviar ? "vl-ctrl enviar listo" : "vl-ctrl enviar"}
             disabled={!listoParaEnviar}
-            onClick={() => lectura.estado === "listo" && decir(lectura.texto)}
+            onClick={() => lectura.estado === "listo" && decir(lectura.texto, true)}
             aria-label={listoParaEnviar ? "Enviar lo que dijiste con señas" : "Enviar (esperando tus señas)"}
           >
             <Icon name="enviar" size={24} />
