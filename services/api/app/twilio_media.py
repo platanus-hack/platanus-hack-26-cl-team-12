@@ -36,8 +36,8 @@ SALUDO = (
 # escenario (los mismos que recibe Deepgram en el agente) más algunos que solo le hacen falta a Twilio.
 _PISTAS_TWILIO = ["hora", "hora médica", "médico", "doctor", "previsión", "copago", "dígito verificador"]
 PISTAS = ", ".join(dict.fromkeys([*load_escenario().stt_keyterms, *_PISTAS_TWILIO]))
-ESPERA_S = 1  # pausa corta entre una espera larga y la siguiente
-AVISO_CADA = 2  # cada ~2 esperas largas (~20 s) se le avisa al ejecutivo que el cliente sigue respondiendo
+PAUSA_LARGA_S = 50  # si el cliente no respondió en la espera larga: silencio largo, que se interrumpe al responder
+AVISO_CADA = 1  # en cada vuelta (~1 min) se le avisa al ejecutivo que el cliente sigue respondiendo
 
 
 def espera_larga_s() -> float:
@@ -126,6 +126,7 @@ async def voz(request: Request) -> Response:
         url = public_base(request).replace("https://", "wss://").replace("http://", "ws://") + "/twilio/media"
         return twiml(f"<Connect><Stream url={quoteattr(url)}/></Connect>")
     sala.reiniciar()
+    sala.call_sid = str((await request.form()).get("CallSid") or "") or None
     await sala.enviar({"tipo": "estado", "valor": "llamada_iniciada"})
     base = public_base(request)
     return twiml(escuchar(base, await hablar(base, SALUDO)))
@@ -156,6 +157,7 @@ async def turno(request: Request) -> Response:
 async def espera(request: Request) -> Response:
     """Mientras el cliente escribe: pausa corta y vuelve a revisar. Cuando hay respuesta, se dice y se escucha."""
     base = public_base(request)
+    sala.en_pausa_larga = False  # Twilio volvió a preguntar: ya no está en pausa
     respuesta = await sala.respuesta_pendiente(espera_larga_s())
     if respuesta:
         texto, audio_id = respuesta
@@ -166,7 +168,10 @@ async def espera(request: Request) -> Response:
     except ValueError:
         n = 1
     aviso = await hablar(base, "La persona sigue respondiendo, espere por favor.") if n % AVISO_CADA == 0 else ""
-    return twiml(f'{aviso}<Pause length="{ESPERA_S}"/>' + ir_a(base, f"/twilio/espera?n={n}"))
+    # Una sola consulta cubre ~1 minuto de espera (el trial corta tras ~10 consultas por llamada). Si el cliente
+    # responde durante la pausa, Sala la interrumpe con la API de Twilio y la respuesta suena al tiro.
+    sala.en_pausa_larga = True
+    return twiml(f'{aviso}<Pause length="{PAUSA_LARGA_S}"/>' + ir_a(base, f"/twilio/espera?n={n}"))
 
 
 @router.get("/audio/{audio_id}.mp3")

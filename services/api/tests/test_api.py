@@ -494,3 +494,21 @@ def test_espera_larga_sin_respuesta_vuelve_a_esperar(sala_falsa, monkeypatch):
     monkeypatch.setenv("TWILIO_ESPERA_S", "0.2")
     r = client.post("/twilio/espera?n=0")
     assert "<Pause" in r.text and "/twilio/espera?n=1" in r.text
+
+
+
+def test_responder_durante_la_pausa_larga_la_interrumpe(sala_falsa, monkeypatch):
+    """Sin respuesta a tiempo, Twilio queda en <Pause> largo; al responder, la API de Twilio corta la pausa."""
+    import app.llamada as llamada
+
+    interrumpidas = []
+    monkeypatch.setattr(llamada, "interrumpir_pausa", lambda sid: interrumpidas.append(sid))
+    monkeypatch.setenv("TWILIO_ESPERA_S", "0")
+    client.post("/twilio/voz", data={"CallSid": "CA_en_curso"})
+    r = client.post("/twilio/espera?n=0")
+    assert '<Pause length="50"/>' in r.text and sala_falsa.en_pausa_larga
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+    assert interrumpidas == ["CA_en_curso"] and not sala_falsa.en_pausa_larga
+    assert "formal(martes bueno)" in client.post("/twilio/espera?n=0").text

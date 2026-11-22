@@ -37,6 +37,9 @@ class Sala:
         # CallSid de las llamadas que creó este servidor (POST /llamadas). Sirve para aceptar el primer pedido del
         # trial de Twilio, que llega por TwilioProxy SIN firma (ver verificar_firma en twilio_media.py).
         self.llamadas_creadas: set[str] = set()
+        # Llamada en curso y si Twilio está en una pausa larga esperando al cliente (ver interrumpir_pausa).
+        self.call_sid: str | None = None
+        self.en_pausa_larga = False
 
     async def enviar(self, msg: dict) -> None:
         for ws in list(self.clientes):
@@ -63,6 +66,9 @@ class Sala:
         frase = recortar(frase)
         para_decir = self.traductor.para_voz(frase)
         await self.respuestas.put((para_decir, frase, await voz.preparar(para_decir)))
+        if self.en_pausa_larga:  # Twilio está en <Pause> largo: se interrumpe para que la respuesta suene al tiro
+            self.en_pausa_larga = False
+            await asyncio.to_thread(interrumpir_pausa, self.call_sid)
 
     async def _senas(self, texto: str) -> None:
         try:
@@ -117,7 +123,25 @@ class Sala:
     def reiniciar(self) -> None:
         """Nueva llamada: se descartan respuestas viejas y sus audios."""
         self.respuestas = asyncio.Queue()
+        self.call_sid, self.en_pausa_larga = None, False
         voz.olvidar_respuestas()
+
+
+def interrumpir_pausa(call_sid: str | None) -> None:
+    """Corta el <Pause> largo de la llamada en curso: Twilio pide de inmediato /twilio/espera, que ya tiene la respuesta.
+
+    Si falla (sin claves, trial que no lo permita), no pasa nada grave: la respuesta suena al terminar la pausa.
+    """
+    base = os.getenv("PUBLIC_BASE_URL", "").split("#")[0].strip().rstrip("/")
+    cuenta, token = os.getenv("TWILIO_ACCOUNT_SID", ""), os.getenv("TWILIO_AUTH_TOKEN", "")
+    if not (call_sid and base and cuenta and token):
+        return
+    try:
+        from twilio.rest import Client
+
+        Client(cuenta, token).calls(call_sid).update(url=f"{base}/twilio/espera?n=0", method="POST")
+    except Exception as e:
+        log.warning("No se pudo interrumpir la pausa (%s); la respuesta suena al terminar la pausa", type(e).__name__)
 
 
 sala = Sala()
