@@ -51,12 +51,17 @@ jobs:
           HOOK_WEB: ${{ secrets.RENDER_DEPLOY_HOOK_WEB }}
         run: |
           set -euo pipefail
+          # La API es obligatoria. El agente (worker pagado) y la web son opcionales: sin su hook, se avisa y se sigue.
+          if [ -z "$HOOK_API" ]; then
+            echo "::error::Falta el secreto RENDER_DEPLOY_HOOK_API (Render → puente-api → Settings → Deploy Hook)"
+            exit 1
+          fi
           for name in API AGENT WEB; do
             var="HOOK_${name}"
             hook="${!var}"
             if [ -z "$hook" ]; then
-              echo "::error::Falta el secreto RENDER_DEPLOY_HOOK_${name} (Render → servicio → Settings → Deploy Hook)"
-              exit 1
+              echo "::warning::Sin RENDER_DEPLOY_HOOK_${name}: no se despliega ${name}"
+              continue
             fi
             # ref=<sha> despliega exactamente el commit que pasó el CI.
             code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "${hook}&ref=${SHA}")
