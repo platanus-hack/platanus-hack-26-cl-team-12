@@ -21,6 +21,15 @@ export interface ClienteDice {
   texto: string;
 }
 
+/**
+ * La frase en español en que el backend convirtió lo que firmó o escribió el cliente (la misma que se dice por voz).
+ * Sirve para que la app muestre "qué entendió el otro lado". Lo emite el backend tras `cliente_dice` o `glosas_cliente`.
+ */
+export interface ClienteDijo {
+  tipo: "cliente_dijo";
+  texto: string;
+}
+
 export interface Estado {
   tipo: "estado";
   valor: EstadoLlamada;
@@ -46,6 +55,7 @@ export interface GlosasParaSenar {
 export type MensajePuente =
   | EjecutivoDice
   | ClienteDice
+  | ClienteDijo
   | Estado
   | GlosasCliente
   | GlosasParaSenar;
@@ -53,6 +63,7 @@ export type MensajePuente =
 /** Mensajes que solo puede emitir el agente. El cliente debe ignorarlos si vienen de otro participante. */
 export const SOLO_AGENTE: ReadonlySet<MensajePuente["tipo"]> = new Set([
   "ejecutivo_dice",
+  "cliente_dijo",
   "estado",
   "glosas_para_senar",
 ]);
@@ -103,6 +114,8 @@ export function parseMensaje(raw: string): MensajePuente | null {
       };
     case "cliente_dice":
       return esTexto(msg.texto) ? { tipo: "cliente_dice", texto: msg.texto } : null;
+    case "cliente_dijo":
+      return esTexto(msg.texto) ? { tipo: "cliente_dijo", texto: msg.texto } : null;
     case "estado":
       return msg.valor === "llamada_iniciada" || msg.valor === "llamada_terminada"
         ? { tipo: "estado", valor: msg.valor }

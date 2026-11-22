@@ -97,6 +97,12 @@ class FakeTraductor:
     async def complejizar(self, texto):
         return f"formal({texto})"
 
+    async def glosas_a_espanol(self, glosas):
+        return f"formal({' '.join(glosas)})"
+
+    def glosas_conocidas(self, glosas):
+        return [g for g in glosas if isinstance(g, str) and g != "INVENTADA"]
+
     def para_voz(self, frase):
         return frase
 
@@ -284,3 +290,51 @@ def test_logs_no_guardan_lo_que_se_dice(sala_falsa, caplog):
     caplog.set_level("DEBUG")
     client.post("/twilio/turno", data={"SpeechResult": "mi RUT es 11.111.111-1", "Confidence": "0.9"})
     assert "11.111.111-1" not in caplog.text
+
+
+def _voz_pendiente(texto_esperado):
+    for _ in range(50):
+        r = client.post("/twilio/espera?n=1")
+        if texto_esperado in r.text:
+            return r.text
+    return r.text
+
+
+def test_glosas_cliente_se_convierten_en_frase_y_se_muestran_y_se_dicen(sala_falsa):
+    """v3: lo que firma el cliente (glosas) se convierte, se le muestra en la app (`cliente_dijo`) y se dice por voz."""
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "INVENTADA", "AMBULANCIA"], "confianza": 1})
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(HOLA AMBULANCIA)"}
+        assert "formal(HOLA AMBULANCIA)" in _voz_pendiente("formal(HOLA AMBULANCIA)")
+
+
+def test_cliente_dice_tambien_muestra_la_frase_convertida(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(martes bueno)"}
+
+
+def test_glosas_cliente_sin_glosas_validas_no_hace_nada(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["INVENTADA"], "confianza": 1})
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": "no-es-lista", "confianza": 1})
+        pwa.send_json({"tipo": "cliente_dice", "texto": "hola"})
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(hola)"}  # lo primero que llega es lo último válido
+
+
+def test_glosas_cliente_si_claude_falla_se_dicen_tal_cual(sala_falsa, monkeypatch):
+    async def falla(glosas):
+        raise RuntimeError("sin Claude")
+
+    monkeypatch.setattr(sala_falsa.traductor, "glosas_a_espanol", falla)
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "AMBULANCIA"], "confianza": 1})
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "hola ambulancia"}
