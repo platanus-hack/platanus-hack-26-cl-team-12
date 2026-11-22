@@ -1,0 +1,111 @@
+{
+  "id": "urgencia_caida",
+  "descripcion": "una llamada de emergencia a un servicio de ambulancias de Chile: un niño se cayó y se lastimó el brazo, y la persona sorda pide una ambulancia",
+  "stt_keyterms": [
+    "ambulancia",
+    "urgencia",
+    "SAMU",
+    "codo",
+    "fractura",
+    "consciente",
+    "traslado",
+    "dirección",
+    "hinchado",
+    "sangrado"
+  ],
+  "pronunciacion": {
+    "SAMU": "samu"
+  },
+  "frases_frecuentes": {
+    "_comment": "Lista blanca de la caché (store.py): solo estas frases se guardan, porque no traen datos personales. Son las frases del guion 1 (data/vocab/guion1_urgencia_caida.json).",
+    "ejecutivo": [
+      "Hola, ¿su hijo está consciente y respira bien?",
+      "Entendido. ¿Hay sangrado o la mano se ve pálida o fría?",
+      "Registramos la solicitud de ambulancia. Tenemos su dirección señora, vamos en camino. Mientras llega, no mueva el brazo de su hijo."
+    ],
+    "cliente": [
+      "Hola, necesito una ambulancia. Mi hijo se cayó y se quebró el codo.",
+      "Sí, está consciente, pero no puede apoyar el brazo y el codo está muy hinchado.",
+      "Hay un poco de sangre, pero la mano está normal. Necesito un traslado urgente."
+    ]
+  },
+  "ejemplos": {
+    "simplificar": [
+      {
+        "entrada": "Hola, ¿su hijo está consciente y respira bien?",
+        "simple": "Hola.\nTu hijo está despierto?\nRespira bien?",
+        "opciones": [
+          "Sí",
+          "No"
+        ]
+      },
+      {
+        "entrada": "Entendido. ¿Hay sangrado o la mano se ve pálida o fría?",
+        "simple": "Entendido.\nHay sangre?\nLa mano está pálida o fría?",
+        "opciones": [
+          "Sí",
+          "No"
+        ]
+      },
+      {
+        "entrada": "Registramos la solicitud de ambulancia. Tenemos su dirección señora, vamos en camino. Mientras llega, no mueva el brazo de su hijo.",
+        "simple": "Anotamos el pedido de ambulancia.\nTenemos su dirección.\nLa ambulancia ya viene.\nEspere.\nNo mueva el brazo de su hijo.",
+        "opciones": []
+      }
+    ],
+    "complejizar": [
+      {
+        "entrada": "HOLA AMBULANCIA NECESITAR HIJO CAER-PERSONA CODO HUESO ROMPER",
+        "salida": "Hola, necesito una ambulancia. Mi hijo se cayó y se quebró el codo."
+      },
+      {
+        "entrada": "SÍ HIJO DESPERTAR PERO BRAZO APOYAR NO-PODER CODO HINCHADO",
+        "salida": "Sí, está consciente, pero no puede apoyar el brazo y el codo está muy hinchado."
+      },
+      {
+        "entrada": "SANGRE POCO PERO MANO BIEN URGENTE NECESITAR HOSPITAL IR",
+        "salida": "Hay un poco de sangre, pero la mano está normal. Necesito un traslado urgente."
+      }
+    ],
+    "glosas": [
+      {
+        "entrada": "Hola, ¿su hijo está consciente y respira bien?",
+        "glosas": [
+          "HOLA",
+          "HIJO",
+          "DESPERTAR",
+          "RESPIRAR",
+          "BIEN"
+        ]
+      },
+      {
+        "entrada": "Entendido. ¿Hay sangrado o la mano se ve pálida o fría?",
+        "glosas": [
+          "ENTENDER",
+          "SANGRE",
+          "MANO",
+          "PÁLIDO",
+          "FRÍO"
+        ]
+      },
+      {
+        "entrada": "Registramos la solicitud de ambulancia. Tenemos su dirección señora, vamos en camino. Mientras llega, no mueva el brazo de su hijo.",
+        "glosas": [
+          "SOLICITUD",
+          "AMBULANCIA",
+          "ANOTAR",
+          "DOMICILIO",
+          "TENER",
+          "SEÑORA",
+          "AMBULANCIA",
+          "VENIR",
+          "CAMINO",
+          "ESPERAR",
+          "BRAZO",
+          "HIJO",
+          "QUIETO"
+        ]
+      }
+    ]
+  }
+}

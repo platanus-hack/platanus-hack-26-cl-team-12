@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "_comment": "Generado por data/vocab/build_glosses.py (vocabulario + curación en data/vocab). Solo aditivo: no reordenar classifierLabel. TODO(real-data): validar con una persona señante (validatedBy).",
   "glosses": [
     {"gloss": "HOLA", "category": "saludo", "es": ["hola"], "classifierLabel": 0, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "hola"},
@@ -82,6 +82,31 @@
     {"gloss": "DINERO", "category": "otro", "es": ["dinero", "plata", "valor"], "classifierLabel": 77, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "dinero"},
     {"gloss": "OTRO", "category": "otro", "es": ["otro", "otra"], "classifierLabel": 78, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "otro-a"},
     {"gloss": "MÁS", "category": "otro", "es": ["más"], "classifierLabel": 79, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "mas"},
-    {"gloss": "BUENO", "category": "respuesta", "es": ["bueno", "está bien", "ok"], "classifierLabel": 80, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "bueno-a-2"}
+    {"gloss": "BUENO", "category": "respuesta", "es": ["bueno", "está bien", "ok"], "classifierLabel": 80, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "bueno-a-2"},
+    {"gloss": "AMBULANCIA", "category": "salud", "es": ["ambulancia"], "classifierLabel": 81, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "ambulancia"},
+    {"gloss": "HIJO", "category": "otro", "es": ["hijo", "hija"], "classifierLabel": 82, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "hijo-a"},
+    {"gloss": "CAER-PERSONA", "category": "verbo", "es": ["caerse", "se cayó", "caída"], "classifierLabel": 83, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "caer-persona"},
+    {"gloss": "CODO", "category": "salud", "es": ["codo"], "classifierLabel": 84, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "codo"},
+    {"gloss": "HUESO", "category": "salud", "es": ["hueso"], "classifierLabel": 85, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "hueso"},
+    {"gloss": "ROMPER", "category": "verbo", "es": ["romper", "quebrar", "quebrarse", "fractura"], "classifierLabel": 86, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "romper"},
+    {"gloss": "DESPERTAR", "category": "verbo", "es": ["despertar", "consciente", "despierto"], "classifierLabel": 87, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "despertar-se"},
+    {"gloss": "RESPIRAR", "category": "verbo", "es": ["respirar", "respira"], "classifierLabel": 88, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "respirar"},
+    {"gloss": "BIEN", "category": "respuesta", "es": ["bien", "normal"], "classifierLabel": 89, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "bien"},
+    {"gloss": "PERO", "category": "otro", "es": ["pero"], "classifierLabel": 90, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "pero"},
+    {"gloss": "BRAZO", "category": "salud", "es": ["brazo"], "classifierLabel": 91, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "brazo"},
+    {"gloss": "APOYAR", "category": "verbo", "es": ["apoyar", "apoyarse"], "classifierLabel": 92, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "apoyar"},
+    {"gloss": "HINCHADO", "category": "salud", "es": ["hinchado", "inflamado"], "classifierLabel": 93, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "hinchado-a"},
+    {"gloss": "ENTENDER", "category": "verbo", "es": ["entender", "entendido", "comprendo"], "classifierLabel": 94, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "entender"},
+    {"gloss": "SANGRE", "category": "salud", "es": ["sangre", "sangrado", "sangra"], "classifierLabel": 95, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "sangre"},
+    {"gloss": "MANO", "category": "salud", "es": ["mano"], "classifierLabel": 96, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "mano"},
+    {"gloss": "PÁLIDO", "category": "salud", "es": ["pálido", "pálida"], "classifierLabel": 97, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "palido-a"},
+    {"gloss": "FRÍO", "category": "salud", "es": ["frío", "fría"], "classifierLabel": 98, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "frio"},
+    {"gloss": "POCO", "category": "otro", "es": ["poco", "un poco"], "classifierLabel": 99, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "poco-a"},
+    {"gloss": "URGENTE", "category": "salud", "es": ["urgente", "urgencia"], "classifierLabel": 100, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "urgente"},
+    {"gloss": "SOLICITUD", "category": "otro", "es": ["solicitud", "pedido"], "classifierLabel": 101, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "solicitud"},
+    {"gloss": "ANOTAR", "category": "verbo", "es": ["anotar", "registrar", "registrado"], "classifierLabel": 102, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "anotar"},
+    {"gloss": "SEÑORA", "category": "otro", "es": ["señora"], "classifierLabel": 103, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "senora"},
+    {"gloss": "CAMINO", "category": "otro", "es": ["camino", "en camino"], "classifierLabel": 104, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "camino"},
+    {"gloss": "QUIETO", "category": "salud", "es": ["quieto", "sin mover", "no mover"], "classifierLabel": 105, "clip": null, "animationId": null, "nonManual": null, "validatedBy": null, "lexiconId": "quieto-a"}
   ]
 }

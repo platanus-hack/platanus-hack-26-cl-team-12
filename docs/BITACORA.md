@@ -157,3 +157,9 @@ Las entradas nuevas van **arriba**. Formato:
 - Decidí: inbound trunk + dispatch rule individual (salas `call-*`, agente `inbound-agent`). El agente maneja espera, saludo y buzón, en vez de FastAPI.
 - Plan B: si 3 h antes de presentar SIP no conecta, Twilio Media Streams → FastAPI. STT: prueba de 10 min Deepgram vs Scribe. Fuera: Tauri y avatar 3D; agente en LiveKit Cloud.
 - Falta: código (`inbound-agent`, `/webhooks/livekit`, `call.incoming` en `contract.ts`, aviso en `apps/web`).
+
+## 2026-11-22 — Tomás / Claude (feature/v4-senas) · escenario urgencia_caida + glosas del guion 1
+- Hice: escenario `urgencia_caida` (`packages/glosses/data/escenarios/`, con las 6 frases del guion 1 como ejemplos y lista blanca de caché) y **25 glosas nuevas** en `glosses.json` (81 → 106, versión 3) con `data/vocab/build_glosses.py` + `curacion_urgencia_caida.json`. Solo aditivo: los `classifierLabel` existentes no cambian.
+- Decidí: la animación de cada glosa se busca por `lexiconId` en mayúsculas (`hijo-a` → `data/signs/anim/HIJO-A.json`), no por el nombre de la glosa (`HIJO`). Las frases grabadas (`FRASE-*`) no son glosas: solo enseñan transiciones (`ml/learn_transitions.py`).
+- Verificado: pytest del agente (escenario, glosario, traductor: 22 OK) con las glosas nuevas. NO corrido: `pnpm typecheck/test`, ni el agente contra servicios reales. Se activa con `ESCENARIO=urgencia_caida`.
+- Falta / bloqueado: reproductor del avatar en `apps/web` (hoy `SenasFotos`); servir `data/signs/anim` y `transitions.json`; validar las señas con una persona señante de LSCh.
