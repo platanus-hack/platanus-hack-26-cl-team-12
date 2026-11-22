@@ -7,7 +7,7 @@ API   := services/api
 AGENT := services/agent
 
 .PHONY: help doctor env install setup dev dev-all dev-web dev-api dev-agent \
-        test test-api test-agent typecheck build check docker-build docker-api docker-agent clean nuke
+        test test-api test-agent lint typecheck build check docker-build docker-api docker-agent clean nuke
 
 help: ## Muestra esta ayuda
 	@echo "Uso: make <comando>"; echo
@@ -62,7 +62,11 @@ test-agent: ## Tests del agente y del traductor
 
 test: test-api test-agent ## Todos los tests de Python
 
-check: typecheck build test ## Typecheck + build + tests (antes de abrir un PR)
+lint: ## Lint de Python (ruff) en API y agente
+	uv --directory $(API) run ruff check .
+	uv --directory $(AGENT) run ruff check .
+
+check: lint typecheck build test ## Lint + typecheck + build + tests (antes de abrir un PR)
 
 # ───────── Docker (se construye desde la raíz del repo) ─────────
 docker-api: ## Construye la imagen de la API

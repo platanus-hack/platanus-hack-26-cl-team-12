@@ -1,4 +1,5 @@
 import pytest
+
 from translator import load_escenario
 from translator.voz import VozNoConfigurada, elegir_voz, normalizar_para_voz
 

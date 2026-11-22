@@ -16,10 +16,11 @@ import os
 
 import anthropic
 from dotenv import load_dotenv
-from guard import parse_cliente_message
 from livekit import agents, rtc
 from livekit.agents import NOT_GIVEN, Agent, AgentSession, StopResponse, llm
 from livekit.plugins import deepgram, elevenlabs, silero
+
+from guard import parse_cliente_message
 from pipeline import turno_cliente, turno_ejecutivo
 from store import abrir_store
 from translator import Translator, load_escenario, load_glossary
