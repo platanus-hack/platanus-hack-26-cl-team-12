@@ -70,7 +70,9 @@ function subDtw(T,B){const n=T.length,m=B.length;let pc=new Float64Array(m+1),pl
    cc[j]=d+bc;cl[j]=bl+1}
   pc=cc;pl=cl}
  return pc[m]/pl[m]}
-const prep=s=>({label:s.label,file:s.file,src:s.src,frames:s.frames,T:resample(s.frames,N_T)});
+// frame con al menos una mano detectada (si no, los features de mano quedan en cero y calzarían con "nada")
+const hasHand=f=>{for(let i=8;i<48;i++)if(f[i]!==0)return true;for(let i=50;i<90;i++)if(f[i]!==0)return true;return false};
+const prep=s=>{const fr=s.frames.filter(hasHand);return fr.length<MIN_FR?null:{label:s.label,file:s.file,src:s.src,frames:fr,T:resample(fr,N_T)}};
 
 // ── umbrales por palabra: costo típico entre muestras de la misma palabra ──
 function calib(){for(const k in thr)delete thr[k];const W=samples.filter(s=>isW(s.label));
@@ -85,7 +87,7 @@ function chips(){$('chips').innerHTML='';labels.forEach(l=>{const b=document.cre
  b.textContent=l+' ('+samples.filter(s=>s.label===l).length+')';b.onclick=()=>{cur=l;chips()};$('chips').append(b)});
  const L=$('lib');L.innerHTML=samples.length?'':'—';samples.forEach(s=>{const sp=document.createElement('span');sp.textContent=s.file+' ('+s.frames.length+'f) ';
  const x=document.createElement('a');x.textContent='✕';x.style.cursor='pointer';x.onclick=async()=>{await fetch('/api/borrar?file='+s.file,{method:'POST'});await load()};sp.append(x,' · ');L.append(sp)})}
-async function load(){samples=(await (await fetch('/api/muestras')).json()).filter(s=>isW(s.label)).map(prep);
+async function load(){samples=(await (await fetch('/api/muestras')).json()).filter(s=>isW(s.label)).map(prep).filter(Boolean);
  for(const s of samples)if(!labels.includes(s.label))labels.push(s.label);calib();chips()}
 $('add').onclick=()=>{const v=$('otra').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'-');if(v&&!labels.includes(v))labels.push(v);if(v)cur=v;$('otra').value='';chips()};
 $('sens').oninput=e=>{sens=+e.target.value;$('sv').textContent=sens};
@@ -166,7 +168,7 @@ let last=-1;
  ctx.fillStyle='#4f8';for(const i of [11,12,13,14,15,16])ctx.fillRect(P[i].x*cv.width-3,P[i].y*cv.height-3,6,6);
  ctx.fillStyle='#fc4';for(const h of Object.values(H))for(const p of h)ctx.fillRect(p.x*cv.width-2,p.y*cv.height-2,4,4);
  if(![11,12].every(i=>(P[i].visibility??1)>0.3))return;
- const act=active(P);
+ const act=active(P)&&Object.keys(H).length>0;   // sin manos detectadas no hay seña
  if(mode==='rec'){if(act){lastAct=now;buf.push(feat(P,H))}else if(buf.length){buf.push(feat(P,H));if(now-lastAct>END_MS)finishRec()}}
  else if(running){
   if(act){lastAct=now;buf.push(feat(P,H));if(buf.length>WIN*2)buf=buf.slice(-WIN);if(++nf%EVAL_EVERY===0)evalStream(now)}
