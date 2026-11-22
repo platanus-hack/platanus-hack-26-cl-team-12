@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comparar: MediaPipe vs WiLoR</title>
+<style>
+html,body{margin:0;height:100%;background:#14161a;color:#eee;font-family:system-ui,sans-serif}
+#top{display:flex;height:calc(100% - 150px)}
+.col{flex:1;position:relative;min-width:0}
+canvas{width:100%;height:100%;display:block;transform:scaleX(-1)}
+.lab{position:absolute;left:0;right:0;top:10px;text-align:center;font-size:18px;font-weight:700;text-shadow:0 0 6px #000}
+#bar{height:150px;display:flex;gap:14px;align-items:center;justify-content:center;background:#1d2026;flex-wrap:wrap;padding:6px}
+video{height:130px;border-radius:8px;transform:scaleX(-1)}
+button,select{border:0;border-radius:8px;padding:9px 14px;background:#3a4150;color:#fff;font-size:14px;cursor:pointer}
+#st{color:#9ad;font-size:13px;max-width:320px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/kalidokit@1.1.5/dist/kalidokit.umd.js"></script>
+<script type="importmap">{"imports":{
+ "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+ "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+ "@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.0.0/lib/three-vrm.module.js"}}</script>
+</head><body>
+<div id="top">
+ <div class="col"><canvas id="cA"></canvas><div class="lab" style="color:#7fdc7f">MediaPipe (como hoy)</div></div>
+ <div class="col"><canvas id="cB"></canvas><div class="lab" style="color:#e07fe0">WiLoR (dedos y muñeca)</div></div>
+</div>
+<div id="bar">
+ <video id="v" muted playsinline loop></video>
+ <button id="pp">⏸ Pausa</button>
+ <select id="sp"><option value="1">1×</option><option value="0.5" selected>0,5×</option><option value="0.25">0,25×</option></select>
+ <div id="st">Cargando…</div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {VRMLoaderPlugin} from '@pixiv/three-vrm';
+import {FilesetResolver,PoseLandmarker,HandLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+import {createRig} from './rig.js';
+const $=id=>document.getElementById(id), st=m=>$('st').textContent=m;
+const NAME=new URLSearchParams(location.search).get('v')||'HOLA__1';
+
+async function makeAvatar(canvas){
+ const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x14161a);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x667788,1.6));const dl=new THREE.DirectionalLight(0xffffff,1.4);dl.position.set(1,2,2);scene.add(dl);
+ const cam=new THREE.PerspectiveCamera(28,1,0.1,20);cam.position.set(0,1.25,1.9);cam.lookAt(0,1.18,0);cam.updateMatrixWorld(true);
+ const loader=new GLTFLoader();loader.register(p=>new VRMLoaderPlugin(p));
+ const vrm=(await loader.loadAsync('models/avatar.vrm')).userData.vrm;scene.add(vrm.scene);
+ const rig=createRig(vrm,cam);
+ const resize=()=>{const r=canvas.parentElement.getBoundingClientRect();renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix()};
+ addEventListener('resize',resize);resize();
+ return {rig,render:(dt)=>{vrm.update(dt);renderer.render(scene,cam)}};
+}
+st('Cargando avatares…');
+const A=await makeAvatar($('cA')), B=await makeAvatar($('cB'));
+
+st('Cargando video y datos de WiLoR…');
+const wil=await (await fetch('/api/wilor/'+NAME)).json();
+const video=$('v');video.src=URL.createObjectURL(await (await fetch('/video/'+NAME+'.webm')).blob());
+video.playbackRate=0.5;
+
+st('Cargando MediaPipe…');
+const fs=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+const mk=async(Cls,url,o)=>{try{return await Cls.createFromOptions(fs,{baseOptions:{modelAssetPath:url,delegate:'GPU'},runningMode:'VIDEO',...o})}catch(e){return await Cls.createFromOptions(fs,{baseOptions:{modelAssetPath:url,delegate:'CPU'},runningMode:'VIDEO',...o})}};
+const G='https://storage.googleapis.com/mediapipe-models/';
+const pose=await mk(PoseLandmarker,G+'pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',{numPoses:1});
+const hands=await mk(HandLandmarker,G+'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',{numHands:2,minHandDetectionConfidence:0.5,minHandPresenceConfidence:0.5,minTrackingConfidence:0.5});
+
+let ts=0;
+function process(t){ // t = tiempo del cuadro de video (s)
+ ts=Math.max(ts+1,performance.now());
+ const pr=pose.detectForVideo(video,ts), hr=hands.detectForVideo(video,ts+0.5);
+ const L=pr.landmarks[0];let okA=false;
+ if(L){const W=pr.worldLandmarks[0],vis=L.map(p=>p.visibility??0);okA=A.rig.arms(W,vis);B.rig.arms(W,vis)}
+ if(!okA){A.rig.restArms(0.08);B.rig.restArms(0.08)}
+ // --- A: MediaPipe completo. Lado por la muñeca de la pose más cercana.
+ const seenA={Left:false,Right:false},mpBySide={};
+ hr.landmarks.forEach((lm,i)=>{let side;
+  if(L&&(L[15].visibility>0.4||L[16].visibility>0.4)){const d=p=>Math.hypot(lm[0].x-p.x,lm[0].y-p.y),dl=d(L[15]),dr=d(L[16]);if(Math.min(dl,dr)>0.22)return;side=dl<dr?'Left':'Right'}
+  else side=hr.handednesses[i][0].categoryName==='Left'?'Right':'Left';
+  if(seenA[side])return;seenA[side]=true;mpBySide[side]=lm;
+  A.rig.handMP(side,lm,hr.worldLandmarks[i])});
+ for(const s of['Left','Right'])if(!seenA[s])A.rig.restHand(s);
+ // --- B: WiLoR (dedos y muñeca) + pulgar de MediaPipe
+ const fr=wil.frames[Math.max(0,Math.min(wil.frames.length-1,Math.round(t*wil.fps)))];
+ const seenB={Left:false,Right:false};
+ for(const h of fr.hands){const side=h.is_right?'Right':'Left';if(seenB[side])continue;seenB[side]=true;
+  const P=i=>B.rig.V3a(h.joints3d[i]);B.rig.wrist(side,P);B.rig.fingersGeo(side,P);
+  if(mpBySide[side])B.rig.fingersKal(side,mpBySide[side],'Thumb')}
+ for(const s of['Left','Right'])if(!seenB[s])B.rig.restHand(s);
+}
+// un cuadro de video decodificado → un procesamiento
+function cb(now,meta){process(meta.mediaTime);video.requestVideoFrameCallback(cb)}
+video.requestVideoFrameCallback(cb);
+await video.play();st('Reproduciendo '+NAME+' · izquierda: MediaPipe, derecha: WiLoR. Mismo cuerpo, solo cambian manos y dedos.');
+$('pp').onclick=()=>{if(video.paused){video.play();$('pp').textContent='⏸ Pausa'}else{video.pause();$('pp').textContent='▶ Seguir'}};
+$('sp').onchange=()=>video.playbackRate=+$('sp').value;
+const clock=new THREE.Clock();
+(function loop(){requestAnimationFrame(loop);const dt=clock.getDelta();A.render(dt);B.render(dt)})();
+</script></body></html>

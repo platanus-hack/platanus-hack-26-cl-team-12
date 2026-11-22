@@ -1,52 +1,52 @@
-/* Puente: generado desde tokens.json. Tipografía del sistema (San Francisco en iPhone, Roboto en Android), como una app nativa. */
+/* Puente: generado desde tokens.json. Tipografía SUSE (Google Fonts, cargada en apps/web/src/app/layout.tsx); si no carga, la del sistema. */
 
-/* Claro es el tema por defecto; Noche con data-theme="dark" en <html>. */
-:root, [data-theme="light"] {
+/* Oscuro es el tema por defecto (Rafael, 21-11-2026); claro con data-theme="light" en <html> (botón de tema). */
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #141414;
+  --surface: #212121;
+  --surface-raised: #2e2e2e;
+  --line: #383838;
+  --line-strong: #7a7a7a;
+  --fg: #ffffff;
+  --muted: #ababab;
+  --accent: #ffd34d;
+  --brand: #ffd34d;
+  --on-accent: #111111;
+  --accent-soft: #3a3214;
+  --cliente: #7cc4ff;
+  --cliente-soft: #1f3247;
+  --live: #4ade80;
+  --live-soft: #15301f;
+  --danger: #e11d2a;
+  --on-danger: #ffffff;
+  --focus: var(--fg);
+}
+
+[data-theme="light"] {
   color-scheme: light;
-  --bg: #f2f3f6;
-  --surface: #ffffff;
-  --surface-raised: #e9ebef;
-  --line: #dde0e6;
-  --line-strong: #6b7591;
-  --fg: #14171c;
-  --muted: #5b6270;
+  --bg: #ffffff;
+  --surface: #f3f3f3;
+  --surface-raised: #e8e8e8;
+  --line: #e2e2e2;
+  --line-strong: #757575;
+  --fg: #000000;
+  --muted: #5e5e5e;
   --accent: #ffe08a;
   --brand: #e6a700;
   --on-accent: #1f2540;
   --accent-soft: #fff4cc;
   --cliente: #1d6fa3;
-  --cliente-soft: #dce9ff;
+  --cliente-soft: #e3eefb;
   --live: #1f7a4a;
-  --live-soft: #d9f5e5;
-  --danger: #c9333a;
+  --live-soft: #dcf3e5;
+  --danger: #d1101c;
   --on-danger: #ffffff;
-  --focus: var(--fg);
-}
-
-[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #0b1220;
-  --surface: #131c2e;
-  --surface-raised: #1c2740;
-  --line: #2c3a57;
-  --line-strong: #5d6f92;
-  --fg: #f5f7fb;
-  --muted: #9aa4b8;
-  --accent: #ffd34d;
-  --brand: #ffd34d;
-  --on-accent: #111111;
-  --accent-soft: #3a3214;
-  --cliente: #7dd3fc;
-  --cliente-soft: #0f2c40;
-  --live: #4ade80;
-  --live-soft: #0f2e1c;
-  --danger: #ff8a80;
-  --on-danger: #0b1220;
 }
 
 :root {
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, "Segoe UI", system-ui, sans-serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", system-ui, sans-serif;
+  --font-display: "SUSE", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", system-ui, sans-serif;
+  --font-sans: "SUSE", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --space-1: 4px;
   --space-2: 8px;

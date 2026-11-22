@@ -1,0 +1,212 @@
+[
+ {
+  "id": "hola",
+  "glosa": "HOLA",
+  "significa": "Hola",
+  "tipo": "seña"
+ },
+ {
+  "id": "ambulancia",
+  "glosa": "AMBULANCIA",
+  "significa": "Ambulancia",
+  "tipo": "seña"
+ },
+ {
+  "id": "necesitar",
+  "glosa": "NECESITAR",
+  "significa": "Necesitar",
+  "tipo": "seña"
+ },
+ {
+  "id": "hijo-a",
+  "glosa": "HIJO/A",
+  "significa": "y f. Hijo",
+  "tipo": "seña"
+ },
+ {
+  "id": "caer-persona",
+  "glosa": "CAER-PERSONA",
+  "significa": "Caerse",
+  "tipo": "seña"
+ },
+ {
+  "id": "codo",
+  "glosa": "CODO",
+  "significa": "codo",
+  "tipo": "fuera-del-diccionario"
+ },
+ {
+  "id": "hueso",
+  "glosa": "HUESO",
+  "significa": "Hueso",
+  "tipo": "seña"
+ },
+ {
+  "id": "romper",
+  "glosa": "ROMPER",
+  "significa": "Romper",
+  "tipo": "seña"
+ },
+ {
+  "id": "despertar-se",
+  "glosa": "DESPERTAR/SE",
+  "significa": "Despertar",
+  "tipo": "seña"
+ },
+ {
+  "id": "respirar",
+  "glosa": "RESPIRAR",
+  "significa": "Respirar",
+  "tipo": "seña"
+ },
+ {
+  "id": "bien",
+  "glosa": "BIEN",
+  "significa": "Bien",
+  "tipo": "seña"
+ },
+ {
+  "id": "si",
+  "glosa": "SÍ",
+  "significa": "Sí",
+  "tipo": "seña"
+ },
+ {
+  "id": "pero",
+  "glosa": "PERO",
+  "significa": "Pero",
+  "tipo": "seña"
+ },
+ {
+  "id": "brazo",
+  "glosa": "BRAZO",
+  "significa": "brazo",
+  "tipo": "fuera-del-diccionario"
+ },
+ {
+  "id": "apoyar",
+  "glosa": "APOYAR",
+  "significa": "Apoyar",
+  "tipo": "seña"
+ },
+ {
+  "id": "no-poder",
+  "glosa": "NO-PODER",
+  "significa": "No poder",
+  "tipo": "seña"
+ },
+ {
+  "id": "hinchado-a",
+  "glosa": "HINCHADO/A",
+  "significa": "Hinchado",
+  "tipo": "seña"
+ },
+ {
+  "id": "entender",
+  "glosa": "ENTENDER",
+  "significa": "Entender",
+  "tipo": "seña"
+ },
+ {
+  "id": "sangre",
+  "glosa": "SANGRE",
+  "significa": "Sangre",
+  "tipo": "seña"
+ },
+ {
+  "id": "mano",
+  "glosa": "MANO",
+  "significa": "mano",
+  "tipo": "fuera-del-diccionario"
+ },
+ {
+  "id": "palido-a",
+  "glosa": "PÁLIDO/A",
+  "significa": "Pálido",
+  "tipo": "seña"
+ },
+ {
+  "id": "frio",
+  "glosa": "FRÍO",
+  "significa": "Frío",
+  "tipo": "seña"
+ },
+ {
+  "id": "poco-a",
+  "glosa": "POCO/A",
+  "significa": "Poco",
+  "tipo": "seña"
+ },
+ {
+  "id": "urgente",
+  "glosa": "URGENTE",
+  "significa": "Urgente",
+  "tipo": "seña"
+ },
+ {
+  "id": "hospital",
+  "glosa": "HOSPITAL",
+  "significa": "Hospital",
+  "tipo": "seña"
+ },
+ {
+  "id": "ir",
+  "glosa": "IR",
+  "significa": "Ir",
+  "tipo": "seña"
+ },
+ {
+  "id": "solicitud",
+  "glosa": "SOLICITUD",
+  "significa": "Solicitud",
+  "tipo": "seña"
+ },
+ {
+  "id": "anotar",
+  "glosa": "ANOTAR",
+  "significa": "Anotar",
+  "tipo": "seña"
+ },
+ {
+  "id": "domicilio",
+  "glosa": "DOMICILIO",
+  "significa": "Domicilio",
+  "tipo": "seña"
+ },
+ {
+  "id": "tener",
+  "glosa": "TENER",
+  "significa": "Tener",
+  "tipo": "seña"
+ },
+ {
+  "id": "senora",
+  "glosa": "SEÑORA",
+  "significa": "Señora",
+  "tipo": "seña"
+ },
+ {
+  "id": "venir",
+  "glosa": "VENIR",
+  "significa": "Venir",
+  "tipo": "seña"
+ },
+ {
+  "id": "camino",
+  "glosa": "CAMINO",
+  "significa": "Camino",
+  "tipo": "seña"
+ },
+ {
+  "id": "esperar",
+  "glosa": "ESPERAR",
+  "significa": "Esperar",
+  "tipo": "seña"
+ },
+ {
+  "id": "quieto-a",
+  "glosa": "QUIETO/A",
+  "significa": "Quieto",
+  "tipo": "seña"
+ }
+]

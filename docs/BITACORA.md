@@ -8,6 +8,63 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — r.labbevidal / Claude (v4/senas-s3) · fotos de señas desde S3
+- Hice: la web lee las fotos del Diccionario LSCh desde `NEXT_PUBLIC_SENAS_URL` (bucket S3); si falta, usa `/senas` local como antes (`apps/web/src/lib/senas.ts`). El service worker recibe esa URL al registrarse (`/sw.js?senas=…`) y sigue guardando las fotos para usarlas sin internet (VERSION `puente-v3`). `make senas-push` las sube y `make senas-pull` las baja (combinado con chore/senas-s3).
+- Decidí: fotos con caché larga e inmutable; `manifest.json` sin caché. El bucket necesita lectura pública de `senas/*` y CORS con GET para el origen de la web.
+- Falta: subir las fotos al bucket, configurar CORS y poner `NEXT_PUBLIC_SENAS_URL` en `puente-web` (Render) y redesplegar. Ojo derechos UMCE: el bucket queda público, igual que si la web las sirviera.
+
+## 2026-11-22 — Rafael / Claude (v4/avatar-3d-app-general) · última iteración antes del PR
+- Decidí (Rafael): sin pestaña Emergencias (se cubre en el inicio). Inicio con la ubicación en chico y **"Pedir una ambulancia" destacado en rojo**. Solo la llamada de ambulancia tiene guion completo (es la que se prueba); las demás son un ejemplo corto. **Logo nuevo** (guiones celestes que pasan a ondas de sonido amarillas). La calificación es sobre Puente (avatar, subtítulos, lectura de señas), no sobre la clínica.
+- Hice: lo anterior; íconos PNG de la PWA regenerados con el logo nuevo. **Rendimiento**: el avatar 3D dibuja solo mientras hace señas (antes 60 cuadros por segundo siempre), resolución 1,5× máx. y cámara a 480×640 y 24 fps. 45 tests OK.
+- Nota: `next dev` es pesado por diseño; para probar la app usar `pnpm --filter @puente/web preview` (versión compilada, mucho más liviana).
+- **Probado en el Samsung Galaxy A33 de Rafael** (versión instalable, `adb reverse`): instalación con el logo nuevo, llamada de ambulancia completa con el avatar 3D haciendo las señas, cámara, Enviar, subtítulos y calificación. Funciona perfecto.
+
+## 2026-11-22 — Rafael / Claude (v4/avatar-3d-app-general) · avatar 3D de Tomás, señas con Enviar y app general
+- Decidí (Rafael): Puente es comunicación para personas sordas **en general** (banco, salud, trámites, personas), no solo salud. En la videollamada no se muestran las respuestas a decir: la cámara lee las señas, se toca **Enviar** y lo enviado aparece como subtítulo; las sugerencias quedan solo en el **modo chat**. El avatar se reemplazará más adelante por el que entrena el equipo.
+- Hice: **avatar 3D de Tomás** en la videollamada (`AvatarVRM`: modelo VRM + animaciones de `data/signs/anim`, encadenadas con solape; versión simplificada de `chain.html`). `scripts/copiar_animaciones.mjs` copia las animaciones a `public/anim` en predev/prebuild (no versionado). Si el 3D no carga, queda el intérprete dibujado. El service worker guarda el modelo y las animaciones (v2). Guiones simulados por tipo: urgencia (con las glosas grabadas), banco, hora médica y general. **Inicio**: contactos frecuentes (10, carrusel), "¿Qué necesitas hacer?" (ejecutivo del banco, agendar hora, trámite, ambulancia), consejos para tus llamadas. Pestañas: **Inicio · Contactos · Historial · Emergencias**. Contactos con buscador; Emergencias recibe ubicación y "Avisar a mis contactos". 45 tests OK, build OK; capturas a 390×844 (el avatar hace DESPERTAR, RESPIRAR, BIEN).
+- Falta: reconocer señas reales (v3); transiciones aprendidas de frases (como `chain.html`); glosas reales del agente para banco/hora/general.
+
+## 2026-11-22 — Rafael / Claude (v4/sin-livekit) · sin LiveKit en la app y revisión de lo comprometido
+- Hice: la app se conecta solo por `/twilio/cliente` (sin LiveKit): fuera el camino de LiveKit de `call.ts`, `livekit-client`, sus pruebas y `NEXT_PUBLIC_TRANSPORTE` (45 tests OK). Revisión de accesibilidad pantalla por pantalla (nombres de botones y campos, alt, tamaño táctil, ids, idioma, títulos): arreglados los puntitos de los carruseles (zona de 24×24, WCAG 2.5.8) y los títulos de videollamada y calificación. `Composer` no manda con Enter mientras el teclado compone (Samsung).
+- Estado frente D: D2, D3, D6 (Android) ✅; D1 sin errores en la revisión propia (falta lector de pantalla real); D5 ⚠️ el avatar dibujado mueve las manos pero no hace las señas reales (las fotos sí); D4 ❌; D7 espera a C.
+- Falta (otros dueños): LiveKit sigue en `services/api` (`/token`, `livekit-api`) y `services/agent` (agente sobre LiveKit Agents) y en los docs/ADR-0005: decidir si se elimina (A y B).
+
+## 2026-11-21 — Tomás / Claude (feature/v4-avatar) · avatar VRM que firma + encadenado
+- Hice: avatar VRM en el navegador con webcam (`lab/v4_avatar/live/`), grabación de tomas por glosa (video crudo), extracción de manos con WiLoR, "cocción" a animación del avatar, fusión de tomas (DTW, mediana, suavizado) y encadenado con solape adaptativo (`chain.html`). 8 señas fusionadas (HOLA, GRACIAS, SÍ, NO, PERMISO, MÉDICO, ENFERMO/A, FIEBRE) en `data/signs/anim/`. Docs: `docs/V4-AVATAR.md` y `docs/GUION-GRABACION.md`.
+- Decidí: encadenado **solapado** (Fluidez "alta", 0,45 s): medido en 56 parejas baja la aceleración del empalme de 172× a 1,7× lo normal (`ml/chain_sim.py`); Tomás lo vio y lo aprobó. WiLoR solo offline y fuera del repo (licencia no comercial + MANO).
+- Falta / bloqueado: validar las señas con una persona señante de LSCh; grabar las ~71 glosas restantes, alfabeto manual y números (no están en el diccionario); conectar con la frase del ejecutivo (Haiku → glosas) y con el simulador de llamada; sin push al repo del equipo hasta que Tomás lo pida.
+
+## 2026-11-21 — Claude (data-glosario)
+- Hice: glosario LSCh **A-H** extraído del PDF (UMCE 2009): 1057 entradas en `data/vocab/glosario.jsonl`, las 1057 con foto recortada (`data/signs/img/`, gitignored), más `glosario.md`, `glosario_compacto.txt` (33 KB, cabe entero en un prompt) y README. Todo local con pymupdf, **0 USD de API**; scripts en `data/vocab/scripts/` (`extract.py`, `build.py`), se regenera en segundos.
+- Decidí: el PDF trae texto seleccionable y fotos incrustadas, así que no se necesita visión de Claude. `escenario` (salud 37, banco 19) es heurística por palabras clave: revisar. El diccionario NO describe cómo se hace la seña ni trae categorías por tema: `descripcion_seña` y `categoría` quedan en null (la seña está en la foto).
+- Falta / bloqueado: procesar `Diccionario_LSCh_I-Z.pdf` (mismo script). **Licencia:** los créditos dicen "Prohibida la reproducción total o parcial de los textos, sin expresa autorización de las autoras": decidir si se pushea el texto extraído a un repo público. Sin push ni PR hasta que Tomás confirme.
+## 2026-11-22 — Rafael / Claude (v4/navegacion-tema) · llamada como videollamada (FaceTime)
+- Decidí (Rafael): la llamada es una **videollamada**: arriba el **avatar del ejecutivo** haciendo señas (reemplaza las fotos del diccionario) con subtítulos grandes; abajo **la cámara del usuario**, que leerá sus señas, con sus subtítulos. En el menú, el editor pasa a "Elegir avatar del intérprete" (es el avatar que muestra la llamada, no el del usuario).
+- Hice: `CamaraPropia` (cámara frontal espejada con `getUserMedia`, aviso si no hay permiso; no graba ni sale del celular). Las respuestas sugeridas simulan responder con señas ("Leyendo tus señas…" y luego el texto). Controles abajo: Conversación (historial del chat en una hoja), Escribir (teclado de respaldo), Cámara y Colgar. Probado en Edge con cámara de prueba a 390×844.
+- Falta: **v3 (Tomás):** reconocer las señas de la cámara con `@puente/signs` y mandar `glosas_cliente` (hoy simulado). `SenasFotos` queda sin uso en la llamada.
+
+## 2026-11-22 — Rafael / Claude (v4/navegacion-tema) · perfil de Rafael, ubicación, contactos y carruseles
+- Hice: perfil **Rafael Rencoret** con su foto (`public/perfil/rafael.jpg`, con su autorización); el guion pasa a un papá ("señor"). **Ubicación** con mapa dibujado y opción de compartirla con la clínica al llamar (aviso en el chat; TODO(real-data): mandarla a la API). **10 clínicas** en carrusel con **puntitos** (y los consejos también), con colores por clínica. **Avisar a mis contactos** (mensaje con la ubicación, simulado) y **contactos de emergencia** editables en el perfil. Consejos con ilustraciones propias. "Cómo funciona" detallado en 4 pasos. "Tu clínica" en Emergencias rehecha. **Intérprete más realista**: volumen con degradados, ojos con párpados, cejas, nariz, labios, orejas y arrugas; nuevas opciones de forma de cara y edad. Arreglo: el menú aplastaba la lista del perfil.
+- Falta: avatar 3D real (VRM + three.js, requiere modelos); envío real de SMS/WhatsApp a contactos; números reales de clínicas.
+
+## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · estilo de app de movilidad y fuente SUSE
+- Decidí (Rafael): interfaz con el lenguaje visual de las apps de movilidad (referencia: Uber), sin copiar su marca: grises neutros, negro/blanco como color de acción, títulos grandes y gruesos, tarjetas grises, carrusel y barra inferior plana. Fuente **SUSE** (Google Fonts; sin internet, la del sistema).
+- Hice: inicio con **3 clínicas** (Santa María, Alemana, Las Condes; las tres usan el mismo guion en `?mock=1`), **3 consejos de primeros auxilios** en carrusel (fractura, quemaduras, datos a mano) y "Cómo funciona" en chico. **Calificación nueva**: pantalla completa con la sigla de la clínica, estrellas grandes en el color del texto, etiquetas "¿Qué salió bien?" / "¿Qué podemos mejorar?" según la nota, comentario y botón negro; "Omitir" arriba. Paletas nuevas con contrastes revisados. Revisado con capturas a 390×844.
+- Falta: números reales de las clínicas (TODO(real-data)); revisar los consejos con alguien del área de salud antes de mostrarlos fuera de la demo.
+
+## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · login, avatar a la medida, calificación
+- Hice: perfil ficticio **Patricia Muñoz** con retrato dibujado (no se usa foto ni identidad de personas reales). **Editor del intérprete** con vista previa en vivo: estatura, contextura, piel (5), largo y color de pelo, ojos, vello facial, lentes y color de ropa (`Interprete` + `Retrato` en `packages/ui`). **Login** de demo (cualquier usuario y contraseña); Cerrar sesión vuelve al login. **Calificación de 5 estrellas** con comentario al terminar la llamada. Foto del usuario al lado de sus mensajes en el chat. Barra: foto a la izquierda, logo al centro, tema a la derecha; el menú sale desde la izquierda. Botón central "Inicio" neutro (antes "Llamar", confundía). Oscuro un poco más claro (`#161a21`). Revisado con capturas a 390×844.
+- Falta: enviar la calificación al backend y login real (TODO(real-data)).
+
+## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · tema oscuro, menú de perfil y pestañas
+- Decidí (Rafael): **oscuro por defecto** con botón sol/luna arriba a la izquierda; la foto de perfil también arriba a la izquierda y abre un **menú desde la derecha** (perfil, personalizar intérprete, accesibilidad, cerrar sesión); abajo **Historial · Llamar (centro) · Emergencias**. LiveKit no se usará.
+- Hice: paleta oscura nueva (contrastes revisados, todo texto ≥ 4,5:1); `lib/preferencias.ts` (se guardan en el celular) con tema, tipo de intérprete (fotos/dibujado), velocidad de señas, tono de piel del intérprete dibujado, texto grande, reducir movimiento, ver texto original y vibrar; script en `<head>` para que no destelle el tema al abrir. `AppShell` (barras), `MenuPerfil`, `Historial` (simulado, con resumen al tocar), `Emergencias` (131 SAMU llama con Puente; 132/133/134 "Pronto"; clínica de ejemplo). Perfil de ejemplo: Camila Rojas. Revisado con capturas en 390×844, oscuro y claro.
+- Falta: perfil, historial e inicio de sesión reales (TODO(real-data)). Sacar el código de LiveKit (`call.ts`, `livekit-client`) en un PR aparte.
+
+## 2026-11-21 — Rafael / Claude (v4/llamada-real) · la app se conecta a la llamada real de Martín
+- Hice: `apps/web/src/lib/call.ts` se conecta por defecto al WebSocket `/twilio/cliente` de `services/api` (plan C de A); LiveKit queda detrás de `NEXT_PUBLIC_TRANSPORTE=livekit`. Arreglos de la revisión de código (D): **5** la app detecta cuando se corta la conexión (aviso y "Llamada terminada", también con LiveKit vía `Disconnected`) y **8** en la app publicada ya no apunta a `localhost:8000` si falta `NEXT_PUBLIC_API_URL` (avisa en vez de fallar en silencio).
+- Verificado sin claves: levanté `services/api` en local y simulé a Twilio con POST a `/twilio/voz`, `/twilio/turno`, `/twilio/espera` y `/twilio/estado`: la app pasa a "En llamada", muestra lo que dice el ejecutivo, la frase del cliente le llega a Twilio para decirla y al cortar queda "Llamada terminada". Apagando el servidor a mitad de llamada, la app avisa el corte.
+- Falta: **A (Martín):** endpoint para que Colgar corte la llamada de Twilio (hoy solo cierra el canal con la app) y token en `/twilio/cliente` (A4). Probar con una llamada real: Martín levanta la API con ngrok y la app usa `NEXT_PUBLIC_API_URL=<url de ngrok>`. Sin `ANTHROPIC_API_KEY` la API manda el texto sin simplificar.
 ## 2026-11-21 — r.labbevidal / Claude (chore/simplify) · limpieza de todo el código
 - Hice: la API reusa `MAX_TEXTO` (500, del contrato), `recortar`, `normalizar_para_voz`, `DEFAULT_PATH` y los `stt_keyterms` del traductor del agente. Antes eran copias, y el tope era 600. El agente precarga VAD, diccionario y escenario con `prewarm_fnc`. En la web, el contador vive en `EstadoLlamada`, `SignAvatar` perdió props muertos, `SenasFotos` se reinicia con `key` y `Composer` respeta `LIMITES.max_texto`.
 - Verificado: ruff, pytest (api 41, agent 63), typecheck, build y 2 archivos de vitest. No probado en el navegador.
@@ -123,6 +180,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Verificado: `pnpm typecheck` y `pnpm build` OK; `pytest` api (7) y agent (10) OK. No probado con claves reales ni con Docker.
 - Falta / bloqueado: **Tomás y el resto deben aceptar (c) antes de mergear**; (a) y (b) se pueden tomar solos. Quien tenga trabajo abierto en `app/backend` o `app/web` debe rebasar con el mapa del ONBOARDING §3. `/llamadas` (SIP saliente) es stub `TODO(v1)`; `agent.py` no se ha corrido contra LiveKit real; voz chilena (`ELEVENLABS_VOICE_ID`) sin elegir; push bloqueado por permisos en esta sesión.
 
+## 2026-11-21 — Tomás / Claude (lab-v1-v2)
+- Hice: simulación de llamada en el navegador (sin Twilio): `app/backend/main.py` (FastAPI + WebSocket) con páginas `/ejecutivo` (micrófono → Scribe) y `/cliente` (chat). Checkbox v2 activa simplificar/naturalizar. Probado de punta a punta por WebSocket: STT ~0,5 s, LLM ~1 s, TTS ~0,6 s. Prompt de "complejizar" afinado (suena normal, sin agregados). Scribe: 7/10 frases perfectas con audio de WhatsApp.
+- Decidí: simular al ejecutivo en el navegador hasta decidir el upgrade de Twilio (pide cargar saldo).
+- Falta: probar con micrófono real en el navegador, STT en streaming, Twilio real, v3/v4.
+
 ## 2026-11-21 — Tomás / Claude (main)
 - Hice: primera investigación v1→v4 en `data/research/` (5 notas). Hallazgos clave: v1 con Twilio Media Streams o ConversationRelay; v2 son 2 prompts con Haiku; v3 y v4 no tienen modelos para LSCh → vocabulario cerrado (MediaPipe + clasificador propio; clips pregrabados por glosa).
 - Decidí: el glosario LSCh de los PDFs se estructura a JSONL; si cabe en contexto va entero al prompt con caching, sin vectorizar.
@@ -143,3 +205,14 @@ Las entradas nuevas van **arriba**. Formato:
 - Decidí: inbound trunk + dispatch rule individual (salas `call-*`, agente `inbound-agent`). El agente maneja espera, saludo y buzón, en vez de FastAPI.
 - Plan B: si 3 h antes de presentar SIP no conecta, Twilio Media Streams → FastAPI. STT: prueba de 10 min Deepgram vs Scribe. Fuera: Tauri y avatar 3D; agente en LiveKit Cloud.
 - Falta: código (`inbound-agent`, `/webhooks/livekit`, `call.incoming` en `contract.ts`, aviso en `apps/web`).
+
+## 2026-11-22 — Tomás / Claude (feature/v4-senas) · escenario urgencia_caida + glosas del guion 1
+- Hice: escenario `urgencia_caida` (`packages/glosses/data/escenarios/`, con las 6 frases del guion 1 como ejemplos y lista blanca de caché) y **25 glosas nuevas** en `glosses.json` (81 → 106, versión 3) con `data/vocab/build_glosses.py` + `curacion_urgencia_caida.json`. Solo aditivo: los `classifierLabel` existentes no cambian.
+- Decidí: la animación de cada glosa se busca por `lexiconId` en mayúsculas (`hijo-a` → `data/signs/anim/HIJO-A.json`), no por el nombre de la glosa (`HIJO`). Las frases grabadas (`FRASE-*`) no son glosas: solo enseñan transiciones (`ml/learn_transitions.py`).
+- Verificado: pytest del agente (escenario, glosario, traductor: 22 OK) con las glosas nuevas. NO corrido: `pnpm typecheck/test`, ni el agente contra servicios reales. Se activa con `ESCENARIO=urgencia_caida`.
+- Falta / bloqueado: reproductor del avatar en `apps/web` (hoy `SenasFotos`); servir `data/signs/anim` y `transitions.json`; validar las señas con una persona señante de LSCh.
+
+## 2026-11-22 — Claude (chore/senas-s3) · fotos de señas en S3 privado
+- Hice: `make senas-pull` / `make senas-push` (`aws s3 sync` de `apps/web/public/senas/` ↔ `s3://$SENAS_S3_BUCKET/senas/`) y las variables `SENAS_S3_BUCKET`, `AWS_REGION`, `AWS_PROFILE` en `.env.example`.
+- Decidí: bucket PRIVADO (derechos UMCE): cada persona baja las fotos con sus credenciales en vez de correr `extraer_senas.py` con los PDF. **Cambió después:** `senas/*` quedó de lectura pública para que la web desplegada muestre las fotos (ver v4/senas-s3). Sin fotos la app sigue usando el avatar de palitos.
+- Falta: crear el bucket (la sesión de AWS había expirado) y que alguien con las fotos generadas corra `make senas-push`.

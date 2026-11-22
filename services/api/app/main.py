@@ -2,7 +2,7 @@
 
 - /health          chequeo de vida (heredado del backend original).
 - /token           token de LiveKit con permisos mínimos por rol.
-- /llamadas        crea la llamada telefónica saliente (LiveKit SIP + Twilio) — v1.
+- /llamadas        Twilio llama al ejecutivo (v1, plan C); la conversación sigue en /twilio/*.
 - /glosses         diccionario de glosas (contrato de ADR-0001).
 - /twilio/*        v1 sin LiveKit: Twilio conversa por turnos con el ejecutivo (app/twilio_media.py, app/llamada.py).
 
@@ -10,6 +10,7 @@ Swagger (solo en desarrollo): http://localhost:8000/docs  ·  ReDoc: /redoc  · 
 Se apaga con API_ENV=production (el Dockerfile ya lo fija) o con API_DOCS=0.
 """
 
+import asyncio
 import json
 import os
 import re
@@ -57,10 +58,11 @@ def version_api() -> str:
 DESCRIPCION = """
 API de **Puente**: llamadas telefónicas accesibles para personas sordas.
 
-La conversación en vivo **no** pasa por esta API: va por el data channel de LiveKit entre la PWA y el agente
-traductor (ver `docs/contrato.md`). Esta API solo entrega lo necesario para entrar a la sala y para la llamada.
+v1 (plan C, funciona con el trial de Twilio): la PWA abre el WebSocket `/twilio/cliente` y llama a
+`POST /llamadas`. Twilio llama al ejecutivo y conversa por turnos (`/twilio/*`): lo que dice llega simplificado a
+la PWA (`ejecutivo_dice`) y lo que escribe el cliente (`cliente_dice`) se le dice por voz. Mensajes: `docs/contrato.md`.
 
-Flujo: `POST /token` → la PWA entra a la sala de LiveKit → `POST /llamadas` une al ejecutivo por teléfono (SIP).
+`/token` (LiveKit) queda para cuando se pague el upgrade de Twilio y se vuelva al plan con SIP.
 """
 
 TAGS = [
@@ -187,22 +189,38 @@ def token() -> TokenResponse:
 
 
 class LlamadaRequest(BaseModel):
-    room: str = Field(description="Sala devuelta por /token.", examples=["puente-3f2a9c"])
     numero: str = Field(
         description="Teléfono del ejecutivo en E.164. Debe estar en ALLOWED_DESTINATIONS.", examples=["+56912345678"]
     )
+    room: str | None = Field(None, description="Sala de LiveKit (solo plan con SIP; en el plan C no se usa).")
+
+
+class LlamadaResponse(BaseModel):
+    sid: str = Field(description="Id de la llamada en Twilio.", examples=["CA0123456789abcdef"])
+    estado: str = Field(examples=["queued"])
+
+
+def llamar_con_twilio(numero: str, base: str) -> tuple[str, str]:
+    """Twilio llama al ejecutivo; al contestar pide las instrucciones a /twilio/voz (plan C, funciona en trial)."""
+    from twilio.rest import Client
+
+    llamada = Client(os.environ["TWILIO_ACCOUNT_SID"], os.environ["TWILIO_AUTH_TOKEN"]).calls.create(
+        to=numero,
+        from_=os.environ["TWILIO_PHONE_NUMBER"],
+        url=f"{base}/twilio/voz",
+        status_callback=f"{base}/twilio/estado",
+    )
+    return llamada.sid, llamada.status
 
 
 @app.post(
-    "/llamadas", tags=["llamada"], summary="Llamar al ejecutivo y unirlo a la sala (v1)",
-    responses=errores(403, 422, 501),
+    "/llamadas", tags=["llamada"], summary="Llamar al ejecutivo por teléfono (v1)",
+    response_model=LlamadaResponse, responses=errores(403, 422, 503),
 )
-def crear_llamada(req: LlamadaRequest):
-    """v1: llama al ejecutivo por teléfono y lo une a la sala como participante SIP.
+async def crear_llamada(req: LlamadaRequest) -> LlamadaResponse:
+    """v1 (plan C): Twilio llama al ejecutivo y la conversación sigue por /twilio/* y el WebSocket /twilio/cliente.
 
-    TODO(v1): crear un SIP outbound trunk en LiveKit apuntando al Elastic SIP Trunk de Twilio
-    (LIVEKIT_SIP_TRUNK_ID) y llamar a `CreateSIPParticipant` con `sip_call_to=req.numero`.
-    Ver services/agent/telefonia/README.md.
+    TODO(auth): exigir el token del cliente y limitar la tasa antes de desplegar (A4).
     """
     if not E164.fullmatch(req.numero):
         raise HTTPException(422, "El número debe estar en formato E.164 (+56...)")
@@ -210,5 +228,9 @@ def crear_llamada(req: LlamadaRequest):
     permitidos = {n.strip() for n in os.getenv("ALLOWED_DESTINATIONS", "").split(",") if n.strip()}
     if req.numero not in permitidos:
         raise HTTPException(403, "Número no permitido (ALLOWED_DESTINATIONS)")
-    # TODO(v1): verificar que `req.room` pertenece al token del cliente que llama (firmar el room en /token).
-    raise HTTPException(501, "TODO(v1): llamada SIP saliente aún no implementada")
+    base = os.getenv("PUBLIC_BASE_URL", "").split("#")[0].strip().rstrip("/")
+    faltan = [k for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER") if not os.getenv(k)]
+    if faltan or not base.startswith("https://"):
+        raise HTTPException(503, "Twilio no configurado (TWILIO_* y PUBLIC_BASE_URL con https://)")
+    sid, estado = await asyncio.to_thread(llamar_con_twilio, req.numero, base)
+    return LlamadaResponse(sid=sid, estado=estado)

@@ -1,6 +1,9 @@
 /* Colores y letras vienen de @puente/ui (tokens.css + components.css, importados en layout.tsx).
-   Estilo de app nativa: tipografía del sistema, títulos grandes, listas agrupadas, barra de pestañas. */
+   Estilo de app nativa: tipografía del sistema, barra arriba, pestañas abajo, listas agrupadas.
+   Oscuro es el tema por defecto; todo color sale de los tokens para que funcione en oscuro y en claro. */
 :root { font-size: 17px; }
+:root[data-texto="grande"] { font-size: 20px; }
+:root[data-movimiento="reducido"] *, :root[data-movimiento="reducido"] *::before, :root[data-movimiento="reducido"] *::after { animation: none !important; transition: none !important; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -10,34 +13,115 @@ main { max-width: 560px; margin: 0 auto; padding: var(--space-4); display: flex;
 
 h1, h2 { margin: 0; }
 
-/* ---------- Inicio ---------- */
-main.inicio-main { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
-.home { display: flex; flex-direction: column; gap: var(--space-4); }
-.large-title { display: flex; align-items: center; gap: 10px; padding-top: var(--space-4); }
-.large-title h1 { font-family: var(--font-display); font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: -0.02em; }
-.lede { margin: -8px 0 var(--space-2); color: var(--muted); font-size: 17px; }
+/* ---------- Barra superior ---------- */
+.barra { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-3); max-width: 560px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 10px) max(var(--space-4), env(safe-area-inset-right, 0px)) 10px max(var(--space-4), env(safe-area-inset-left, 0px)); background: var(--bg); }
+.barra-izq, .barra-der { display: flex; align-items: center; gap: var(--space-2); }
+.barra-der { justify-self: end; }
+.perfil-btn { padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; }
+.foto { display: inline-grid; place-items: center; border-radius: 50%; background: linear-gradient(135deg, var(--cliente), var(--live)); color: var(--bg); font-weight: 700; letter-spacing: 0.02em; flex: none; }
+.icono-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--surface-raised); color: var(--fg); cursor: pointer; }
+.perfil-btn:focus-visible, .icono-btn:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+.girar { display: inline-flex; transform: rotate(180deg); }
 
-.sos { font: inherit; width: 100%; display: flex; align-items: center; gap: var(--space-4); padding: 18px 20px; border: 0; border-radius: 16px; background: var(--danger); color: var(--on-danger); text-align: left; cursor: pointer; box-shadow: 0 6px 18px rgba(201, 51, 58, 0.28); }
+/* ---------- Contenido de las pestañas ---------- */
+main.contenido { padding-top: var(--space-2); padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.seccion { display: flex; flex-direction: column; gap: var(--space-3); }
+.titulo-seccion { font-family: var(--font-display); font-size: 2rem; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
+.lede { margin: -4px 0 var(--space-2); color: var(--muted); font-size: 1rem; }
+.nota { margin: 0; color: var(--muted); font-size: 0.82rem; line-height: 1.4; }
+
+.sos { font: inherit; width: 100%; display: flex; align-items: center; gap: var(--space-4); padding: 18px 20px; border: 0; border-radius: 16px; background: var(--danger); color: var(--on-danger); text-align: left; cursor: pointer; box-shadow: 0 8px 24px color-mix(in srgb, var(--danger) 35%, transparent); }
 .sos:active { transform: scale(0.99); }
 .sos:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
-.sos-ico { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); }
+.sos-ico { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: color-mix(in srgb, var(--on-danger) 20%, transparent); }
 .sos-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.sos-txt strong { font-size: 22px; line-height: 28px; font-weight: 700; }
-.sos-txt span { font-size: 15px; opacity: 0.92; }
+.sos-txt strong { font-size: 1.3rem; line-height: 1.25; font-weight: 700; }
+.sos-txt span { font-size: 0.88rem; opacity: 0.92; }
 
-.group-title { margin: var(--space-4) 0 6px var(--space-4); font-size: 13px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); }
+/* Listas agrupadas (como Ajustes del celular) */
+.group-title { margin: var(--space-3) 0 6px var(--space-4); font-size: 0.76rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 .group { list-style: none; margin: 0; padding: 0; background: var(--surface); border-radius: 12px; overflow: hidden; }
-.group li { display: flex; align-items: center; gap: 12px; padding: 11px var(--space-4); }
-.group li + li { border-top: 1px solid var(--line); }
-.row-ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--cliente); color: #fff; }
-.row-txt { display: flex; flex-direction: column; min-width: 0; }
-.row-txt strong { font-size: 17px; font-weight: 500; line-height: 22px; }
-.row-txt span { font-size: 14px; line-height: 19px; color: var(--muted); }
+.group > li + li { border-top: 1px solid var(--line); }
+.fila, .num { display: flex; align-items: center; gap: 12px; padding: 11px var(--space-4); }
+.row-ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--cliente); color: var(--surface); }
+.row-txt { flex: 1; display: flex; flex-direction: column; min-width: 0; text-align: left; }
+.row-txt strong { font-size: 1rem; font-weight: 500; line-height: 1.3; }
+.row-txt span { font-size: 0.82rem; line-height: 1.35; color: var(--muted); }
 
-.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: space-around; padding: 6px max(var(--space-4), env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(var(--space-4), env(safe-area-inset-left, 0px)); background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px); border-top: 1px solid var(--line); }
-.tab { font: inherit; flex: 1; max-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; border: 0; background: none; color: var(--muted); font-size: 11px; font-weight: 500; cursor: default; }
-.tab.on { color: var(--cliente); }
+.chip-estado { flex: none; padding: 3px 10px; border-radius: 999px; font-size: 0.76rem; font-weight: 600; background: var(--surface-raised); color: var(--muted); }
+.chip-estado.ok { background: var(--live-soft); color: var(--live); }
+.chip-estado.fallo { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--fg); }
 
+/* Historial */
+.hist-fila { font: inherit; width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px var(--space-4); border: 0; background: none; color: inherit; cursor: pointer; }
+.hist-fila:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: -3px; }
+.hist-resumen { margin: 0; padding: 0 var(--space-4) 14px 58px; color: var(--fg); font-size: 0.9rem; line-height: 1.45; }
+
+/* Emergencias */
+.num-badge { flex: none; display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 6px; border-radius: 12px; background: var(--surface-raised); color: var(--fg); font-weight: 700; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.num-badge.clinica { background: var(--danger); color: var(--on-danger); }
+.num-llamar { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--live); color: var(--bg); cursor: pointer; }
+.num-llamar:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+
+/* ---------- Barra de pestañas: Historial · Llamar (centro) · Emergencias ---------- */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: space-around; align-items: flex-end; padding: 6px max(var(--space-4), env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(var(--space-4), env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(16px); border-top: 1px solid var(--line); }
+.tab { font: inherit; flex: 1; max-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; border: 0; background: none; color: var(--muted); font-size: 0.68rem; font-weight: 600; cursor: pointer; }
+.tab.on { color: var(--fg); }
+.tab.on .tab-ico { position: relative; }
+.tab.on::before { content: ""; position: absolute; top: 0; width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: var(--fg); }
+.tab { position: relative; }
+.tab .tab-ico { display: grid; place-items: center; }
+/* Barra plana: las tres pestañas iguales; la activa en el color del texto. */
+.tab:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; border-radius: 12px; }
+
+/* ---------- Menú que sale desde la derecha ---------- */
+.drawer { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
+.drawer-fondo { position: absolute; inset: 0; border: 0; background: rgba(0, 0, 0, 0.5); opacity: 0; transition: opacity 0.25s ease; }
+.drawer-panel { position: absolute; top: 0; left: 0; bottom: 0; width: min(88vw, 380px); display: flex; flex-direction: column; background: var(--bg); border-right: 1px solid var(--line); transform: translateX(-100%); transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); outline: none; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.drawer.abierto { pointer-events: auto; }
+.drawer.abierto .drawer-fondo { opacity: 1; }
+.drawer.abierto .drawer-panel { transform: translateX(0); }
+.drawer-head { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: var(--space-2); padding: 10px var(--space-4); }
+.drawer-head strong { text-align: center; font-size: 1.05rem; }
+.drawer-cuerpo { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-2) var(--space-4) var(--space-6); }
+.drawer-perfil { font: inherit; display: flex; align-items: center; gap: 14px; padding: 14px var(--space-4); border: 0; border-radius: 12px; background: var(--surface); color: var(--fg); cursor: pointer; text-align: left; }
+.drawer-perfil .row-txt strong { font-size: 1.1rem; font-weight: 600; }
+.opcion { font: inherit; width: 100%; display: flex; align-items: center; gap: 12px; padding: 13px var(--space-4); border: 0; background: none; color: var(--fg); cursor: pointer; text-align: left; }
+.opcion-txt { flex: 1; font-size: 1rem; }
+.opcion.peligro { color: var(--fg); }
+.opcion.peligro .row-ico { background: var(--danger); color: var(--on-danger); }
+.drawer-perfil:focus-visible, .opcion:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: -3px; }
+.perfil-foto { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; }
+.dato { display: flex; flex-direction: column; gap: 2px; padding: 11px var(--space-4); }
+.dato span { font-size: 0.76rem; color: var(--muted); }
+.dato strong { font-weight: 500; font-size: 0.95rem; }
+.enlace { font: inherit; border: 0; background: none; color: var(--cliente); font-weight: 600; cursor: pointer; padding: 6px; }
+.aviso-ok { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--live-soft); color: var(--fg); font-size: 0.88rem; }
+.salir { display: flex; flex-direction: column; gap: var(--space-3); }
+.salir p { margin: 0; }
+.btn-peligro { font: inherit; min-height: var(--target-min); border: 0; border-radius: 12px; background: var(--danger); color: var(--on-danger); font-weight: 700; cursor: pointer; }
+
+/* Ajustes: segmentos e interruptores */
+.ajustes { display: flex; flex-direction: column; gap: var(--space-4); }
+.segmento { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
+.segmento legend { padding: 0 0 8px var(--space-2); font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.segmento-ops { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface-raised); }
+.seg { font: inherit; flex: 1; min-height: 40px; border: 0; border-radius: 9px; background: none; color: var(--fg); font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+.seg.on { background: var(--cliente); color: var(--surface); }
+.seg:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 1px; }
+.tono { display: inline-flex; align-items: center; gap: 6px; }
+.tono::before { content: ""; width: 14px; height: 14px; border-radius: 50%; }
+.tono.clara::before { background: #f1c7a5; }
+.tono.media::before { background: #c68863; }
+.tono.oscura::before { background: #7a4b2e; }
+.interruptor { display: flex; align-items: center; gap: 12px; padding: 11px var(--space-4); cursor: pointer; }
+.interruptor input { appearance: none; flex: none; width: 51px; height: 31px; border-radius: 999px; background: var(--surface-raised); border: 1px solid var(--line-strong); position: relative; cursor: pointer; transition: background 0.2s; }
+.interruptor input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 25px; height: 25px; border-radius: 50%; background: var(--fg); transition: transform 0.2s; }
+.interruptor input:checked { background: var(--live); border-color: var(--live); }
+.interruptor input:checked::after { transform: translateX(20px); background: var(--bg); }
+.interruptor input:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+
+/* ---------- */
 /* ---------- Llamada: ocupa la pantalla; solo el chat tiene scroll (y baja solo) ---------- */
 main.call { height: 100dvh; gap: 10px; padding-block: 10px; }
 .call-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
@@ -71,5 +155,293 @@ main.call { height: 100dvh; gap: 10px; padding-block: 10px; }
 .pu-avatar .stage > .senas-palabra { position: absolute; inset: 0 0 84px 0; display: grid; place-items: center; padding: 0 var(--space-4); color: #14171c; font-size: 40px; line-height: 44px; font-weight: 700; letter-spacing: 0.02em; text-align: center; }
 
 /* Botón "Instalar app" (D6): solo aparece cuando Android permite instalar. */
-.instalar { font: inherit; margin-left: auto; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--cliente); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+.instalar { font: inherit; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--cliente); color: var(--surface); font-size: 15px; font-weight: 600; cursor: pointer; }
 .instalar:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+
+/* ---------- Login ---------- */
+main.login { min-height: 100dvh; justify-content: center; gap: var(--space-8); padding-block: var(--space-8); }
+.login-marca { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center; }
+.login-marca h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; }
+.login-marca p { margin: 0; color: var(--muted); }
+.login-form { display: flex; flex-direction: column; gap: 8px; }
+.login-form label { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-top: 6px; }
+.login-form input { font: inherit; min-height: 50px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.login-form input:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 1px; }
+.login-error { margin: 4px 0 0; color: var(--fg); background: color-mix(in srgb, var(--danger) 22%, transparent); padding: 8px 12px; border-radius: 10px; font-size: 0.88rem; }
+.btn-principal { font: inherit; min-height: 52px; margin-top: var(--space-3); border: 0; border-radius: 10px; background: var(--fg); color: var(--bg); font-weight: 700; font-size: 1.02rem; cursor: pointer; }
+.btn-principal:disabled { background: var(--surface-raised); color: var(--muted); cursor: default; }
+.btn-principal:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+.centrada { text-align: center; }
+
+/* ---------- Calificación (hoja que sube al terminar la llamada) ---------- */
+.califica { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; padding: var(--space-6) var(--space-6) calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); border-radius: 22px 22px 0 0; background: var(--surface); box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.55); }
+.califica h2 { text-align: center; font-family: var(--font-display); font-size: 1.35rem; }
+.estrellas { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
+.estrella { width: 52px; height: 52px; padding: 4px; border: 0; background: none; cursor: pointer; color: var(--line-strong); }
+.estrella svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.estrella.on { color: #f5b301; }
+.estrella.on svg { fill: currentColor; }
+.estrella:focus-visible { outline: var(--focus-width) solid var(--focus); border-radius: 10px; }
+.califica-texto { margin: 0; text-align: center; font-weight: 600; min-height: 1.4em; }
+.califica-comentario { font: inherit; resize: none; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.califica-gracias { margin: 0; text-align: center; font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; }
+
+/* ---------- Editor del intérprete ---------- */
+.editor-vista { aspect-ratio: 4 / 3; border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, #e4e8ef 0%, #cdd4de 100%); display: flex; justify-content: center; align-items: flex-start; }
+.editor-vista > svg { height: 100%; width: auto; margin-top: -6%; }
+.subtitulo-ajustes { margin: var(--space-2) 0 -4px; font-size: 1rem; }
+.valor-elegido { color: var(--fg); font-weight: 600; }
+.muestras { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 2px; }
+.muestra { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; }
+.muestra.on { border-color: var(--fg); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--cliente); }
+.muestra:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 4px; }
+.segmento-ops { flex-wrap: wrap; }
+.seg { min-width: 56px; }
+
+/* ---------- Estilo de apps de movilidad: inicio ---------- */
+.titulo-seccion { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.03em; }
+.bloque-u { display: flex; flex-direction: column; gap: 12px; margin-top: var(--space-2); }
+.bloque-cabeza { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.bloque-cabeza h2, .como h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+.pildora-24 { padding: 4px 10px; border-radius: 999px; background: var(--danger); color: var(--on-danger); font-size: 0.76rem; font-weight: 700; }
+
+.clinicas { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.clinica { font: inherit; width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 0; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; }
+.clinica-tile { position: relative; width: 100%; aspect-ratio: 1 / 1; display: grid; place-items: center; border-radius: 14px; background: var(--surface); transition: transform 0.12s ease; }
+.clinica:active .clinica-tile { transform: scale(0.97); }
+.clinica:focus-visible .clinica-tile { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.clinica-sigla { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+.clinica-fono { position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--danger); color: var(--on-danger); }
+.clinica-nombre { font-size: 0.86rem; font-weight: 600; line-height: 1.2; }
+.clinica-detalle { margin-top: -4px; font-size: 0.74rem; color: var(--muted); }
+
+.carrusel { list-style: none; margin: 0 calc(-1 * var(--space-4)); padding: 0 var(--space-4); display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.carrusel::-webkit-scrollbar { display: none; }
+.consejo { flex: none; width: 82%; max-width: 330px; scroll-snap-align: start; display: flex; gap: 12px; padding: 16px; border-radius: 16px; background: var(--surface); }
+.consejo-txt { flex: 1; min-width: 0; }
+.consejo-txt strong { display: block; font-size: 1.02rem; font-weight: 700; line-height: 1.25; }
+.consejo-txt p { margin: 6px 0 0; font-size: 0.86rem; line-height: 1.4; color: var(--muted); }
+.consejo-ico { flex: none; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 14px; background: var(--surface-raised); color: var(--fg); }
+.consejo.t1 .consejo-ico { background: var(--danger); color: var(--on-danger); }
+.consejo.t2 .consejo-ico { background: var(--accent); color: var(--on-accent); }
+.consejo.t3 .consejo-ico { background: var(--cliente); color: var(--surface); }
+
+.como { margin-top: var(--space-2); padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); }
+.como h2 { font-size: 0.86rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.como ol { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.como li { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: var(--fg); }
+.como li svg { color: var(--muted); }
+
+/* ---------- Calificación: pantalla completa ---------- */
+.calif { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: var(--bg); padding: env(safe-area-inset-top, 0px) max(var(--space-6), env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(var(--space-6), env(safe-area-inset-left, 0px)); }
+.calif-barra { display: flex; justify-content: space-between; align-items: center; min-height: 56px; }
+.calif-omitir { font: inherit; border: 0; background: var(--surface); color: var(--fg); font-weight: 600; padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+.calif-cuerpo { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding-top: var(--space-4); }
+.calif-logo { width: 88px; height: 88px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+.calif h1, .calif h2 { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+.calif-sub { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.calif-estrellas { display: flex; gap: 4px; margin-top: var(--space-6); }
+.calif-estrella { width: 54px; height: 54px; padding: 3px; border: 0; background: none; color: var(--fg); cursor: pointer; }
+.calif-estrella svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; opacity: 0.45; }
+.calif-estrella.on svg { fill: currentColor; opacity: 1; }
+.calif-estrella:focus-visible { outline: var(--focus-width) solid var(--focus); border-radius: 10px; }
+.calif-nota { margin: 0; font-weight: 700; min-height: 1.4em; }
+.calif-pregunta { margin: var(--space-6) 0 4px; font-weight: 700; font-size: 1.05rem; }
+.calif-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.calif-chip { font: inherit; padding: 9px 14px; border-radius: 999px; border: 0; background: var(--surface); color: var(--fg); font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+.calif-chip.on { background: var(--fg); color: var(--bg); }
+.calif-chip:focus-visible, .calif-omitir:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.calif-comentario { font: inherit; width: 100%; margin-top: var(--space-4); resize: none; padding: 12px 14px; border-radius: 10px; border: 0; background: var(--surface); color: var(--fg); text-align: left; }
+.calif-fin { justify-content: center; }
+.calif-check { width: 72px; height: 72px; display: grid; place-items: center; border-radius: 50%; background: var(--live); color: var(--bg); margin-bottom: 8px; }
+.calif-pie { padding: var(--space-4) 0 var(--space-4); }
+.btn-negro { font: inherit; width: 100%; min-height: 54px; border: 0; border-radius: 10px; background: var(--fg); color: var(--bg); font-weight: 700; font-size: 1.05rem; cursor: pointer; }
+.btn-negro:disabled { background: var(--surface-raised); color: var(--muted); cursor: default; }
+.btn-negro:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+
+/* ---------- v3: más color, ubicación, carrusel con puntitos, aviso a contactos ---------- */
+.foto-perfil { display: block; flex: none; border-radius: 50%; object-fit: cover; background: var(--surface); }
+.icono-btn.chico { width: 32px; height: 32px; }
+.inicial { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--cliente-soft); color: var(--fg); font-weight: 700; }
+.seccion-sub { margin: var(--space-2) 0 0; font-size: 1.15rem; font-weight: 700; }
+.nota-sistema { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px auto 8px; padding: 6px 12px; width: fit-content; max-width: 100%; border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 0.78rem; text-align: center; }
+
+/* Ubicación */
+.ubicacion { border-radius: 16px; overflow: hidden; background: var(--surface); }
+.ubicacion-mapa { height: 96px; }
+.ubicacion-mapa svg { display: block; width: 100%; height: 100%; }
+.ubicacion-info { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.ubicacion-pin { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #3b82f6; color: #fff; }
+.chip-toggle { font: inherit; flex: none; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--fg); font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+.chip-toggle.on { background: var(--live-soft); border-color: transparent; color: var(--live); }
+
+/* Carrusel con puntitos */
+.carrusel-caja { display: flex; flex-direction: column; gap: 10px; }
+.carrusel-caja .carrusel { list-style: none; margin: 0 calc(-1 * var(--space-4)); padding: 0 var(--space-4); display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-4); scrollbar-width: none; }
+.carrusel-caja .carrusel::-webkit-scrollbar { display: none; }
+.carrusel-item { flex: none; scroll-snap-align: start; }
+.carrusel-clinicas .carrusel-item { width: calc((100% - 2 * var(--space-4) - 20px) / 3 + 0px); width: calc((min(100vw, 560px) - 2 * var(--space-4) - 20px) / 3); }
+.carrusel-consejos .carrusel-item { width: 84%; max-width: 360px; }
+.puntitos { display: flex; justify-content: center; gap: 6px; }
+/* El punto se ve chico, pero la zona para tocarlo mide 24x24 (WCAG 2.5.8). */
+.puntitos { gap: 0; }
+.puntito { position: relative; width: 24px; height: 24px; padding: 0; border: 0; background: none; cursor: pointer; }
+.puntito::before { content: ""; position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; border-radius: 999px; background: var(--line-strong); opacity: 0.5; transform: translate(-50%, -50%); transition: width 0.2s, opacity 0.2s; }
+.puntito.on::before { width: 18px; background: var(--fg); opacity: 1; }
+.puntito:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+
+/* Clínicas con color */
+.clinica-tile.tono-0, .tu-clinica-logo.tono-0 { background: color-mix(in srgb, #3b82f6 26%, var(--surface)); }
+.clinica-tile.tono-1, .tu-clinica-logo.tono-1 { background: color-mix(in srgb, #22c55e 24%, var(--surface)); }
+.clinica-tile.tono-2, .tu-clinica-logo.tono-2 { background: color-mix(in srgb, #a855f7 24%, var(--surface)); }
+.clinica-tile.tono-3, .tu-clinica-logo.tono-3 { background: color-mix(in srgb, #f97316 24%, var(--surface)); }
+.clinica-tile.tono-4, .tu-clinica-logo.tono-4 { background: color-mix(in srgb, #14b8a6 24%, var(--surface)); }
+
+/* Consejos con ilustración */
+.consejo { height: 100%; display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 16px; background: var(--surface); width: auto; max-width: none; }
+.consejo-dibujo { flex: none; width: 76px; height: 76px; }
+.consejo-dibujo svg { display: block; width: 100%; height: 100%; }
+
+/* Avisar a contactos */
+.avisar { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: color-mix(in srgb, #3b82f6 14%, var(--surface)); }
+.avisar-cabeza { display: flex; align-items: center; gap: 12px; }
+.avisar-ico { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #3b82f6; color: #fff; }
+.avisar-cabeza .row-txt strong { font-size: 1.05rem; font-weight: 700; }
+.avisar-contactos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.avisar-contactos li { position: relative; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--bg); font-size: 0.88rem; font-weight: 600; }
+.avisar-contactos .inicial { width: 28px; height: 28px; font-size: 0.8rem; }
+.avisar-ok { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--live); color: var(--bg); }
+.avisar-enviado p { margin: 0; font-size: 0.9rem; }
+.avisar-mensaje { margin-top: 6px !important; padding: 10px 12px; border-radius: 12px; background: var(--bg); color: var(--muted); }
+.btn-negro { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* Cómo funciona, detallado */
+.como ol { gap: 10px; }
+.como li { align-items: flex-start; gap: 10px; }
+.como-num { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-raised); color: var(--fg); font-size: 0.74rem; font-weight: 700; }
+.como-txt { display: flex; flex-direction: column; gap: 1px; }
+.como-txt strong { font-size: 0.86rem; }
+.como-txt span { font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
+
+/* Emergencias: tu clínica */
+.tu-clinica { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 16px; background: var(--surface); }
+.tu-clinica-fila { display: flex; align-items: center; gap: 14px; }
+.tu-clinica-logo { flex: none; width: 60px; height: 60px; display: grid; place-items: center; border-radius: 14px; font-size: 1.3rem; font-weight: 800; color: var(--fg); }
+.tu-clinica .row-txt strong { font-size: 1.1rem; font-weight: 700; }
+.num-llamar { width: auto; height: 38px; padding: 0 14px; gap: 6px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--fg); color: var(--bg); font: inherit; font-weight: 700; font-size: 0.86rem; }
+
+/* Perfil: contactos */
+.contactos { display: flex; flex-direction: column; gap: 10px; }
+.contacto-form { display: flex; flex-direction: column; gap: 8px; }
+.contacto-form input { font: inherit; min-height: 46px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.contacto-form input:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 1px; }
+.btn-secundario { font: inherit; min-height: 46px; border: 0; border-radius: 10px; background: var(--surface-raised); color: var(--fg); font-weight: 700; cursor: pointer; }
+.btn-secundario:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.editor-vista { aspect-ratio: 1 / 1; }
+.editor-vista > svg { margin-top: 0; }
+
+/* Que las secciones del menú no se aplasten (se cortaba la lista de datos del perfil). */
+.drawer-cuerpo > * { flex-shrink: 0; }
+
+/* ---------- Videollamada (estilo FaceTime): ejecutivo arriba, tú abajo ---------- */
+main.vl { position: relative; max-width: 560px; height: 100dvh; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 8px; background: #000; }
+.vl-tile { position: relative; min-height: 0; border-radius: 22px; overflow: hidden; }
+.vl-ejecutivo { background: linear-gradient(180deg, #e8ecf2 0%, #c9d0da 100%); }
+.vl-avatar { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; }
+.vl-avatar > svg { height: 112%; width: auto; margin-top: -4%; }
+.vl-cabeza { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; }
+.vl-cabeza .row-txt { padding: 6px 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(8px); color: #fff; width: fit-content; }
+.vl-cabeza .row-txt strong { font-size: 0.92rem; font-weight: 700; }
+.vl-cabeza .row-txt span { color: rgba(255, 255, 255, 0.82); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+
+/* Subtítulos grandes y fáciles de leer */
+.vl-sub { position: absolute; left: 10px; right: 10px; bottom: 10px; margin: 0; padding: 10px 14px; border-radius: 14px; background: rgba(0, 0, 0, 0.78); color: #fff; font-size: 1.22rem; line-height: 1.32; font-weight: 700; text-align: center; text-wrap: balance; white-space: pre-line; }
+.vl-sub-yo { background: rgba(29, 78, 216, 0.82); }
+.vl-sub.esperando, .vl-sub.leyendo { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; font-weight: 600; }
+.vl-sub .dots { display: inline-flex; gap: 4px; }
+.vl-sub .dots i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+@media (prefers-reduced-motion: no-preference) {
+  .vl-sub .dots i { animation: typing 1.2s infinite ease-in-out; }
+  .vl-sub .dots i:nth-child(2) { animation-delay: 0.15s; }
+  .vl-sub .dots i:nth-child(3) { animation-delay: 0.3s; }
+  .vl-sub.leyendo { animation: pu-pulse 1.2s ease-in-out infinite; }
+}
+
+/* Tu cámara */
+.vl-yo { background: #1a1a1a; }
+.vl-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.vl-video.oculto { visibility: hidden; }
+.vl-sin-camara { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0 24px; color: #bdbdbd; text-align: center; font-size: 0.92rem; }
+.vl-etiqueta { position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 0.78rem; font-weight: 600; }
+.vl-punto { width: 8px; height: 8px; border-radius: 50%; background: #9a9a9a; }
+.vl-punto.vivo { background: #34c759; }
+
+/* Respuestas sugeridas, teclado y conversación */
+/* Fila propia entre tu cámara y los controles: no tapa tus subtítulos. */
+.vl-respuestas { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.vl-respuestas-titulo { align-self: flex-start; padding: 0 4px; color: #bdbdbd; font-size: 0.72rem; font-weight: 600; }
+.vl-respuestas .pu-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.vl-respuestas .pu-chip { flex: none; max-width: 88%; background: #fff; color: #000; border-color: #fff; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
+.vl-hoja { position: absolute; left: 8px; right: 8px; bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); max-height: 44dvh; overflow-y: auto; padding: 12px; border-radius: 20px; background: var(--bg); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.vl-hoja-alta { max-height: 60dvh; }
+.vl-controles { display: flex; justify-content: space-around; align-items: center; padding: 6px 4px 2px; }
+.vl-ctrl { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: none; color: #fff; font-size: 0.68rem; font-weight: 600; cursor: pointer; }
+.vl-ctrl > svg { box-sizing: content-box; padding: 13px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); }
+.vl-ctrl.on > svg { background: #fff; color: #000; }
+.vl-ctrl.colgar > svg { background: #ff3b30; color: #fff; }
+.vl-ctrl:disabled { opacity: 0.45; cursor: default; }
+.vl-ctrl:focus-visible { outline: 3px solid #fff; outline-offset: 2px; border-radius: 12px; }
+main.vl .pu-alert { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 5; }
+
+/* ---------- v4: app general, acciones, contactos, avatar 3D, enviar señas ---------- */
+.clinica-tile.tono-5, .tu-clinica-logo.tono-5, .accion.tono-5 .accion-ico { background: var(--danger); color: var(--on-danger); }
+.acciones { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.accion { font: inherit; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; border: 0; border-radius: 16px; background: var(--surface); color: var(--fg); text-align: left; cursor: pointer; }
+.accion:active { transform: scale(0.98); }
+.accion:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.accion-ico { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--fg); }
+.accion.tono-0 .accion-ico { background: color-mix(in srgb, #3b82f6 30%, var(--surface)); }
+.accion.tono-1 .accion-ico { background: color-mix(in srgb, #22c55e 30%, var(--surface)); }
+.accion.tono-3 .accion-ico { background: color-mix(in srgb, #f97316 30%, var(--surface)); }
+.accion-txt { display: flex; flex-direction: column; gap: 2px; }
+.accion-txt strong { font-size: 0.98rem; font-weight: 700; line-height: 1.25; }
+.accion-txt span { font-size: 0.8rem; color: var(--muted); }
+.num-badge.tono-0 { background: color-mix(in srgb, #3b82f6 28%, var(--surface)); }
+.num-badge.tono-1 { background: color-mix(in srgb, #22c55e 26%, var(--surface)); }
+.num-badge.tono-2 { background: color-mix(in srgb, #a855f7 26%, var(--surface)); }
+.num-badge.tono-3 { background: color-mix(in srgb, #f97316 26%, var(--surface)); }
+.num-badge.tono-4 { background: color-mix(in srgb, #14b8a6 26%, var(--surface)); }
+.buscador { display: flex; align-items: center; gap: 8px; padding: 0 14px; min-height: 46px; border-radius: 999px; background: var(--surface); color: var(--muted); }
+.buscador input { font: inherit; flex: 1; min-width: 0; border: 0; background: none; color: var(--fg); outline: none; }
+.buscador:focus-within { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.tu-clinica.urgente { background: color-mix(in srgb, var(--danger) 16%, var(--surface)); }
+.btn-rojo { font: inherit; width: 100%; min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 10px; background: var(--danger); color: var(--on-danger); font-weight: 700; font-size: 1.02rem; cursor: pointer; }
+.btn-rojo:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+
+/* Avatar 3D (lienzo espejado, como el laboratorio de Tomás) */
+.avatar-vrm { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transform: scaleX(-1); }
+
+/* Enviar lo que la cámara leyó */
+.vl-ctrl.enviar > svg { background: rgba(255, 255, 255, 0.16); }
+.vl-ctrl.enviar.listo > svg { background: #34c759; color: #000; box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.35); }
+.vl-yo.listo { box-shadow: inset 0 0 0 3px #34c759; }
+.vl-sub.listo { display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(21, 128, 61, 0.88); font-size: 1.05rem; }
+.vl-chat { max-height: 38dvh; overflow-y: auto; margin-bottom: 10px; }
+
+/* ---------- Inicio: ubicación chica y ambulancia destacada ---------- */
+.ubic-chica { font: inherit; display: flex; align-items: center; gap: 8px; width: 100%; margin-top: -4px; padding: 8px 12px; border: 0; border-radius: 12px; background: var(--surface); color: var(--muted); font-size: 0.82rem; text-align: left; cursor: pointer; }
+.ubic-chica svg { color: #3b82f6; flex: none; }
+.ubic-dir { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg); }
+.ubic-estado { flex: none; font-weight: 700; font-size: 0.74rem; }
+.ubic-estado.on { color: var(--live); }
+.ubic-chica:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.acciones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.accion { padding: 12px; gap: 8px; }
+.accion-txt strong { font-size: 0.86rem; }
+.accion-txt span { font-size: 0.74rem; }
+.calif-logo { width: 96px; }
+
+/* La ambulancia: una acción más, pero en rojo para que se vea primero. */
+.accion.destacada { background: var(--danger); color: var(--on-danger); box-shadow: 0 6px 18px color-mix(in srgb, var(--danger) 35%, transparent); }
+.accion.destacada .accion-ico { background: color-mix(in srgb, var(--on-danger) 22%, transparent); color: var(--on-danger); }
+.accion.destacada .accion-txt span { color: var(--on-danger); opacity: 0.92; }

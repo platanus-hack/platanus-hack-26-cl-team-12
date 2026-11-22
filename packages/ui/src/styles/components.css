@@ -9,10 +9,10 @@ body { margin: 0; font-family: var(--font-sans); font-size: 18px; line-height: 1
 /* Logo */
 .pu-logo { display: inline-flex; align-items: center; gap: 0.3em; color: var(--fg); }
 .pu-logo svg { display: block; }
-.pu-logo .arch { fill: none; stroke: var(--brand); stroke-width: 7; stroke-linecap: round; }
+.pu-logo .barra { fill: var(--brand); }
 .pu-logo .dot-c { fill: var(--cliente); }
 .pu-logo .dot-e { fill: var(--fg); }
-.pu-logo.mono .arch { stroke: currentColor; }
+.pu-logo.mono .barra { fill: currentColor; }
 .pu-logo.mono .dot-c, .pu-logo.mono .dot-e { fill: currentColor; }
 .pu-logo .word { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
 
@@ -60,6 +60,9 @@ body { margin: 0; font-family: var(--font-sans); font-size: 18px; line-height: 1
 /* Subtitles: conversación estilo app de mensajería. */
 .pu-subs { list-style: none; margin: 0; padding: var(--space-2) 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .pu-sub { white-space: pre-line; display: flex; flex-direction: column; gap: 2px; max-width: 82%; padding: 8px 12px; border-radius: 18px 18px 18px 6px; background: var(--surface-raised); align-self: flex-start; font-size: 17px; line-height: 23px; }
+.pu-fila-sub { display: flex; align-items: flex-end; gap: 8px; }
+.pu-fila-sub:has(> .pu-sub[data-who="cliente"]) { justify-content: flex-end; }
+.pu-fila-sub > .pu-retrato-marco { margin-bottom: 2px; }
 .pu-sub[data-who="cliente"] { align-self: flex-end; background: var(--cliente-soft); border-radius: 18px 18px 6px 18px; }
 .pu-sub .who { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--muted); }
 .pu-sub[data-who="cliente"] .who { color: var(--cliente); }
@@ -87,7 +90,7 @@ body { margin: 0; font-family: var(--font-sans); font-size: 18px; line-height: 1
 .pu-composer.compact { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: var(--space-2); padding: 0; background: none; border: 0; border-radius: 0; }
 .pu-composer.compact > .pu-chips { grid-column: 1 / -1; }
 .pu-composer.compact textarea { min-height: 44px; font-size: 17px; line-height: 22px; padding: 10px 16px; border-radius: 22px; border: 1px solid var(--line); background: var(--surface); resize: none; }
-.pu-send { width: 44px; height: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--cliente); color: #fff; cursor: pointer; }
+.pu-send { width: 44px; height: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--cliente); color: var(--surface); cursor: pointer; }
 .pu-send:disabled { background: var(--surface-raised); color: var(--muted); cursor: default; }
 .pu-send:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
 
@@ -147,3 +150,7 @@ body { margin: 0; font-family: var(--font-sans); font-size: 18px; line-height: 1
 @keyframes pu-ring-border { 50% { border-color: var(--live); } }
 @keyframes pu-ring-pulse { 0% { box-shadow: 0 0 0 0 var(--live-soft); } 100% { box-shadow: 0 0 0 28px transparent; } }
 @keyframes pu-hint { 50% { transform: translateX(-6px); } }
+
+/* Retrato dibujado (foto de perfil y chat) */
+.pu-retrato-marco { display: inline-block; flex: none; border-radius: 50%; overflow: hidden; background: #d7dde6; }
+.pu-retrato-marco > svg { display: block; width: 100%; height: 100%; }
