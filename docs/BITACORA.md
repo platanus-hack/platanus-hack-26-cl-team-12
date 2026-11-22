@@ -8,11 +8,6 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
-## 2026-11-22 — Martín / Claude (v1/twilio-pro)
-- Decidí: **pagar el upgrade de Twilio** (cierra el TODO de evaluar el upgrade). Con el trial: llamadas de máx. 10 min, solo 5 números verificados y aviso "trial account".
-- Hice: `LLAMADA_MAX_MIN` (por defecto 240 = 4 h, máx. 24 h) se pasa como `time_limit` al crear la llamada. Solo rige con cuenta pagada.
-- Falta: probar con la cuenta pagada; evaluar conversación fluida (audio en vivo, sin turnos) ahora que Media Streams queda disponible.
-
 ## 2026-11-22 — r.labbevidal / Claude (v4/vista-web) · vista web en el computador
 - Hice: desde 1024 px la app deja de ser una columna de 560 px. La barra y las pestañas pasan a una barra lateral; el inicio va en dos columnas (contactos frecuentes y acciones a la izquierda, consejos a la derecha, cómo funciona abajo; los carruseles se vuelven grilla). La llamada tiene el intérprete y tu cámara a la izquierda, el chat fijo a la derecha (abierto por defecto en computador) y los controles abajo. Todo en un `@media (min-width: 1024px)` al final de `globals.css`, más `.shell` en `AppShell` y `esEscritorio()` en `CallPanel`. En el celular no cambia nada.
 - Verificado: typecheck, build, vitest `call` (4) y `senas` (3). No probado en el navegador (Chrome DevTools no conecta en este equipo).

@@ -205,23 +205,8 @@ class LlamadaResponse(BaseModel):
     estado: str = Field(examples=["queued"])
 
 
-TWILIO_MAX_S = 24 * 3600  # Twilio no acepta llamadas de más de 24 h
-
-
-def duracion_maxima_s() -> int:
-    """Tope de la llamada en segundos, desde LLAMADA_MAX_MIN (por defecto 240 = 4 h, el de Twilio).
-
-    Ojo: en la cuenta trial Twilio corta igual a los 10 minutos; el valor solo rige con cuenta pagada.
-    """
-    try:
-        minutos = int(os.getenv("LLAMADA_MAX_MIN", "240"))
-    except ValueError:
-        minutos = 240
-    return max(60, min(minutos * 60, TWILIO_MAX_S))
-
-
 def llamar_con_twilio(numero: str, base: str) -> tuple[str, str]:
-    """Twilio llama al ejecutivo; al contestar pide las instrucciones a /twilio/voz (plan C)."""
+    """Twilio llama al ejecutivo; al contestar pide las instrucciones a /twilio/voz (plan C, funciona en trial)."""
     from twilio.rest import Client
 
     llamada = Client(os.environ["TWILIO_ACCOUNT_SID"], os.environ["TWILIO_AUTH_TOKEN"]).calls.create(
@@ -229,7 +214,6 @@ def llamar_con_twilio(numero: str, base: str) -> tuple[str, str]:
         from_=os.environ["TWILIO_PHONE_NUMBER"],
         url=f"{base}/twilio/voz",
         status_callback=f"{base}/twilio/estado",
-        time_limit=duracion_maxima_s(),
     )
     return llamada.sid, llamada.status
 

@@ -473,18 +473,3 @@ def test_llamadas_registra_el_callsid(monkeypatch):
     client.post("/llamadas", json={"numero": "+56911111111"})
     assert "CA_registrada" in sala.llamadas_creadas
     sala.llamadas_creadas.discard("CA_registrada")
-
-
-
-@pytest.mark.parametrize(
-    "valor, esperado",
-    [(None, 240 * 60), ("30", 30 * 60), ("0", 60), ("99999", 24 * 3600), ("no-numero", 240 * 60)],
-)
-def test_duracion_maxima_de_la_llamada(monkeypatch, valor, esperado):
-    from app.main import duracion_maxima_s
-
-    if valor is None:
-        monkeypatch.delenv("LLAMADA_MAX_MIN", raising=False)
-    else:
-        monkeypatch.setenv("LLAMADA_MAX_MIN", valor)
-    assert duracion_maxima_s() == esperado
