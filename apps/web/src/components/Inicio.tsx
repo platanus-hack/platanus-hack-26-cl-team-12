@@ -1,13 +1,13 @@
 "use client";
 
 // Pestaña Inicio. Puente es comunicación por teléfono para personas sordas en general (banco, salud, trámites).
-//   0. Tu ubicación (chica) y Pedir una ambulancia, destacado en rojo (es lo más urgente).
+//   0. Tu ubicación, en chico.
 //   1. Contactos frecuentes (carrusel con puntitos).
-//   2. ¿Qué necesitas hacer? (acciones rápidas: ejecutivo del banco, hora médica, trámite, ambulancia).
+//   2. ¿Qué necesitas hacer? (ambulancia destacada en rojo, ejecutivo del banco, hora médica, trámite).
 //   3. Consejos para tus llamadas (carrusel).
 //   4. Cómo funciona.
 import { Icon, type IconName } from "@puente/ui";
-import { ACCIONES, FRECUENTES, URGENCIAS, type Destino } from "@/lib/contactos";
+import { ACCIONES, FRECUENTES, type Destino } from "@/lib/contactos";
 import { cambiarPreferencias, usePreferencias } from "@/lib/preferencias";
 import { Carrusel } from "./Carrusel";
 import { IlustracionDatos, IlustracionDerechos, IlustracionRepetir } from "./Ilustraciones";
@@ -46,16 +46,6 @@ export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
         <span className={p.compartirUbicacion ? "ubic-estado on" : "ubic-estado"}>{p.compartirUbicacion ? "Compartiendo" : "No compartida"}</span>
       </button>
 
-      {/* Lo más urgente, en rojo */}
-      <button type="button" className="sos" onClick={() => onLlamar(URGENCIAS)}>
-        <span className="sos-ico" aria-hidden>
-          <Icon name="emergencia" size={30} />
-        </span>
-        <span className="sos-txt">
-          <strong>Pedir una ambulancia</strong>
-          <span>{URGENCIAS.nombre} · comparte tu ubicación</span>
-        </span>
-      </button>
 
       <section aria-labelledby="t-frecuentes" className="bloque-u">
         <div className="bloque-cabeza">
@@ -84,7 +74,7 @@ export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {
         <ul className="acciones">
           {ACCIONES.map((a) => (
             <li key={a.titulo}>
-              <button type="button" className={`accion tono-${a.tono}`} onClick={() => onLlamar(a.destino)}>
+              <button type="button" className={a.destacada ? `accion tono-${a.tono} destacada` : `accion tono-${a.tono}`} onClick={() => onLlamar(a.destino)}>
                 <span className="accion-ico" aria-hidden>
                   <Icon name={a.icon} size={22} />
                 </span>

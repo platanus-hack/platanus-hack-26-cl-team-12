@@ -435,8 +435,13 @@ main.vl .pu-alert { position: absolute; top: 12px; left: 12px; right: 12px; z-in
 .ubic-estado { flex: none; font-weight: 700; font-size: 0.74rem; }
 .ubic-estado.on { color: var(--live); }
 .ubic-chica:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
-.acciones { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.acciones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .accion { padding: 12px; gap: 8px; }
 .accion-txt strong { font-size: 0.86rem; }
 .accion-txt span { font-size: 0.74rem; }
 .calif-logo { width: 96px; }
+
+/* La ambulancia: una acción más, pero en rojo para que se vea primero. */
+.accion.destacada { background: var(--danger); color: var(--on-danger); box-shadow: 0 6px 18px color-mix(in srgb, var(--danger) 35%, transparent); }
+.accion.destacada .accion-ico { background: color-mix(in srgb, var(--on-danger) 22%, transparent); color: var(--on-danger); }
+.accion.destacada .accion-txt span { color: var(--on-danger); opacity: 0.92; }

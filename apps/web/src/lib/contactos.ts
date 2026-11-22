@@ -41,8 +41,9 @@ export const FRECUENTES: Destino[] = [
 export const URGENCIAS: Destino = d("urgencias", "Urgencias Clínica Santa María", "Urgencias", "Pedir una ambulancia", "SM", 1, "urgencia");
 export const SAMU: Destino = d("samu", "SAMU (ambulancia)", "SAMU", "Pedir una ambulancia", "131", 0, "urgencia");
 
-/** Acciones rápidas del inicio ("¿Qué necesitas hacer?"). La ambulancia va aparte, destacada en rojo. */
-export const ACCIONES: { icon: IconName; titulo: string; detalle: string; destino: Destino; tono: number }[] = [
+/** Acciones rápidas del inicio ("¿Qué necesitas hacer?"). La ambulancia es una más, pero destacada en rojo y primero. */
+export const ACCIONES: { icon: IconName; titulo: string; detalle: string; destino: Destino; tono: number; destacada?: boolean }[] = [
+  { icon: "emergencia", titulo: "Pedir una ambulancia", detalle: "Urgencias · comparte tu ubicación", destino: URGENCIAS, tono: 5, destacada: true },
   { icon: "llamar", titulo: "Llamar a mi ejecutivo", detalle: "Banco", destino: FRECUENTES[0]!, tono: 0 },
   { icon: "historial", titulo: "Agendar una hora", detalle: "Clínica", destino: FRECUENTES[1]!, tono: 1 },
   { icon: "subtitulos", titulo: "Hacer un trámite", detalle: "Registro Civil", destino: FRECUENTES[3]!, tono: 3 },
