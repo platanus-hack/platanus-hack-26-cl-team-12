@@ -22,8 +22,8 @@ services:
       - key: API_ENV
         value: production
       - key: CORS_ORIGINS
-        # PWA + WebView de Capacitor en Android (origen https://localhost). Nunca "*".
-        value: https://puente-web.onrender.com,https://localhost
+        # PWA + WebView de Capacitor: Android (https://localhost) e iOS (capacitor://localhost). Nunca "*".
+        value: https://puente-web.onrender.com,https://localhost,capacitor://localhost
       - key: LIVEKIT_URL
         sync: false
       - key: LIVEKIT_API_KEY
