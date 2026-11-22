@@ -5,12 +5,12 @@ import "./globals.css";
 import { SCRIPT_TEMA } from "@/lib/scriptTema";
 
 export const metadata: Metadata = {
-  title: "Puente",
+  title: "Bridge",
   description: "Llamadas telefónicas accesibles para personas sordas",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icons/icon.svg", apple: "/icons/apple-touch-icon.png" },
   // iPhone: al agregarla a la pantalla de inicio se abre a pantalla completa, sin la barra de Safari.
-  appleWebApp: { capable: true, title: "Puente", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Bridge", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {

@@ -17,14 +17,14 @@ export type { Destino };
 
 const CONSEJOS = [
   { Dibujo: IlustracionDatos, titulo: "Ten tus datos a mano", texto: "Antes de llamar, busca tu RUT, número de cliente o de atención. Te los van a pedir." },
-  { Dibujo: IlustracionRepetir, titulo: "Pide que repitan", texto: "Si no entiendes, responde \"Repita, por favor\". Puente le pide a la persona que lo diga de nuevo." },
+  { Dibujo: IlustracionRepetir, titulo: "Pide que repitan", texto: "Si no entiendes, responde \"Repita, por favor\". Bridge le pide a la persona que lo diga de nuevo." },
   { Dibujo: IlustracionDerechos, titulo: "Es tu derecho", texto: "La Ley 21.303 reconoce la Lengua de Señas Chilena como la lengua natural de las personas sordas." },
 ];
 
 const PASOS: { icon: IconName; titulo: string; texto: string }[] = [
-  { icon: "llamar", titulo: "Eliges a quién llamar", texto: "Tu banco, tu clínica, un servicio público o una persona. Puente llama por teléfono por ti." },
+  { icon: "llamar", titulo: "Eliges a quién llamar", texto: "Tu banco, tu clínica, un servicio público o una persona. Bridge llama por teléfono por ti." },
   { icon: "senas", titulo: "Ves sus señas y subtítulos", texto: "Un avatar te muestra en lengua de señas lo que dice la otra persona, con subtítulos simples." },
-  { icon: "camara", titulo: "Respondes con señas", texto: "La cámara lee tus señas. Tocas Enviar y Puente lo dice con voz. También puedes escribir." },
+  { icon: "camara", titulo: "Respondes con señas", texto: "La cámara lee tus señas. Tocas Enviar y Bridge lo dice con voz. También puedes escribir." },
 ];
 
 export function Inicio({ onLlamar }: { onLlamar: (d: Destino) => void }) {

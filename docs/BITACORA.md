@@ -8,6 +8,10 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Rafael / Claude (v4/mejoras-chat) · el proyecto pasa a llamarse Bridge
+- Decidí (Rafael): el proyecto se llama **Bridge** (antes Puente). Logo: **un puente simple, sin lo que conecta**.
+- Hice: varias rondas de logo con Rafael. **Logo final: 10 barras cuyas alturas dibujan un puente colgante (altas en las torres, bajas al centro), sin piso** (`apps/web/public/logo/bridge-logo.svg` y `-claro.svg`; componente `Logo`; íconos de la PWA). No había plugin de Figma en la sesión: son SVG, importables a Figma. **Paleta Bridge**: azul `#6E9BFF` (oscuro) / `#2F5BE0` (claro) como marca y color del usuario, ámbar `#FFB547` de acento, rojo urgencia, verde estado, neutros igual (contrastes revisados, todos ≥ 5:1). Nombre visible "Bridge" en la app, manifest, login, calificación y textos; íconos PNG de la PWA regenerados. Los paquetes siguen como `@puente/*` (solo cambia lo que ve el usuario).
+- Falta: actualizar `project-description.md` y `platanus-hack-project.jsonc` (los arma A) y el pitch con el nombre nuevo.
 ## 2026-11-22 — r.labbevidal / Claude (fix/agente-hilos) · el agente se reiniciaba en Render
 - Hice: medí la memoria real (PSS) del agente en modo producción: ~780 MB. `livekit-agents` 1.8 precarga por defecto el modelo de fin de turno (~450 MB, "EOT weights") en cada ejecutor de llamadas aunque no lo usemos. En Render Starter (512 MB) el sistema lo mataba antes de conectarse a LiveKit (por eso no había error y Render lo reintentaba cada ~5 min). Ahora `agent.py` fija `LIVEKIT_AGENTS_PRELOAD_LOCAL_INFERENCE=0` y corre las llamadas en hilos (`AGENT_EXECUTOR=thread`): **221 MB** (379 MB si se vuelve a procesos).
 - Verificado: pytest 63 y ruff OK; corrido contra el LiveKit real: `registered worker` (Brazil) y `job runner initialized` en 0,6 s. No probado: una llamada completa en Render.

@@ -19,7 +19,7 @@ export interface IncomingCallProps {
 const UMBRAL = 0.6; // fracción del recorrido para contestar
 const VIBRACION = [600, 400, 600, 1200]; // patrón tipo timbre
 
-export function IncomingCall({ caller, detail = "Llamada entrante por Puente", onAnswer, onDecline }: IncomingCallProps) {
+export function IncomingCall({ caller, detail = "Llamada entrante por Bridge", onAnswer, onDecline }: IncomingCallProps) {
   const track = useRef<HTMLDivElement>(null);
   const start = useRef<number | null>(null);
   const moved = useRef(false); // si arrastró, el click que sigue no cuenta como toque

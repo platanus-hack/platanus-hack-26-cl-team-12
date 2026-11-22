@@ -37,14 +37,14 @@ export function Calificacion({ quien, duracion, onListo }: { quien: string; sigl
             <Icon name="listo" size={34} />
           </span>
           <h1 id="calif-titulo">Gracias por tu opinión</h1>
-          <p className="calif-sub">Nos ayuda a que Puente funcione mejor para todas las personas sordas.</p>
+          <p className="calif-sub">Nos ayuda a que Bridge funcione mejor para todas las personas sordas.</p>
         </div>
       ) : (
         <div className="calif-cuerpo">
           <span className="calif-logo" aria-hidden>
             <Logo variant="mark" size={34} />
           </span>
-          <h1 id="calif-titulo">¿Cómo te fue con Puente?</h1>
+          <h1 id="calif-titulo">¿Cómo te fue con Bridge?</h1>
           <p className="calif-sub">
             Llamada con {quien} · {duracion}
           </p>
