@@ -23,13 +23,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.config import es_produccion
 from app.llamada import router as llamada_router
+from app.traductor import DEFAULT_PATH
 from app.twilio_media import router as twilio_router
 
 load_dotenv()
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-GLOSSES_PATH = Path(os.getenv("GLOSSES_PATH", REPO_ROOT / "packages/glosses/data/glosses.json"))
+GLOSSES_PATH = Path(os.getenv("GLOSSES_PATH", DEFAULT_PATH))  # el mismo diccionario que usa el traductor
 
 ROL_CLIENTE = "cliente"
 E164 = re.compile(r"\+[1-9]\d{7,14}")
@@ -43,7 +44,7 @@ def docs_habilitados() -> bool:
     explicito = (os.getenv("API_DOCS") or "").strip().lower()
     if explicito:  # vacío (`API_DOCS=` del .env.example) = no definido
         return explicito in ("1", "true", "si", "sí", "yes")
-    return os.getenv("API_ENV", "development").strip().lower() != "production"
+    return not es_produccion()
 
 
 def version_api() -> str:

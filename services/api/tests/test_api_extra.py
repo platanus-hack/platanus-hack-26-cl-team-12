@@ -94,4 +94,4 @@ def test_glosses_reads_configured_path(tmp_path, monkeypatch):
 
 def test_shared_glosses_file_exists_at_repo_root():
     # Se valida la ruta por defecto, no main.GLOSSES_PATH (un .env local puede sobreescribirla).
-    assert (main.REPO_ROOT / "packages/glosses/data/glosses.json").exists()
+    assert main.DEFAULT_PATH.exists()

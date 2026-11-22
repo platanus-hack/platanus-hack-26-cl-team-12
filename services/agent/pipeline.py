@@ -11,7 +11,7 @@ import time
 from collections.abc import Awaitable, Callable
 
 from translator import Translator
-from translator.translate import MAX_TEXTO
+from translator.translate import recortar
 from translator.voz import normalizar_para_voz
 
 log = logging.getLogger("puente.pipeline")
@@ -26,20 +26,16 @@ def faltantes_sin_nombres(descartadas: list[str], texto: str) -> list[str]:
     return [g for g in descartadas if g.lower() not in capitalizadas]
 
 
-def recortar(texto: str, maximo: int = MAX_TEXTO) -> str:
-    """El contrato rechaza textos sobre `max_texto`: se recortan aquí para que el subtítulo nunca se pierda."""
-    return texto if len(texto) <= maximo else texto[: maximo - 1].rstrip() + "…"
-
-
 def _ms(t0: float) -> int:
     return round((time.perf_counter() - t0) * 1000)
 
 
-def _registrar(translator: Translator, sala: str, direccion: str, **metricas) -> None:
+async def _registrar(translator: Translator, sala: str, direccion: str, **metricas) -> None:
+    """SQLite es síncrono y comparte lock con la caché: fuera del event loop, como registrar_faltantes."""
     if translator.store is None:
         return
     try:
-        translator.store.registrar_turno(sala, direccion, **metricas)
+        await asyncio.to_thread(translator.store.registrar_turno, sala, direccion, **metricas)
     except Exception:  # las métricas nunca deben botar la llamada
         log.exception("no se pudo registrar el turno")
 
@@ -89,7 +85,7 @@ async def turno_ejecutivo(texto: str, translator: Translator, publish: Publish, 
     metricas["total_ms"] = _ms(t0)
     metricas["cache_hit"] = int(translator.cache_hits > hits0)
     log.info("turno ejecutivo→cliente %s", metricas)
-    _registrar(translator, sala, "ejecutivo_a_cliente", **metricas)
+    await _registrar(translator, sala, "ejecutivo_a_cliente", **metricas)
 
 
 async def turno_cliente(msg: dict, translator: Translator, sala: str = "") -> str:
@@ -108,7 +104,7 @@ async def turno_cliente(msg: dict, translator: Translator, sala: str = "") -> st
         frase = crudo
     llm_ms = _ms(t0)
     voz = normalizar_para_voz(frase, translator.escenario.pronunciacion)
-    _registrar(
+    await _registrar(
         translator, sala, "cliente_a_ejecutivo",
         llm_cliente_ms=llm_ms, total_ms=_ms(t0), cache_hit=int(translator.cache_hits > hits0),
     )

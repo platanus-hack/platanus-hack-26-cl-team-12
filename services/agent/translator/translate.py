@@ -39,6 +39,11 @@ MAX_OPCION_CHARS = CONTRATO["max_opcion_chars"]
 MAX_GLOSAS = CONTRATO["max_glosas"]
 MAX_TEXTO = CONTRATO["max_texto"]
 
+
+def recortar(texto: str, maximo: int = MAX_TEXTO) -> str:
+    """El contrato rechaza textos sobre `max_texto`: se recortan para que el subtítulo nunca se pierda."""
+    return texto if len(texto) <= maximo else texto[: maximo - 1].rstrip() + "…"
+
 SIMPLE_TOOL = {
     "name": "emitir_simple",
     "description": "Entrega el texto simplificado para la persona sorda y, si el ejecutivo preguntó, respuestas rápidas.",

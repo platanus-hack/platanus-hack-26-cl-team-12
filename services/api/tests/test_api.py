@@ -82,6 +82,9 @@ class FakeTraductor:
     async def complejizar(self, texto):
         return f"formal({texto})"
 
+    def para_voz(self, frase):
+        return frase
+
 
 @pytest.fixture
 def sala_falsa(monkeypatch):
@@ -148,6 +151,16 @@ def test_ejecutivo_dice_sin_traduccion_si_claude_falla(sala_falsa, monkeypatch):
     with client.websocket_connect("/twilio/cliente") as pwa:
         client.post("/twilio/turno", data={"SpeechResult": "hola"})
         assert pwa.receive_json() == {"tipo": "ejecutivo_dice", "texto": "hola", "simple": None, "opciones": []}
+
+
+def test_ejecutivo_dice_respeta_el_tope_del_contrato(sala_falsa):
+    from app.traductor import MAX_TEXTO
+
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/turno", data={"SpeechResult": "a" * (MAX_TEXTO + 100)})
+        msg = pwa.receive_json()
+    assert len(msg["texto"]) == MAX_TEXTO and msg["texto"].endswith("…")
+    assert len(msg["simple"]) <= MAX_TEXTO
 
 
 # ── Auth mínima (A4) ──────────────────────────────────────────────────────────

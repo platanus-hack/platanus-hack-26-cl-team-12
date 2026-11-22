@@ -5,7 +5,6 @@ En el contenedor de la API el Dockerfile copia `services/agent/translator` a la 
 """
 
 import asyncio
-import os
 import sys
 from pathlib import Path
 
@@ -15,15 +14,11 @@ if _AGENT not in sys.path:
     sys.path.insert(0, _AGENT)
 
 from translator import SimpleResult, Translator, load_escenario, load_glossary  # noqa: E402
+from translator.glossary import DEFAULT_PATH  # noqa: E402
+from translator.translate import MAX_TEXTO, recortar  # noqa: E402  (tope del contrato: contrato.json)
+from translator.voz import normalizar_para_voz  # noqa: E402
 
-MAX_TEXTO = 600  # caracteres por turno: tope de costo y de abuso (A4)
-
-__all__ = ["MAX_TEXTO", "SimpleResult", "Traductor", "es_produccion"]
-
-
-def es_produccion() -> bool:
-    """Mismo criterio que main.py: API_ENV=production (el Dockerfile lo fija). En producción la auth falla cerrada."""
-    return os.getenv("API_ENV", "development").strip().lower() == "production"
+__all__ = ["DEFAULT_PATH", "MAX_TEXTO", "SimpleResult", "Traductor", "load_escenario", "normalizar_para_voz", "recortar"]
 
 
 class Traductor:
@@ -46,3 +41,7 @@ class Traductor:
 
     async def complejizar(self, texto: str) -> str:
         return await asyncio.to_thread(self.translator.complejizar, texto[:MAX_TEXTO])
+
+    def para_voz(self, frase: str) -> str:
+        """Lo que dirá el <Say> de Twilio: RUT, horas, montos y pronunciación del escenario (como el TTS del agente)."""
+        return normalizar_para_voz(frase, self.translator.escenario.pronunciacion)
