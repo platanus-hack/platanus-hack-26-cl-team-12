@@ -8,6 +8,32 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Claude (fix/revision-demo) · revisión de código en 2 rondas y arreglos 🔴🟠🟡
+- Hice: revisé origin/dev con 4 agentes más un verificador y arreglé 14 hallazgos que afectan el plan C.
+  - **Despliegue:** `NEXT_PUBLIC_CLIENTE_WS_TOKEN` y `NUMERO_DEMO` en render.yaml y en el CD.
+  - **Traducción:** `complejizar` sin thinking (Haiku 5.5 gastaba `max_tokens=200` pensando y devolvía vacío).
+  - **Web:**
+    - El texto escrito ya no se reemplaza por glosas.
+    - La PWA abre la llamada real.
+    - El subtítulo aparece al tiro.
+    - MediaPipe y el VRM se precargan al marcar y no tienen fugas; three.js queda fuera del bundle inicial.
+    - Horas, RUT y nombres (`TEXTO:`) se muestran en grande sobre el avatar.
+    - El SW revalida `/anim/index.json`.
+  - **API:**
+    - Las frases fijas no bloquean el webhook: esperan su audio máx. 1,5 s y se precalientan al arrancar.
+    - httpx compartido y Anthropic con `timeout=10`.
+    - `Sala.gen` descarta lo que llegue de la llamada anterior, `/estado` se filtra por CallSid y queda un solo WS a la vez.
+    - `POST /twilio/colgar` (token + CallSid) corta el teléfono al colgar en la app.
+- Decidí:
+  - Un solo PR que cruza las carpetas de A, B y D.
+  - `pose_full` se mantiene: las plantillas están calibradas con ese modelo.
+- Verificado: pytest api (71) y agent (64), los 10 archivos de vitest (66), `pnpm typecheck` y `pnpm build`. NO probado con Twilio ni ElevenLabs reales.
+- Falta / bloqueado:
+  - Raimundo carga `NUMERO_DEMO` y `NEXT_PUBLIC_CLIENTE_WS_TOKEN` en Render, más el secreto `CLIENTE_WS_TOKEN` en GitHub para la APK.
+  - Decidir si `puente-api` sube a starter.
+  - Rotar el token compartido después de la demo.
+  - Lo de LiveKit (turn detector de ~400 MB, RoomIO) sigue pendiente.
+
 ## 2026-11-22 — Martín / Claude (v1/twilio-pagado)
 - Decidí: **pagar el upgrade de Twilio** (cierra el TODO de evaluar el upgrade). Con el trial: llamadas de máx. 10 min, solo 5 números verificados y aviso "trial account".
 - Hice: `LLAMADA_MAX_MIN` (por defecto 240 = 4 h, máx. 24 h) se pasa como `time_limit` al crear la llamada. Solo rige con cuenta pagada.
