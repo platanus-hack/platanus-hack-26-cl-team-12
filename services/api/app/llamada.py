@@ -1,7 +1,8 @@
 """Plan C de v1: estado de la llamada, traducción con Claude y canal con la app del cliente.
 
 Ejecutivo (teléfono) ⇄ Twilio <Gather>/<Say> ⇄ /twilio/* (twilio_media.py) ⇄ este módulo ⇄ WS /twilio/cliente ⇄ PWA
-Mensajes del WebSocket con el cliente: los de docs/contrato.md (`ejecutivo_dice`, `cliente_dice`, `glosas_cliente`, `cliente_dijo`, `estado`).
+Mensajes del WebSocket con el cliente: los de docs/contrato.md (`ejecutivo_dice`, `glosas_para_senar`, `cliente_dice`,
+`glosas_cliente`, `cliente_dijo`, `estado`).
 
 TODO(v1): una sola llamada a la vez (demo). Para varias, indexar `Sala` por CallSid y unirla al token del cliente.
 """
@@ -40,6 +41,10 @@ class Sala:
                 self.clientes.discard(ws)
 
     async def ejecutivo_dijo(self, texto: str) -> None:
+        """Texto simple (v2) y señas (v4) en paralelo, como el agente: el texto no espera a las señas."""
+        await asyncio.gather(self._texto_simple(texto), self._senas(texto))
+
+    async def _texto_simple(self, texto: str) -> None:
         simple, opciones = None, []
         try:
             r = await self.traductor.simplificar(texto)
@@ -52,6 +57,15 @@ class Sala:
         """Lo que el cliente dijo ya convertido: queda listo para decirse por voz. La app lo ve cuando empieza a sonar."""
         frase = recortar(frase)
         await self.respuestas.put((self.traductor.para_voz(frase), frase))
+
+    async def _senas(self, texto: str) -> None:
+        try:
+            r = await self.traductor.a_glosas(texto)
+        except Exception:
+            log.exception("No se pudo traducir a señas; queda solo el texto")
+            return
+        if r.glosas:
+            await self.enviar({"tipo": "glosas_para_senar", "glosas": r.glosas, "subtitulo": recortar(r.subtitulo)})
 
     async def cliente_dijo(self, texto: str) -> None:
         texto = texto.strip()[:MAX_TEXTO]
