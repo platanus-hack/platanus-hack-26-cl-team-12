@@ -7,7 +7,7 @@ TODO(v1): una sola llamada a la vez (demo). Para varias, indexar `Sala` por Call
 """
 
 import asyncio
-import importlib.util
+import hmac
 import json
 import logging
 import os
@@ -16,53 +16,10 @@ from pathlib import Path
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
+from app.traductor import MAX_TEXTO, Traductor
+
 log = logging.getLogger("puente.llamada")
 router = APIRouter(prefix="/twilio")
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
-# Prompts afinados por B (Raimundo). Se cargan por ruta para tener una sola fuente.
-# TODO(v2): moverlos a services/agent/translator/ cuando B agregue `complejizar` (B5).
-_PROMPTS = REPO_ROOT / "lab" / "v2_simplificar" / "prompts.py"
-MAX_TEXTO = 600  # caracteres por turno: tope de costo y de abuso (A4)
-
-
-def _cargar_prompts():
-    spec = importlib.util.spec_from_file_location("prompts_v2", _PROMPTS)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod.SIMPLIFICAR, mod.COMPLEJIZAR
-
-
-class Traductor:
-    """Simplificar (ejecutivo → cliente) y complejizar (cliente → ejecutivo) con Claude."""
-
-    def __init__(self, client=None):
-        self.simplificar_prompt, self.complejizar_prompt = _cargar_prompts()
-        self._client = client
-
-    @property
-    def client(self):
-        if self._client is None:
-            import anthropic
-
-            self._client = anthropic.AsyncAnthropic()  # lee ANTHROPIC_API_KEY
-        return self._client
-
-    async def _pedir(self, system: str, texto: str) -> str:
-        msg = await self.client.messages.create(
-            model=os.getenv("TRANSLATOR_MODEL", "claude-haiku-5-5"),
-            max_tokens=300,
-            system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
-            messages=[{"role": "user", "content": texto[:MAX_TEXTO]}],
-        )
-        # Solo bloques de texto: el modelo puede devolver también bloques de razonamiento.
-        return "".join(b.text for b in msg.content if b.type == "text").strip()
-
-    async def simplificar(self, texto: str) -> str:
-        return await self._pedir(self.simplificar_prompt, texto)
-
-    async def complejizar(self, texto: str) -> str:
-        return await self._pedir(self.complejizar_prompt, texto)
 
 
 class Sala:
@@ -81,12 +38,13 @@ class Sala:
                 self.clientes.discard(ws)
 
     async def ejecutivo_dijo(self, texto: str) -> None:
+        simple, opciones = None, []
         try:
-            simple = await self.traductor.simplificar(texto)
+            r = await self.traductor.simplificar(texto)
+            simple, opciones = r.simple, list(r.opciones)
         except Exception:
             log.exception("No se pudo simplificar; se manda el texto original")
-            simple = None
-        await self.enviar({"tipo": "ejecutivo_dice", "texto": texto, "simple": simple})
+        await self.enviar({"tipo": "ejecutivo_dice", "texto": texto, "simple": simple, "opciones": opciones})
 
     async def cliente_dijo(self, texto: str) -> None:
         texto = texto.strip()[:MAX_TEXTO]
@@ -113,9 +71,20 @@ class Sala:
 sala = Sala()
 
 
+def token_valido(token: str | None) -> bool:
+    """`CLIENTE_WS_TOKEN` vacío = modo dev (sin token). Con valor, el WebSocket exige `?token=` igual."""
+    esperado = os.getenv("CLIENTE_WS_TOKEN", "")
+    if not esperado:
+        return True
+    return hmac.compare_digest((token or "").encode(), esperado.encode())
+
+
 @router.websocket("/cliente")
 async def cliente(ws: WebSocket) -> None:
-    """Canal con la app del cliente sordo. TODO(auth): exigir token antes de desplegar (A4)."""
+    """Canal con la app del cliente sordo. Exige `?token=CLIENTE_WS_TOKEN` cuando está configurado (A4)."""
+    if not token_valido(ws.query_params.get("token")):
+        await ws.close(code=1008)  # policy violation
+        return
     await ws.accept()
     sala.clientes.add(ws)
     try:

@@ -46,7 +46,9 @@ const agregar = (clase, texto, nota) => {
 };
 let ws;
 function conectar() {
-  ws = new WebSocket(location.origin.replace(/^http/, "ws") + "/twilio/cliente");
+  // ?token=... en la URL de esta página se reenvía al WebSocket (CLIENTE_WS_TOKEN en la API).
+  const token = new URLSearchParams(location.search).get("token") || "";
+  ws = new WebSocket(location.origin.replace(/^http/, "ws") + "/twilio/cliente" + (token ? "?token=" + encodeURIComponent(token) : ""));
   ws.onopen = () => estado.textContent = "Conectado";
   ws.onclose = () => { estado.textContent = "Reconectando…"; setTimeout(conectar, 1500); };
   ws.onmessage = (e) => {

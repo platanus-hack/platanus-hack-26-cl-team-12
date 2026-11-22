@@ -76,7 +76,9 @@ def test_llamada_blocks_numbers_outside_allowlist(monkeypatch):
 
 class FakeTraductor:
     async def simplificar(self, texto):
-        return f"simple({texto})"
+        from app.traductor import SimpleResult
+
+        return SimpleResult(simple=f"simple({texto})", opciones=["Sí", "No"])
 
     async def complejizar(self, texto):
         return f"formal({texto})"
@@ -87,6 +89,9 @@ def sala_falsa(monkeypatch):
     from app.llamada import sala
 
     monkeypatch.setenv("PUBLIC_BASE_URL", "https://abc.ngrok-free.app")
+    # main.py carga el .env local: sin esto, un TWILIO_AUTH_TOKEN real haría fallar los POST sin firma.
+    monkeypatch.delenv("TWILIO_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("CLIENTE_WS_TOKEN", raising=False)
     monkeypatch.setattr(sala, "traductor", FakeTraductor())
     sala.reiniciar()
     return sala
@@ -112,7 +117,10 @@ def test_conversacion_completa_por_turnos(sala_falsa):
         r = client.post("/twilio/turno", data={"SpeechResult": "su hora es el martes <x>"})
         assert "/twilio/espera?n=0" in r.text
         assert pwa.receive_json() == {
-            "tipo": "ejecutivo_dice", "texto": "su hora es el martes <x>", "simple": "simple(su hora es el martes <x>)"
+            "tipo": "ejecutivo_dice",
+            "texto": "su hora es el martes <x>",
+            "simple": "simple(su hora es el martes <x>)",
+            "opciones": ["Sí", "No"],
         }
         assert "<Pause" in client.post("/twilio/espera?n=0").text  # el cliente todavía no responde
 
@@ -129,6 +137,62 @@ def test_conversacion_completa_por_turnos(sala_falsa):
 def test_twilio_turno_vacio_vuelve_a_escuchar(sala_falsa):
     r = client.post("/twilio/turno", data={"SpeechResult": ""})
     assert '<Gather input="speech"' in r.text
+
+
+def test_ejecutivo_dice_sin_traduccion_si_claude_falla(sala_falsa, monkeypatch):
+    class Roto(FakeTraductor):
+        async def simplificar(self, texto):
+            raise RuntimeError("sin red")
+
+    monkeypatch.setattr(sala_falsa, "traductor", Roto())
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/turno", data={"SpeechResult": "hola"})
+        assert pwa.receive_json() == {"tipo": "ejecutivo_dice", "texto": "hola", "simple": None, "opciones": []}
+
+
+# ── Auth mínima (A4) ──────────────────────────────────────────────────────────
+
+
+def _firmar(url: str, params: dict, token: str) -> str:
+    from twilio.request_validator import RequestValidator
+
+    return RequestValidator(token).compute_signature(url, params)
+
+
+def test_twilio_post_sin_firma_es_rechazado(sala_falsa, monkeypatch):
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "secreto-twilio")
+    assert client.post("/twilio/turno", data={"SpeechResult": "hola"}).status_code == 403
+    r = client.post("/twilio/voz", headers={"X-Twilio-Signature": "falsa"})
+    assert r.status_code == 403
+
+
+def test_twilio_post_con_firma_valida_pasa(sala_falsa, monkeypatch):
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "secreto-twilio")
+    # Twilio firma la URL pública (PUBLIC_BASE_URL), con query, y los parámetros del form.
+    params = {"SpeechResult": ""}
+    url = "https://abc.ngrok-free.app/twilio/turno?x=1"
+    r = client.post("/twilio/turno?x=1", data=params, headers={"X-Twilio-Signature": _firmar(url, params, "secreto-twilio")})
+    assert r.status_code == 200 and '<Gather input="speech"' in r.text
+
+
+def test_firma_de_otra_url_no_sirve(sala_falsa, monkeypatch):
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "secreto-twilio")
+    firma = _firmar("https://abc.ngrok-free.app/twilio/voz", {}, "secreto-twilio")
+    assert client.post("/twilio/escuchar", headers={"X-Twilio-Signature": firma}).status_code == 403
+
+
+def test_ws_cliente_exige_token(sala_falsa, monkeypatch):
+    from starlette.websockets import WebSocketDisconnect
+
+    monkeypatch.setenv("CLIENTE_WS_TOKEN", "abc123")
+    for ruta in ("/twilio/cliente", "/twilio/cliente?token=otro"):
+        with pytest.raises(WebSocketDisconnect) as e:
+            with client.websocket_connect(ruta):
+                pass
+        assert e.value.code == 1008
+    with client.websocket_connect("/twilio/cliente?token=abc123") as pwa:
+        client.post("/twilio/voz")
+        assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
 
 
 def test_twilio_media_echoes_audio():

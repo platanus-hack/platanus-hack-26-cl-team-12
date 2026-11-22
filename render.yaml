@@ -37,6 +37,11 @@ services:
         value: https://puente-api.onrender.com
       - key: ANTHROPIC_API_KEY
         sync: false
+      # Auth mínima (A4): firma de Twilio en los POST y token del WebSocket /twilio/cliente.
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: CLIENTE_WS_TOKEN
+        sync: false
 
   # ── Agente (LiveKit Agents): proceso largo, sin puerto ──────────────────────
   - type: worker
