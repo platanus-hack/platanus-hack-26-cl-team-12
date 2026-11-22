@@ -8,6 +8,13 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — r.labbevidal / Claude (fix/deuda-fase1) · deuda técnica antes de la demo
+- Hice: la API (plan C, `/twilio/*`) usa el `Translator` del agente (`services/api/app/traductor.py`) en vez de cargar `lab/v2_simplificar/prompts.py`: una sola fuente de prompts, glosario y escenario. `ejecutivo_dice` ahora trae `opciones`, como pide el contrato. El Dockerfile de la API copia `services/agent/translator` y ya no copia `lab/`.
+- Hice: auth mínima (A4). Los POST de Twilio validan `X-Twilio-Signature` (`TWILIO_AUTH_TOKEN`) y el WebSocket `/twilio/cliente` exige `?token=CLIENTE_WS_TOKEN`. Si la variable está vacía no se valida (dev). Las dos quedan en `.env.example` y en `render.yaml`.
+- Hice: ruff en CI y `make lint` (dentro de `make check`). Solo hubo que ordenar imports.
+- Verificado: `make check` OK (ruff, typecheck, build, pytest api 39 y agent 63). El import del traductor se probó con la estructura de la imagen (sin `lab/`). No probado: `docker build` (no hay Docker en esta máquina) ni una llamada real de Twilio.
+- Falta / bloqueado: **en Render, cargar `TWILIO_AUTH_TOKEN` y `CLIENTE_WS_TOKEN`**. Cuando la PWA use `/twilio/cliente`, tiene que mandar el token. Quedan pendientes de la auditoría: test de contrato TS↔Python, `Sala` indexada por CallSid, y sesión y rate limit en `/token`.
+
 ## 2026-11-21 — Rafael / Claude (v4/pwa-instalable) · D6 PWA instalable y sin internet
 - Hice: íconos PNG (192, 512, maskable y apple-touch) desde el SVG; `manifest.webmanifest` completo (id, start_url `/?mock=1`, portrait, colores, atajo "Pedir una ambulancia" con `?llamar=urgencias`); `public/sw.js` que guarda la app, los JS/CSS de Next, los íconos y las fotos de señas, con la portada primero desde la red y los estáticos primero desde la copia (nunca guarda la API ni LiveKit); registro del SW solo en producción; botón "Instalar app" con `beforeinstallprompt` (Chrome y Samsung Internet); metadatos para iPhone. Script `pnpm --filter @puente/web preview` (build + servidor en :3001).
 - Verificado en Edge (CDP, 390×844): manifest sin errores, **instalable sin errores**, SW activo, 126 archivos guardados y **la llamada simulada completa funciona sin internet** (con fotos de señas).
