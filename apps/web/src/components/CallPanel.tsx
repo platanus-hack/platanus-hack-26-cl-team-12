@@ -151,7 +151,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setChat(false);
     setState("connecting");
     try {
-      const handle = mock ? await joinMockCall({ onMessage, guion: d.guion }) : await joinCall({ onMessage, onDesconectado });
+      const handle = mock ? await joinMockCall({ onMessage, guion: d.guion }) : await joinCall({ onMessage, onDesconectado, destino: d.id });
       callRef.current = handle;
       setCall(handle);
     } catch (e) {

@@ -29,6 +29,11 @@ from translator.voz import elegir_voz
 load_dotenv()
 log = logging.getLogger("puente.agent")
 
+# livekit-agents precarga por defecto el modelo de fin de turno (~450 MB) en cada ejecutor de llamadas, aunque no lo
+# usemos (el turno lo marca el VAD de Silero, que cargamos en prewarm). Con eso el agente pasaba de 600 MB y en
+# Render Starter (512 MB) el sistema lo mataba al arrancar, sin dejar error. "0" lo apaga; el .env puede cambiarlo.
+os.environ.setdefault("LIVEKIT_AGENTS_PRELOAD_LOCAL_INFERENCE", "0")
+
 
 def _env_bool(nombre: str, defecto: bool) -> bool:
     return os.getenv(nombre, str(defecto)).strip().lower() in ("1", "true", "sí", "si", "yes")
@@ -120,8 +125,12 @@ if __name__ == "__main__":
         agents.WorkerOptions(
             entrypoint_fnc=entrypoint,
             prewarm_fnc=prewarm,
-            # En producción LiveKit deja un proceso en espera por CPU *del host* (no del plan), y cada uno carga el
-            # VAD en prewarm: en Render Starter (512 MB) eso agota la memoria y el contenedor se reinicia en bucle.
+            # Llamadas en hilos del mismo proceso, no en procesos aparte: con procesos (forkserver + uno en espera)
+            # el agente usa ~780 MB y en Render Starter (512 MB) el sistema lo mata al arrancar, sin dejar error.
+            # Con hilos no hay aislamiento entre llamadas, que para la demo (una a la vez) no importa.
+            # AGENT_EXECUTOR=process vuelve al modo de LiveKit por defecto (para planes con más memoria).
+            job_executor_type=agents.JobExecutorType(os.getenv("AGENT_EXECUTOR", "thread")),
+            # En producción LiveKit deja uno en espera por CPU *del host* (no del plan): se fija en 1.
             num_idle_processes=int(os.getenv("AGENT_IDLE_PROCESSES", "1")),
             # Cargar el VAD en una CPU compartida puede pasar de los 10 s por defecto.
             initialize_process_timeout=float(os.getenv("AGENT_INIT_TIMEOUT_S", "30")),

@@ -21,18 +21,18 @@ importers:
   apps/mobile:
     dependencies:
       '@capacitor/android':
-        specifier: ^6.2.0
-        version: 6.2.3(@capacitor/core@6.2.3)
+        specifier: 6.2.2
+        version: 6.2.2(@capacitor/core@6.2.2)
       '@capacitor/core':
-        specifier: ^6.2.0
-        version: 6.2.3
+        specifier: 6.2.2
+        version: 6.2.2
       '@capacitor/ios':
-        specifier: ^6.2.0
-        version: 6.2.3(@capacitor/core@6.2.3)
+        specifier: 6.2.2
+        version: 6.2.2(@capacitor/core@6.2.2)
     devDependencies:
       '@capacitor/cli':
-        specifier: ^6.2.0
-        version: 6.2.3
+        specifier: 6.2.2
+        version: 6.2.2
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -129,21 +129,21 @@ importers:
 
 packages:
 
-  '@capacitor/android@6.2.3':
-    resolution: {integrity: sha512-1x7HUUy5XdQUmAwkMcI8qz0pAmSDXGHVq0XVdCvFswqbE74VGxRuGeo7hUGcgQUWkmqXkVWzMSlAm3Z8NrmQjA==}
+  '@capacitor/android@6.2.2':
+    resolution: {integrity: sha512-JjIu1ryNE16PQTp51rb4NEygxP7cSCDMmUqx4f5f12xscKdGKTjO9bkEP3TroLnTa/J6p2QopIhRbrd3E/7DrA==}
     peerDependencies:
       '@capacitor/core': ^6.2.0
 
-  '@capacitor/cli@6.2.3':
-    resolution: {integrity: sha512-jqmqpe8K/kdw2/imsii+taG7qsv0bbYKsxwrOfcgPpm+omxBGg4j81Hf9FIvlxB3zV2EAORPBKeUfCkkV+o83A==}
+  '@capacitor/cli@6.2.2':
+    resolution: {integrity: sha512-5wEYSHBzRKJKZnhD2sVJAP0t0kUT7o2/vlgEGzFE3t2w+inL9qMDN7zxg6pvqveJiPNZT2k93ZvJDdRKIn/w1w==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
-  '@capacitor/core@6.2.3':
-    resolution: {integrity: sha512-zajW/Fu1RFi42CC6KDjjgOIJ57hCl0Mo9FixpWpm6wXYAsFOU04dk+CBLvRt6rtO3sd6Lce4xxu68Pvi1oR99w==}
+  '@capacitor/core@6.2.2':
+    resolution: {integrity: sha512-qEI3DcwJEPzhW+hVGKH8m4jbujtkdUiGkpMLHmpR8epACU7wEsV6NF8pCHzpsMYjc80oK7Cmpcw+MIienv/YRw==}
 
-  '@capacitor/ios@6.2.3':
-    resolution: {integrity: sha512-IqYhQH6yOrsNLwmKgUj51UWemRuNw2+wIi/mwpkDP3SennxmovjdpnCpbSmapjA4CmCn56yd4D1AVdPHWKVj4Q==}
+  '@capacitor/ios@6.2.2':
+    resolution: {integrity: sha512-dc9upo3L5wSUVJBJnd7oRGGsiwB2rMe7ZF2bti8hvDVCAZeYMzzw8iqxuUc6cvGBhH2/LsORMBO51/vEQhdmHg==}
     peerDependencies:
       '@capacitor/core': ^6.2.0
 
@@ -1435,11 +1435,11 @@ packages:
 
 snapshots:
 
-  '@capacitor/android@6.2.3(@capacitor/core@6.2.3)':
+  '@capacitor/android@6.2.2(@capacitor/core@6.2.2)':
     dependencies:
-      '@capacitor/core': 6.2.3
+      '@capacitor/core': 6.2.2
 
-  '@capacitor/cli@6.2.3':
+  '@capacitor/cli@6.2.2':
     dependencies:
       '@ionic/cli-framework-output': 2.2.8
       '@ionic/utils-fs': 3.1.7
@@ -1461,13 +1461,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@capacitor/core@6.2.3':
+  '@capacitor/core@6.2.2':
     dependencies:
       tslib: 2.9.1
 
-  '@capacitor/ios@6.2.3(@capacitor/core@6.2.3)':
+  '@capacitor/ios@6.2.2(@capacitor/core@6.2.2)':
     dependencies:
-      '@capacitor/core': 6.2.3
+      '@capacitor/core': 6.2.2
 
   '@emnapi/runtime@1.11.3':
     dependencies:
