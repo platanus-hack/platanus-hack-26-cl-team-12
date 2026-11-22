@@ -27,6 +27,8 @@ E2E_ENV = {
     "CLIENTE_WS_TOKEN": "",
     "CORS_ORIGINS": os.getenv("E2E_WEB_ORIGIN", "http://127.0.0.1:3100"),
     "ANTHROPIC_API_KEY": "",
+    # Sin ElevenLabs: el ejecutivo oye <Say> (voz de Twilio) con el texto, que el test puede leer, y no se gasta saldo.
+    "ELEVENLABS_API_KEY": "",
 }
 os.environ.update(E2E_ENV)
 

@@ -57,7 +57,9 @@ export default defineConfig({
       url: WEB_URL,
       reuseExistingServer: !CI,
       timeout: 300_000,
-      env: { NEXT_PUBLIC_API_URL: API_URL, NEXT_PUBLIC_CLIENTE_WS_TOKEN: "", SKIP_AVATAR: "1" },
+      // NEXT_PUBLIC_RECONOCER_SENAS=0: lectura de señas simulada. La real (activa por defecto, #35) baja MediaPipe de un
+      // CDN y necesita manos de verdad frente a la cámara: con la cámara falsa de Chromium nunca reconoce nada.
+      env: { NEXT_PUBLIC_API_URL: API_URL, NEXT_PUBLIC_CLIENTE_WS_TOKEN: "", NEXT_PUBLIC_RECONOCER_SENAS: "0", SKIP_AVATAR: "1" },
     },
   ],
 });
