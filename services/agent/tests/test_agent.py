@@ -130,7 +130,9 @@ def wired(monkeypatch):
     async def connect():
         pass
 
-    ctx = SimpleNamespace(room=room, connect=connect)
+    proc = SimpleNamespace(userdata={})
+    agent.prewarm(proc)  # lo mismo que hace el worker una vez por proceso
+    ctx = SimpleNamespace(room=room, connect=connect, proc=proc)
 
     async def run(packets):
         await agent.entrypoint(ctx)

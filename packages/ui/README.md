@@ -31,7 +31,7 @@ Mensajes del contrato → componentes (`docs/contrato.md`):
 - `ejecutivo_dice` → una línea en `Subtitles` (`text` = `simple ?? texto`, `original` = `texto`).
 - `estado` → `CallStatus` (`llamada_iniciada` → `live`, `llamada_terminada` → `ended`) + `VisualAlert`.
 - `glosas_cliente` → `SignCamera glosses`.
-- `glosas_para_senar` → `SignAvatar glosses` + `subtitle`.
+- `glosas_para_senar` → el `player` de `SignAvatar` (recibe las glosas) + `subtitle`.
 
 ---
 
@@ -191,6 +191,6 @@ Panel de la cámara para v3: el cliente firma y ve las glosas que la app va reco
 
 Panel para v4: el avatar firma lo que dice el ejecutivo, con la secuencia de glosas y el subtítulo debajo.
 
-- `glosses` y `subtitle` vienen del mensaje `glosas_para_senar` (docs/contrato.md); `current` es el índice de la glosa que se está reproduciendo.
+- `subtitle` viene del mensaje `glosas_para_senar` (docs/contrato.md); las glosas las recibe el reproductor que se pasa en `player`. `signing` mueve las manos del intérprete de ejemplo.
 - El subtítulo siempre se muestra: el avatar complementa el texto, no lo reemplaza.
 - La figura es un marcador de posición. TODO(real-data): clips de `packages/avatar`.

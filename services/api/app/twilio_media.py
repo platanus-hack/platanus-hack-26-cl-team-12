@@ -17,8 +17,9 @@ from xml.sax.saxutils import escape, quoteattr
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 
+from app.config import es_produccion
 from app.llamada import sala
-from app.traductor import es_produccion
+from app.traductor import load_escenario
 
 log = logging.getLogger("puente.twilio")
 
@@ -27,8 +28,10 @@ SALUDO = (
     "Hola. Le habla Puente, un servicio de interpretación para una persona sorda. "
     "Hable después de este mensaje y espere unos segundos la respuesta."
 )
-# Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol").
-PISTAS = "RUT, Fonasa, Isapre, hora, hora médica, médico, doctor, consulta, agendar, previsión, bono, copago, rut, dígito verificador"
+# Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol"): los términos del
+# escenario (los mismos que recibe Deepgram en el agente) más algunos que solo le hacen falta a Twilio.
+_PISTAS_TWILIO = ["hora", "hora médica", "médico", "doctor", "previsión", "copago", "dígito verificador"]
+PISTAS = ", ".join(dict.fromkeys([*load_escenario().stt_keyterms, *_PISTAS_TWILIO]))
 ESPERA_S = 2  # segundos entre revisiones de la respuesta del cliente
 AVISO_CADA = 10  # cada ~20 s de espera se le avisa al ejecutivo que el cliente sigue escribiendo
 _tareas: set[asyncio.Task] = set()

@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-21 — r.labbevidal / Claude (chore/simplify) · limpieza de todo el código
+- Hice: la API reusa `MAX_TEXTO` (500, del contrato), `recortar`, `normalizar_para_voz`, `DEFAULT_PATH` y los `stt_keyterms` del traductor del agente. Antes eran copias, y el tope era 600. El agente precarga VAD, diccionario y escenario con `prewarm_fnc`. En la web, el contador vive en `EstadoLlamada`, `SignAvatar` perdió props muertos, `SenasFotos` se reinicia con `key` y `Composer` respeta `LIMITES.max_texto`.
+- Verificado: ruff, pytest (api 41, agent 63), typecheck, build y 2 archivos de vitest. No probado en el navegador.
+- Falta: probar a mano `?mock=1`, con fotos y sin fotos. Lo que se omitió a propósito está en el PR #22 (depende de #21).
+
 ## 2026-11-21 — r.labbevidal / Claude (fix/deuda-fase1) · deuda técnica antes de la demo
 - Hice: la API (plan C, `/twilio/*`) usa el `Translator` del agente (`services/api/app/traductor.py`) en vez de cargar `lab/v2_simplificar/prompts.py`: una sola fuente de prompts, glosario y escenario. `ejecutivo_dice` ahora trae `opciones`, como pide el contrato. El Dockerfile de la API copia `services/agent/translator` y ya no copia `lab/`.
 - Hice: auth mínima (A4). Los POST de Twilio validan `X-Twilio-Signature` (`TWILIO_AUTH_TOKEN`) y el WebSocket `/twilio/cliente` exige `?token=CLIENTE_WS_TOKEN`. Si la variable está vacía no se valida (dev). Las dos quedan en `.env.example` y en `render.yaml`.

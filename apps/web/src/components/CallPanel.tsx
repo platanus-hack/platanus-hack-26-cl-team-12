@@ -10,7 +10,7 @@ import {
   Button, CallStatus, Composer, Icon, QuickReplies, SignAvatar, Subtitles, VisualAlert, DEFAULT_REPLIES,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
-import type { MensajePuente } from "@puente/glosses";
+import { LIMITES, type MensajePuente } from "@puente/glosses";
 import { joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall } from "@/lib/mockCall";
 import { Inicio, URGENCIAS, type Destino } from "./Inicio";
@@ -25,15 +25,24 @@ const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", min
 let siguienteId = 0;
 const nuevoId = () => `l${++siguienteId}`;
 
+/** Estado + duración. El contador vive aquí para que el tic de cada segundo no vuelva a dibujar toda la llamada. */
+function EstadoLlamada({ state }: { state: CallState }) {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (state !== "live") return;
+    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [state]);
+  return <CallStatus state={state} seconds={seconds} />;
+}
 
 export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLlamar?: boolean }) {
   const [call, setCall] = useState<CallHandle | null>(null);
   const [state, setState] = useState<CallState>("idle");
-  const [seconds, setSeconds] = useState(0);
   const [lines, setLines] = useState<SubtitleLine[]>([]);
   const [opciones, setOpciones] = useState<string[]>(DEFAULT_REPLIES);
   const [alert, setAlert] = useState<{ message: string; tone: AlertTone } | null>(null);
-  const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
+  const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string } | null>(null);
   const [destino, setDestino] = useState<Destino | null>(null);
   // Fotos de señas (D5). null = no están en este computador: se usa el intérprete dibujado.
   const manifest = useManifestSenas();
@@ -45,19 +54,16 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   const destinoRef = useRef<Destino | null>(null); // onMessage corre fuera del render: lee el destino de aquí
   const chatRef = useRef<HTMLDivElement>(null);
 
-  // Contador de duración mientras la llamada está en curso.
+  // Intérprete dibujado (sin fotos): mueve las manos AVATAR_MS_POR_SENA por cada seña de la frase.
+  // Con fotos, `senando` lo maneja SenasFotos. Depende del arreglo de glosas: un subtítulo nuevo no reinicia.
+  const glosas = senas?.glosas;
   useEffect(() => {
-    if (state !== "live") return;
-    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
-    return () => clearInterval(id);
-  }, [state]);
-
-  // Intérprete dibujado (sin fotos): avanza una seña cada AVATAR_MS_POR_SENA para mover las manos.
-  useEffect(() => {
-    if (!senas || senas.actual >= senas.glosas.length) return;
-    const id = setTimeout(() => setSenas((s) => (s ? { ...s, actual: s.actual + 1 } : s)), AVATAR_MS_POR_SENA);
+    if (manifest) return;
+    if (!glosas?.length) return setSenando(false);
+    setSenando(true);
+    const id = setTimeout(() => setSenando(false), glosas.length * AVATAR_MS_POR_SENA);
     return () => clearTimeout(id);
-  }, [senas]);
+  }, [glosas, manifest]);
 
   // El chat baja solo al último mensaje: nunca hay que bajar a mano para ver qué te dijeron.
   useEffect(() => {
@@ -85,7 +91,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         setOpciones(msg.opciones?.length ? msg.opciones : DEFAULT_REPLIES);
         setEsperando(false);
         // Sin v4 activa no llega glosas_para_senar: el subtítulo del avatar igual muestra lo último que dijeron.
-        setSenas((s) => ({ glosas: s?.glosas ?? [], actual: s?.actual ?? 0, subtitulo: msg.simple ?? msg.texto }));
+        setSenas((s) => ({ glosas: s?.glosas ?? [], subtitulo: msg.simple ?? msg.texto }));
         break;
       case "estado":
         if (msg.valor === "llamada_iniciada") {
@@ -93,17 +99,14 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
           setAlert(null);
           // Al contestar, se ofrecen las frases iniciales del destino para hablar primero con un toque.
           setOpciones((o) => (destinoRef.current?.frasesIniciales.length ? destinoRef.current.frasesIniciales : o));
-          setSenas((s) => s ?? { glosas: [], actual: 0, subtitulo: "Contestaron.\nCuéntales qué pasa." });
+          setSenas((s) => s ?? { glosas: [], subtitulo: "Contestaron.\nCuéntales qué pasa." });
         } else {
-          setState("ended");
-          callRef.current?.leave();
-          callRef.current = null;
-          setCall(null);
+          colgar();
         }
         break;
       case "glosas_para_senar":
         // Glosas tal cual (con TEXTO:): el reproductor decide cómo mostrar cada una.
-        setSenas({ glosas: msg.glosas, subtitulo: msg.subtitulo, actual: 0 });
+        setSenas({ glosas: msg.glosas, subtitulo: msg.subtitulo });
         setFrase((f) => f + 1);
         break;
     }
@@ -116,7 +119,6 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     setSenas(null);
     setOpciones(DEFAULT_REPLIES);
     setEsperando(false);
-    setSeconds(0);
     setAlert(null);
     setState("connecting");
     try {
@@ -174,7 +176,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       <header className="call-head">
         <div className="who">
           <strong>{destino?.nombre}</strong>
-          <CallStatus state={state} seconds={seconds} />
+          <EstadoLlamada state={state} />
         </div>
         {call && (
           <button type="button" className="hangup" onClick={colgar} aria-label="Colgar">
@@ -184,12 +186,11 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       </header>
 
       <SignAvatar
-        glosses={senas?.glosas ?? []}
-        current={senas?.actual}
         subtitle={subtitulo}
-        signing={manifest ? senando : !!senas && senas.actual < senas.glosas.length}
+        signing={senando}
         player={
-          manifest ? <SenasFotos manifest={manifest} glosas={senas?.glosas ?? []} frase={frase} onSenando={setSenando} /> : undefined
+          // key={frase}: cada frase nueva monta el reproductor de cero (aunque las glosas se repitan).
+          manifest ? <SenasFotos key={frase} manifest={manifest} glosas={glosas ?? []} onSenando={setSenando} /> : undefined
         }
       />
 
@@ -210,7 +211,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       <VisualAlert message={alert?.message ?? null} tone={alert?.tone} />
 
       {enLlamada && (
-        <Composer compact onSend={decir} placeholder="Escribe un mensaje">
+        <Composer compact onSend={decir} placeholder="Escribe un mensaje" maxLength={LIMITES.max_texto}>
           {opciones.length > 0 && <QuickReplies options={opciones} onPick={decir} />}
         </Composer>
       )}

@@ -16,7 +16,8 @@ from pathlib import Path
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
-from app.traductor import MAX_TEXTO, Traductor, es_produccion
+from app.config import es_produccion
+from app.traductor import MAX_TEXTO, Traductor, recortar
 
 log = logging.getLogger("puente.llamada")
 router = APIRouter(prefix="/twilio")
@@ -41,10 +42,10 @@ class Sala:
         simple, opciones = None, []
         try:
             r = await self.traductor.simplificar(texto)
-            simple, opciones = r.simple, list(r.opciones)
+            simple, opciones = recortar(r.simple), list(r.opciones)
         except Exception:
             log.exception("No se pudo simplificar; se manda el texto original")
-        await self.enviar({"tipo": "ejecutivo_dice", "texto": texto, "simple": simple, "opciones": opciones})
+        await self.enviar({"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": simple, "opciones": opciones})
 
     async def cliente_dijo(self, texto: str) -> None:
         texto = texto.strip()[:MAX_TEXTO]
@@ -55,7 +56,7 @@ class Sala:
         except Exception:
             log.exception("No se pudo complejizar; se dice el texto original")
             frase = texto
-        await self.respuestas.put(frase or texto)
+        await self.respuestas.put(self.traductor.para_voz(frase or texto))
 
     def respuesta_pendiente(self) -> str | None:
         try:
