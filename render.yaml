@@ -91,3 +91,5 @@ services:
         value: https://puente-api.onrender.com
       - key: NODE_VERSION
         value: "22"
+      - key: NEXT_PUBLIC_SENAS_URL # fotos de señas en S3 (https://<bucket>.s3.<región>.amazonaws.com/senas)
+        sync: false

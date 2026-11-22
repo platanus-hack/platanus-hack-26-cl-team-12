@@ -55,6 +55,20 @@ El CD corre en `rlabbev/puente` y en **cualquier repo con la variable `CD_DEPLOY
 Si el CD corre en un repo distinto del que ve Render, el commit (`ref=<sha>`) tiene que existir también en el repo de
 Render (doble push), o el deploy falla.
 
+### Fotos de las señas en S3
+Las fotos del Diccionario LSCh no van en el repo (derechos UMCE), así que la web desplegada las lee de un bucket:
+1. Genera las fotos en tu computador (necesita los PDF del Diccionario y su índice):
+   `uv run --with pymupdf python -I apps/web/scripts/extraer_senas.py <Diccionario_A-H.pdf> <Diccionario_I-Z.pdf> <indice_LSCh.csv>`
+   (deja `apps/web/public/senas/` con `manifest.json`).
+2. Súbelas: `make subir-senas BUCKET=<bucket>` (usa tus credenciales de `aws configure`).
+3. En el bucket, lectura pública de `senas/*` (bucket policy) y **CORS** con `GET` para el origen de la web (lo
+   necesitan el manifest y el modo sin internet):
+   ```json
+   [{"AllowedMethods": ["GET"], "AllowedOrigins": ["https://<tu-web>.onrender.com", "https://localhost"], "AllowedHeaders": ["*"], "MaxAgeSeconds": 3600}]
+   ```
+4. En Render, `puente-web`: `NEXT_PUBLIC_SENAS_URL=https://<bucket>.s3.<región>.amazonaws.com/senas` y Manual
+   Deploy (se graba en el build). Sin la variable, la web usa `/senas` y, si no hay fotos, el intérprete dibujado.
+
 ### APK Android
 - Descargar: `gh release download --repo rlabbev/puente --pattern '*.apk'` (o desde Releases en el celular, con sesión de GitHub).
 - Instalar: abrir el `.apk` en el Android y permitir "instalar apps desconocidas". La app pide cámara y micrófono.
