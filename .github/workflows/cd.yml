@@ -1,7 +1,8 @@
 name: CD
 
 # Despliegue continuo. Infra: render.yaml (Blueprint) + apps/mobile/android (Capacitor).
-# - deploy-render: solo en el espejo personal (Render no ve el repo de la org), tras CI verde en main.
+# - deploy-render: tras CI verde en main, solo en el repo donde se despliega: el espejo de Raimundo o cualquier
+#   repo con la variable CD_DEPLOY=true (gh variable set CD_DEPLOY --body true --repo <owner/repo>).
 # - android-apk: APK de debug instalable, publicada como Release del repo donde corre.
 # Guía y secretos: docs/DESPLIEGUE.md.
 
@@ -36,7 +37,7 @@ env:
 jobs:
   deploy-render:
     if: >-
-      github.repository == 'rlabbev/puente' &&
+      (github.repository == 'rlabbev/puente' || vars.CD_DEPLOY == 'true') &&
       (github.event_name == 'workflow_dispatch' && inputs.deploy ||
        github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.event == 'push')
@@ -50,12 +51,17 @@ jobs:
           HOOK_WEB: ${{ secrets.RENDER_DEPLOY_HOOK_WEB }}
         run: |
           set -euo pipefail
+          # La API es obligatoria. El agente (worker pagado) y la web son opcionales: sin su hook, se avisa y se sigue.
+          if [ -z "$HOOK_API" ]; then
+            echo "::error::Falta el secreto RENDER_DEPLOY_HOOK_API (Render → puente-api → Settings → Deploy Hook)"
+            exit 1
+          fi
           for name in API AGENT WEB; do
             var="HOOK_${name}"
             hook="${!var}"
             if [ -z "$hook" ]; then
-              echo "::error::Falta el secreto RENDER_DEPLOY_HOOK_${name} (Render → servicio → Settings → Deploy Hook)"
-              exit 1
+              echo "::warning::Sin RENDER_DEPLOY_HOOK_${name}: no se despliega ${name}"
+              continue
             fi
             # ref=<sha> despliega exactamente el commit que pasó el CI.
             code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "${hook}&ref=${SHA}")
@@ -74,7 +80,7 @@ jobs:
   android-apk:
     if: >-
       github.event_name == 'workflow_dispatch' && inputs.apk ||
-      github.repository == 'rlabbev/puente' &&
+      (github.repository == 'rlabbev/puente' || vars.CD_DEPLOY == 'true') &&
       github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest

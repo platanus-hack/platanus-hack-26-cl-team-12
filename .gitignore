@@ -126,3 +126,6 @@ apps/web/public/models/
 # Muestras de reconocimiento (landmarks propios, locales)
 data/reco/
 data/signs-video
+
+# Animaciones del avatar copiadas desde data/signs/anim (apps/web/scripts/copiar_animaciones.mjs)
+apps/web/public/anim/
