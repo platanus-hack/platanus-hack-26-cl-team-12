@@ -47,6 +47,8 @@ services:
         sync: false
       - key: CLIENTE_WS_TOKEN
         sync: false
+      - key: LLAMADA_MAX_MIN
+        value: "240" # duración máxima de cada llamada en minutos (cuenta pagada de Twilio)
       # Voz chilena de lo que escucha el ejecutivo (app/voz.py). Sin clave, Twilio usa su voz es-MX.
       - key: ELEVENLABS_API_KEY
         sync: false
