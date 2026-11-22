@@ -5,6 +5,7 @@
 //   abajo     tu cámara: lee tus señas (v3, hoy simulado) y, cuando las reconoce, tocas Enviar
 //   chat      modo aparte con la conversación, respuestas sugeridas y teclado
 //   controles Chat, Cámara, Enviar y Colgar
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   Composer, Icon, Interprete, QuickReplies, Subtitles, VisualAlert, DEFAULT_REPLIES, formatDuration,
@@ -16,13 +17,16 @@ import { joinMockCall, type EventoVoz } from "@/lib/mockCall";
 import { URGENCIAS, type Destino } from "@/lib/contactos";
 import { usePreferencias } from "@/lib/preferencias";
 import { AppShell } from "./AppShell";
-import { AvatarVRM } from "./AvatarVRM";
 import { Calificacion } from "./Calificacion";
 import { RECONOCER_SENAS, iniciarReconocedor, precargarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
 import { mensajeCliente } from "@/lib/respuesta";
+import { precargarAvatar } from "@/lib/avatarAssets";
 import { CamaraPropia, type Conversion, type Lectura, type Voz } from "./CamaraPropia";
 import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
+
+// three.js (~600 kB) solo se baja al entrar a una llamada, no en el login ni el inicio.
+const AvatarVRM = dynamic(() => import("./AvatarVRM").then((m) => m.AvatarVRM), { ssr: false });
 
 const AVATAR_MS_POR_SENA = 1300; // intérprete dibujado (respaldo): una seña cada 1,3 s
 // La frase convertida se queda a la vista hasta que empiezas a señar la siguiente respuesta (o pasa este tiempo).
@@ -123,7 +127,9 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
 
   // MediaPipe se empieza a bajar al marcar (no al contestar): habla primero la persona sorda.
   useEffect(() => {
-    if (RECONOCER_SENAS && state === "connecting") precargarReconocedor().catch(() => {});
+    if (state !== "connecting") return;
+    precargarAvatar();
+    if (RECONOCER_SENAS) precargarReconocedor().catch(() => {});
   }, [state]);
 
   // Lectura real: MediaPipe + @puente/signs reconocen cada seña (con pausa entre señas) y se acumulan como glosas del turno.
