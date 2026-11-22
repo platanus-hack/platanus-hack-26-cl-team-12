@@ -4,6 +4,7 @@
 // Android (Chrome y Samsung Internet) avisa con `beforeinstallprompt` cuando la app se puede instalar:
 // guardamos ese aviso y mostramos nuestro propio botón "Instalar".
 import { useEffect, useState } from "react";
+import { SENAS_BASE } from "@/lib/senas";
 
 interface AvisoInstalacion extends Event {
   prompt: () => Promise<void>;
@@ -14,7 +15,8 @@ interface AvisoInstalacion extends Event {
 export function useServiceWorker() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    // El service worker no lee variables de entorno: se le pasa dónde están las fotos para guardarlas sin internet.
+    navigator.serviceWorker.register(`/sw.js?senas=${encodeURIComponent(SENAS_BASE)}`).catch(() => {
       // Sin service worker la app funciona igual, solo que no sin internet.
     });
   }, []);
