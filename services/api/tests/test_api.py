@@ -527,3 +527,20 @@ def test_duracion_maxima_de_la_llamada(monkeypatch, valor, esperado):
     else:
         monkeypatch.setenv("LLAMADA_MAX_MIN", valor)
     assert duracion_maxima_s() == esperado
+
+
+def test_respuesta_perdida_al_interrumpir_se_vuelve_a_entregar(voz_falsa):
+    """Bug medido en fix/debug: al interrumpir la pausa, Twilio pide /espera dos veces y descarta la primera.
+    La respuesta no se da por entregada hasta que Twilio descarga su audio, así la segunda la vuelve a mandar."""
+    import re
+
+    with TestClient(app) as c, c.websocket_connect("/twilio/cliente") as pwa:
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+        primera = c.post("/twilio/espera?n=1").text  # Twilio la descarta (no baja el audio)
+        segunda = c.post("/twilio/espera?n=0").text  # la de la interrupción: debe traer la misma respuesta
+        ruta = re.search(r"/twilio/audio/[\w-]+\.mp3", primera.split("<Gather")[0]).group(0)
+        assert ruta in segunda
+        assert c.get(ruta).content == b"MP3:formal(martes bueno)"  # ahora sí suena
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(martes bueno)"}  # la app la ve al sonar
+        assert "<Pause" in c.post("/twilio/espera?n=0").text  # ya entregada: no se repite

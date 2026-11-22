@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Martín / Claude (fix/debug) · la respuesta del cliente se perdía al interrumpir la espera
+- Hallazgo (con registro detallado, sin datos personales): señas → `glosas_a_espanol` → voz chilena funcionaban. Al apretar Enviar, `calls.update` interrumpe la pausa y **Twilio hace dos consultas seguidas a `/twilio/espera` y descarta la primera**; esa se llevaba la respuesta y nunca sonaba.
+- Hice: la respuesta queda `en_entrega` hasta que Twilio **descarga su audio** (`/twilio/audio/{id}.mp3`); si una consulta se pierde, la siguiente la reentrega. `cliente_dijo` se manda a la app al descargarse el audio (cuando de verdad suena). Registro detallado (`puente.*`, `PUENTE_LOG`).
+- Falta: probar con llamada real.
+
 ## 2026-11-22 — Martín / Claude (v1/twilio-pagado)
 - Decidí: **pagar el upgrade de Twilio** (cierra el TODO de evaluar el upgrade). Con el trial: llamadas de máx. 10 min, solo 5 números verificados y aviso "trial account".
 - Hice: `LLAMADA_MAX_MIN` (por defecto 240 = 4 h, máx. 24 h) se pasa como `time_limit` al crear la llamada. Solo rige con cuenta pagada.

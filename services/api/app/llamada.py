@@ -41,6 +41,8 @@ class Sala:
         # Llamada en curso y si Twilio está en una pausa larga esperando al cliente (ver interrumpir_pausa).
         self.call_sid: str | None = None
         self.en_pausa_larga = False
+        # Respuesta ya devuelta a Twilio pero sin confirmar (su audio aún no se descarga): ver respuesta_pendiente.
+        self.en_entrega: tuple[str, str, str | None] | None = None
 
     async def enviar(self, msg: dict) -> None:
         for ws in list(self.clientes):
@@ -116,10 +118,15 @@ class Sala:
     async def respuesta_pendiente(self, esperar_s: float = 0) -> tuple[str, str | None] | None:
         """La siguiente respuesta del cliente para decir por voz, esperando hasta `esperar_s` a que llegue.
 
-        Al sacarla empieza a sonar: ahí se le manda a la app la frase (`cliente_dijo`) para que se vea a la par del audio.
-        Esperar aquí (en vez de que Twilio vuelva a preguntar cada 2 s) ahorra pedidos: el trial de Twilio corta la
-        llamada después de ~10 pedidos de TwiML (ver BITACORA 2026-11-22).
+        Con audio (voz chilena), la respuesta NO se da por entregada al devolverla: queda `en_entrega` hasta que Twilio
+        descarga su audio (confirmar_audio). Al interrumpir la pausa, Twilio hace dos consultas seguidas y descarta la
+        primera: si esa se llevaba la respuesta, se perdía (medido en fix/debug). Ahora la segunda la vuelve a entregar.
+        Esperar aquí (en vez de que Twilio pregunte cada 2 s) ahorra consultas.
         """
+        if self.en_entrega is not None:  # entregada antes pero Twilio no la reprodujo: se reintenta
+            para_decir, _, audio_id = self.en_entrega
+            log.info("reentrega de la respuesta pendiente (audio %s)", (audio_id or "-")[:6])
+            return para_decir, audio_id
         try:
             if esperar_s > 0:
                 item = await asyncio.wait_for(self.respuestas.get(), timeout=esperar_s)
@@ -128,13 +135,24 @@ class Sala:
         except (asyncio.QueueEmpty, asyncio.TimeoutError):
             return None
         para_decir, pantalla, audio_id = item
-        await self.enviar({"tipo": "cliente_dijo", "texto": pantalla})
+        if audio_id:
+            self.en_entrega = item  # se confirma cuando Twilio descarga el audio
+        else:  # voz de Twilio (<Say>): no hay forma de confirmar, se da por entregada
+            await self.enviar({"tipo": "cliente_dijo", "texto": pantalla})
         return para_decir, audio_id
+
+    async def confirmar_audio(self, audio_id: str) -> None:
+        """Twilio descargó el audio: la respuesta empieza a sonar. Recién ahí se da por entregada y la app la muestra."""
+        if self.en_entrega is not None and self.en_entrega[2] == audio_id:
+            _, pantalla, _ = self.en_entrega
+            self.en_entrega = None
+            log.info("respuesta entregada: Twilio descargó el audio %s", audio_id[:6])
+            await self.enviar({"tipo": "cliente_dijo", "texto": pantalla})
 
     def reiniciar(self) -> None:
         """Nueva llamada: se descartan respuestas viejas y sus audios."""
         self.respuestas = asyncio.Queue()
-        self.call_sid, self.en_pausa_larga = None, False
+        self.call_sid, self.en_pausa_larga, self.en_entrega = None, False, None
         voz.olvidar_respuestas()
 
 

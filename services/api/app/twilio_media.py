@@ -193,6 +193,8 @@ async def audio(audio_id: str) -> Response:
     de 128 bits y el audio de una respuesta vence a los pocos minutos (app/voz.py)."""
     mp3 = voz_chilena.audio(audio_id)
     log.info("Twilio descarga audio %s: %s", audio_id[:6], "ok" if mp3 else "NO EXISTE")
+    if mp3 is not None:
+        await sala.confirmar_audio(audio_id)
     if mp3 is None:
         raise HTTPException(404, "Audio no disponible")
     return Response(mp3, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})
