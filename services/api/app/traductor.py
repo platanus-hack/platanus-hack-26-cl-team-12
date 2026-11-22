@@ -14,11 +14,12 @@ if _AGENT not in sys.path:
     sys.path.insert(0, _AGENT)
 
 from translator import SimpleResult, Translator, load_escenario, load_glossary  # noqa: E402
+from translator.translate import GlossResult  # noqa: E402
 from translator.glossary import DEFAULT_PATH  # noqa: E402
 from translator.translate import MAX_TEXTO, recortar  # noqa: E402  (tope del contrato: contrato.json)
 from translator.voz import normalizar_para_voz  # noqa: E402
 
-__all__ = ["DEFAULT_PATH", "MAX_TEXTO", "SimpleResult", "Traductor", "load_escenario", "normalizar_para_voz", "recortar"]
+__all__ = ["DEFAULT_PATH", "GlossResult", "MAX_TEXTO", "SimpleResult", "Traductor", "load_escenario", "normalizar_para_voz", "recortar"]
 
 
 class Traductor:
@@ -38,6 +39,10 @@ class Traductor:
 
     async def simplificar(self, texto: str) -> SimpleResult:
         return await asyncio.to_thread(self.translator.simplificar, texto[:MAX_TEXTO])
+
+    async def a_glosas(self, texto: str) -> GlossResult:
+        """v4: lo que dice el ejecutivo → glosas LSCh validadas contra el diccionario (para el avatar)."""
+        return await asyncio.to_thread(self.translator.espanol_a_glosas, texto[:MAX_TEXTO])
 
     async def complejizar(self, texto: str) -> str:
         return await asyncio.to_thread(self.translator.complejizar, texto[:MAX_TEXTO])

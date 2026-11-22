@@ -97,6 +97,11 @@ class FakeTraductor:
     async def complejizar(self, texto):
         return f"formal({texto})"
 
+    async def a_glosas(self, texto):
+        from app.traductor import GlossResult
+
+        return GlossResult(glosas=["MARTES", "HORA"], subtitulo=f"señas({texto})")
+
     def para_voz(self, frase):
         return frase
 
@@ -134,11 +139,16 @@ def test_conversacion_completa_por_turnos(sala_falsa):
         # Turno del ejecutivo: el texto (escapado) va simplificado a la PWA y Twilio queda esperando.
         r = client.post("/twilio/turno", data={"SpeechResult": "su hora es el martes <x>"})
         assert "/twilio/espera?n=0" in r.text
-        assert pwa.receive_json() == {
+        # Texto simple (v2) y señas (v4) llegan los dos; el orden no importa (van en paralelo).
+        recibidos = {m["tipo"]: m for m in (pwa.receive_json(), pwa.receive_json())}
+        assert recibidos["ejecutivo_dice"] == {
             "tipo": "ejecutivo_dice",
             "texto": "su hora es el martes <x>",
             "simple": "simple(su hora es el martes <x>)",
             "opciones": ["Sí", "No"],
+        }
+        assert recibidos["glosas_para_senar"] == {
+            "tipo": "glosas_para_senar", "glosas": ["MARTES", "HORA"], "subtitulo": "señas(su hora es el martes <x>)"
         }
         assert "<Pause" in client.post("/twilio/espera?n=0").text  # el cliente todavía no responde
 
@@ -299,3 +309,14 @@ def test_llamada_sin_numero_usa_el_telefono_de_la_demo(monkeypatch):
     monkeypatch.setattr(m, "llamar_con_twilio", lambda numero, base: llamadas.append(numero) or ("CA1", "queued"))
     assert client.post("/llamadas", json={"destino": "clinica"}).status_code == 200
     assert llamadas == ["+56911111111"]
+
+
+
+def test_si_fallan_las_senas_igual_llega_el_texto(sala_falsa):
+    async def falla(_texto):
+        raise RuntimeError("Claude caído")
+
+    sala_falsa.traductor.a_glosas = falla
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/turno", data={"SpeechResult": "hola"})
+        assert pwa.receive_json()["tipo"] == "ejecutivo_dice"
