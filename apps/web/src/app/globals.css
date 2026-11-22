@@ -258,3 +258,84 @@ main.login { min-height: 100dvh; justify-content: center; gap: var(--space-8); p
 .btn-negro { font: inherit; width: 100%; min-height: 54px; border: 0; border-radius: 10px; background: var(--fg); color: var(--bg); font-weight: 700; font-size: 1.05rem; cursor: pointer; }
 .btn-negro:disabled { background: var(--surface-raised); color: var(--muted); cursor: default; }
 .btn-negro:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+
+/* ---------- v3: más color, ubicación, carrusel con puntitos, aviso a contactos ---------- */
+.foto-perfil { display: block; flex: none; border-radius: 50%; object-fit: cover; background: var(--surface); }
+.icono-btn.chico { width: 32px; height: 32px; }
+.inicial { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--cliente-soft); color: var(--fg); font-weight: 700; }
+.seccion-sub { margin: var(--space-2) 0 0; font-size: 1.15rem; font-weight: 700; }
+.nota-sistema { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px auto 8px; padding: 6px 12px; width: fit-content; max-width: 100%; border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 0.78rem; text-align: center; }
+
+/* Ubicación */
+.ubicacion { border-radius: 16px; overflow: hidden; background: var(--surface); }
+.ubicacion-mapa { height: 96px; }
+.ubicacion-mapa svg { display: block; width: 100%; height: 100%; }
+.ubicacion-info { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.ubicacion-pin { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #3b82f6; color: #fff; }
+.chip-toggle { font: inherit; flex: none; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--fg); font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+.chip-toggle.on { background: var(--live-soft); border-color: transparent; color: var(--live); }
+
+/* Carrusel con puntitos */
+.carrusel-caja { display: flex; flex-direction: column; gap: 10px; }
+.carrusel-caja .carrusel { list-style: none; margin: 0 calc(-1 * var(--space-4)); padding: 0 var(--space-4); display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-4); scrollbar-width: none; }
+.carrusel-caja .carrusel::-webkit-scrollbar { display: none; }
+.carrusel-item { flex: none; scroll-snap-align: start; }
+.carrusel-clinicas .carrusel-item { width: calc((100% - 2 * var(--space-4) - 20px) / 3 + 0px); width: calc((min(100vw, 560px) - 2 * var(--space-4) - 20px) / 3); }
+.carrusel-consejos .carrusel-item { width: 84%; max-width: 360px; }
+.puntitos { display: flex; justify-content: center; gap: 6px; }
+.puntito { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: var(--line-strong); opacity: 0.5; cursor: pointer; transition: width 0.2s, opacity 0.2s; }
+.puntito.on { width: 18px; border-radius: 999px; background: var(--fg); opacity: 1; }
+.puntito:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+
+/* Clínicas con color */
+.clinica-tile.tono-0, .tu-clinica-logo.tono-0 { background: color-mix(in srgb, #3b82f6 26%, var(--surface)); }
+.clinica-tile.tono-1, .tu-clinica-logo.tono-1 { background: color-mix(in srgb, #22c55e 24%, var(--surface)); }
+.clinica-tile.tono-2, .tu-clinica-logo.tono-2 { background: color-mix(in srgb, #a855f7 24%, var(--surface)); }
+.clinica-tile.tono-3, .tu-clinica-logo.tono-3 { background: color-mix(in srgb, #f97316 24%, var(--surface)); }
+.clinica-tile.tono-4, .tu-clinica-logo.tono-4 { background: color-mix(in srgb, #14b8a6 24%, var(--surface)); }
+
+/* Consejos con ilustración */
+.consejo { height: 100%; display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 16px; background: var(--surface); width: auto; max-width: none; }
+.consejo-dibujo { flex: none; width: 76px; height: 76px; }
+.consejo-dibujo svg { display: block; width: 100%; height: 100%; }
+
+/* Avisar a contactos */
+.avisar { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: color-mix(in srgb, #3b82f6 14%, var(--surface)); }
+.avisar-cabeza { display: flex; align-items: center; gap: 12px; }
+.avisar-ico { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #3b82f6; color: #fff; }
+.avisar-cabeza .row-txt strong { font-size: 1.05rem; font-weight: 700; }
+.avisar-contactos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.avisar-contactos li { position: relative; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--bg); font-size: 0.88rem; font-weight: 600; }
+.avisar-contactos .inicial { width: 28px; height: 28px; font-size: 0.8rem; }
+.avisar-ok { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--live); color: var(--bg); }
+.avisar-enviado p { margin: 0; font-size: 0.9rem; }
+.avisar-mensaje { margin-top: 6px !important; padding: 10px 12px; border-radius: 12px; background: var(--bg); color: var(--muted); }
+.btn-negro { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* Cómo funciona, detallado */
+.como ol { gap: 10px; }
+.como li { align-items: flex-start; gap: 10px; }
+.como-num { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-raised); color: var(--fg); font-size: 0.74rem; font-weight: 700; }
+.como-txt { display: flex; flex-direction: column; gap: 1px; }
+.como-txt strong { font-size: 0.86rem; }
+.como-txt span { font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
+
+/* Emergencias: tu clínica */
+.tu-clinica { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 16px; background: var(--surface); }
+.tu-clinica-fila { display: flex; align-items: center; gap: 14px; }
+.tu-clinica-logo { flex: none; width: 60px; height: 60px; display: grid; place-items: center; border-radius: 14px; font-size: 1.3rem; font-weight: 800; color: var(--fg); }
+.tu-clinica .row-txt strong { font-size: 1.1rem; font-weight: 700; }
+.num-llamar { width: auto; height: 38px; padding: 0 14px; gap: 6px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--fg); color: var(--bg); font: inherit; font-weight: 700; font-size: 0.86rem; }
+
+/* Perfil: contactos */
+.contactos { display: flex; flex-direction: column; gap: 10px; }
+.contacto-form { display: flex; flex-direction: column; gap: 8px; }
+.contacto-form input { font: inherit; min-height: 46px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.contacto-form input:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 1px; }
+.btn-secundario { font: inherit; min-height: 46px; border: 0; border-radius: 10px; background: var(--surface-raised); color: var(--fg); font-weight: 700; cursor: pointer; }
+.btn-secundario:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.editor-vista { aspect-ratio: 1 / 1; }
+.editor-vista > svg { margin-top: 0; }
+
+/* Que las secciones del menú no se aplasten (se cortaba la lista de datos del perfil). */
+.drawer-cuerpo > * { flex-shrink: 0; }

@@ -3,43 +3,43 @@
 // Menú que sale desde la izquierda al tocar la foto de perfil: 1 Perfil, 2 Intérprete de señas, 3 Accesibilidad, 4 Cerrar sesión.
 // El perfil es ficticio (de ejemplo). El editor del intérprete y accesibilidad funcionan de verdad (lib/preferencias.ts).
 // TODO(real-data): perfil real e inicio de sesión cuando exista backend con usuarios.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
-  COLORES_OJOS, COLORES_PELO, COLORES_ROPA, Icon, Interprete, Retrato, TONOS_PIEL,
+  APARIENCIA_POR_DEFECTO, COLORES_OJOS, COLORES_PELO, COLORES_ROPA, Icon, Interprete, TONOS_PIEL,
   type Apariencia, type IconName,
 } from "@puente/ui";
 import { cambiarPreferencias, usePreferencias, type Preferencias } from "@/lib/preferencias";
 
-// Persona ficticia de la demo (no es una persona real).
+// Perfil de la demo: Rafael Rencoret (foto y nombre con su autorización). Dirección y datos médicos son de ejemplo.
 export const PERFIL = {
-  nombre: "Patricia Muñoz",
+  nombre: "Rafael Rencoret",
+  foto: "/perfil/rafael.jpg",
   descripcion: "Persona sorda · Lengua de Señas Chilena",
   direccion: "Av. Providencia 1234, depto 56, Providencia",
-  contacto: "Jorge Muñoz (esposo) · +56 9 0000 0000",
   medicos: "Sin alergias conocidas",
-  apariencia: { piel: "clara", largoPelo: "medio", colorPelo: "castano", ojos: "cafe", lentes: true, ropa: "burdeo" } satisfies Partial<Apariencia>,
 };
 
 type Vista = "menu" | "perfil" | "interprete" | "accesibilidad" | "salir";
 
 export function FotoPerfil({ size = 36 }: { size?: number }) {
-  return <Retrato apariencia={PERFIL.apariencia} size={size} />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="foto-perfil" src={PERFIL.foto} alt="" width={size} height={size} style={{ width: size, height: size }} />;
 }
 
-export function MenuPerfil({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
+export function MenuPerfil({ abierto, onCerrar, vistaInicial = "menu" }: { abierto: boolean; onCerrar: () => void; vistaInicial?: "menu" | "perfil" }) {
   const [vista, setVista] = useState<Vista>("menu");
   const [aviso, setAviso] = useState<string | null>(null);
   const panel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!abierto) return;
-    setVista("menu");
+    setVista(vistaInicial);
     setAviso(null);
     panel.current?.focus();
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
-  }, [abierto, onCerrar]);
+  }, [abierto, onCerrar, vistaInicial]);
 
   const titulos: Record<Vista, string> = {
     menu: "Menú",
@@ -101,10 +101,10 @@ export function MenuPerfil({ abierto, onCerrar }: { abierto: boolean; onCerrar: 
                 <Dato titulo="Nombre" valor={PERFIL.nombre} />
                 <Dato titulo="Cómo me comunico" valor={PERFIL.descripcion} />
                 <Dato titulo="Dirección" valor={PERFIL.direccion} />
-                <Dato titulo="Contacto de emergencia" valor={PERFIL.contacto} />
                 <Dato titulo="Datos médicos" valor={PERFIL.medicos} />
               </ul>
-              <p className="nota">Puente usa tu dirección para decirla rápido en una urgencia.</p>
+              <Ubicacion />
+              <ContactosEmergencia />
             </>
           )}
 
@@ -195,7 +195,7 @@ function Colores<T extends string>({ titulo, valor, colores, nombres, onCambio }
 
 function EditorInterprete() {
   const p = usePreferencias();
-  const a = p.avatar;
+  const a = { ...APARIENCIA_POR_DEFECTO, ...p.avatar };
   const cambiar = (c: Partial<Apariencia>) => cambiarPreferencias({ avatar: { ...a, ...c } });
   return (
     <div className="ajustes">
@@ -253,6 +253,26 @@ function EditorInterprete() {
       />
 
       <h3 className="subtitulo-ajustes">Cara y pelo</h3>
+      <Grupo<Apariencia["cara"]>
+        titulo="Forma de la cara"
+        valor={a.cara}
+        onCambio={(cara) => cambiar({ cara })}
+        opciones={[
+          { v: "ovalada", texto: "Ovalada" },
+          { v: "redonda", texto: "Redonda" },
+          { v: "cuadrada", texto: "Cuadrada" },
+        ]}
+      />
+      <Grupo<Apariencia["edad"]>
+        titulo="Edad"
+        valor={a.edad}
+        onCambio={(edad) => cambiar({ edad })}
+        opciones={[
+          { v: "joven", texto: "Joven" },
+          { v: "adulta", texto: "Adulta" },
+          { v: "mayor", texto: "Mayor" },
+        ]}
+      />
       <Grupo<Apariencia["largoPelo"]>
         titulo="Largo del pelo"
         valor={a.largoPelo}
@@ -336,5 +356,90 @@ function Accesibilidad() {
       <Interruptor texto="Vibrar con los avisos" detalle="En Android, vibra cuando te hablan" valor={p.vibrar} onCambio={(vibrar) => cambiarPreferencias({ vibrar })} />
       <Interruptor texto="Modo claro" detalle="También con el botón de sol o luna arriba" valor={p.tema === "claro"} onCambio={(c) => cambiarPreferencias({ tema: c ? "claro" : "oscuro" })} />
     </ul>
+  );
+}
+
+function Ubicacion() {
+  const p = usePreferencias();
+  return (
+    <ul className="group">
+      <Interruptor
+        texto="Compartir mi ubicación al llamar"
+        detalle="La clínica la recibe al contestar y no tiene que preguntarla"
+        valor={p.compartirUbicacion}
+        onCambio={(compartirUbicacion) => cambiarPreferencias({ compartirUbicacion })}
+      />
+    </ul>
+  );
+}
+
+/** Contactos de emergencia: reciben el aviso por mensaje desde el inicio. */
+function ContactosEmergencia() {
+  const p = usePreferencias();
+  const [nombre, setNombre] = useState("");
+  const [relacion, setRelacion] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  function agregar(e: FormEvent) {
+    e.preventDefault();
+    if (!nombre.trim() || !telefono.trim()) {
+      setError("Escribe al menos el nombre y el teléfono.");
+      return;
+    }
+    cambiarPreferencias({
+      contactos: [...p.contactos, { id: `c${Date.now()}`, nombre: nombre.trim(), relacion: relacion.trim() || "Contacto", telefono: telefono.trim() }],
+    });
+    setNombre("");
+    setRelacion("");
+    setTelefono("");
+    setError(null);
+  }
+
+  return (
+    <section className="contactos" aria-labelledby="t-contactos">
+      <h3 id="t-contactos" className="subtitulo-ajustes">
+        Contactos de emergencia
+      </h3>
+      <p className="nota">Reciben un mensaje con tu ubicación cuando usas &quot;Avisar a mis contactos&quot;.</p>
+      {p.contactos.length > 0 && (
+        <ul className="group">
+          {p.contactos.map((c) => (
+            <li key={c.id} className="fila">
+              <span className="inicial" aria-hidden>
+                {c.nombre.charAt(0)}
+              </span>
+              <span className="row-txt">
+                <strong>{c.nombre}</strong>
+                <span>
+                  {c.relacion} · {c.telefono}
+                </span>
+              </span>
+              <button
+                type="button"
+                className="icono-btn chico"
+                aria-label={`Quitar a ${c.nombre}`}
+                onClick={() => cambiarPreferencias({ contactos: p.contactos.filter((x) => x.id !== c.id) })}
+              >
+                <Icon name="cerrar" size={18} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form className="contacto-form" onSubmit={agregar} noValidate>
+        <input aria-label="Nombre" placeholder="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        <input aria-label="Relación" placeholder="Relación (ej: hermana)" value={relacion} onChange={(e) => setRelacion(e.target.value)} />
+        <input aria-label="Teléfono" placeholder="Teléfono" inputMode="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+        {error && (
+          <p className="login-error" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="btn-secundario">
+          Agregar contacto
+        </button>
+      </form>
+    </section>
   );
 }

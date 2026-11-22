@@ -24,6 +24,7 @@ const PESTANAS: { id: Pestana; icon: IconName; label: string }[] = [
 export function AppShell({ onLlamar, aviso }: { onLlamar: (d: Destino) => void; aviso?: ReactNode }) {
   const [pestana, setPestana] = useState<Pestana>("llamar");
   const [menu, setMenu] = useState(false);
+  const [vistaMenu, setVistaMenu] = useState<"menu" | "perfil">("menu");
   const cerrarMenu = useCallback(() => setMenu(false), []);
   const { tema } = usePreferencias();
   const oscuro = tema === "oscuro";
@@ -32,7 +33,11 @@ export function AppShell({ onLlamar, aviso }: { onLlamar: (d: Destino) => void; 
     <>
       <header className="barra">
         <div className="barra-izq">
-          <button type="button" className="perfil-btn" onClick={() => setMenu(true)} aria-label="Abrir menú de perfil" aria-expanded={menu}>
+          <button type="button" className="perfil-btn" onClick={() => {
+              setVistaMenu("menu");
+              setMenu(true);
+            }}
+            aria-label="Abrir menú de perfil" aria-expanded={menu}>
             <FotoPerfil size={38} />
           </button>
         </div>
@@ -52,7 +57,15 @@ export function AppShell({ onLlamar, aviso }: { onLlamar: (d: Destino) => void; 
 
       <main className="contenido">
         {aviso}
-        {pestana === "llamar" && <Inicio onLlamar={onLlamar} />}
+        {pestana === "llamar" && (
+          <Inicio
+            onLlamar={onLlamar}
+            onAbrirPerfil={() => {
+              setVistaMenu("perfil");
+              setMenu(true);
+            }}
+          />
+        )}
         {pestana === "historial" && <Historial />}
         {pestana === "emergencias" && <Emergencias onLlamar={onLlamar} />}
       </main>
@@ -74,7 +87,7 @@ export function AppShell({ onLlamar, aviso }: { onLlamar: (d: Destino) => void; 
         ))}
       </nav>
 
-      <MenuPerfil abierto={menu} onCerrar={cerrarMenu} />
+      <MenuPerfil abierto={menu} onCerrar={cerrarMenu} vistaInicial={vistaMenu} />
     </>
   );
 }

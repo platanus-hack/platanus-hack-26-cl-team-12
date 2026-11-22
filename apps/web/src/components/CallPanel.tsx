@@ -17,7 +17,7 @@ import { URGENCIAS, type Destino } from "./Inicio";
 import { AppShell } from "./AppShell";
 import { Calificacion } from "./Calificacion";
 import { Login } from "./Login";
-import { FotoPerfil } from "./MenuPerfil";
+import { FotoPerfil, PERFIL } from "./MenuPerfil";
 import { usePreferencias } from "@/lib/preferencias";
 import { SenasFotos, useManifestSenas } from "./SenasFotos";
 
@@ -211,6 +211,12 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       />
 
       <div className="chat" ref={chatRef}>
+        {prefs.compartirUbicacion && state !== "connecting" && (
+          // TODO(real-data): mandar la ubicación a la API (hoy el contrato no tiene ese mensaje).
+          <p className="nota-sistema">
+            <Icon name="ubicacion" size={14} /> Compartiste tu ubicación: {PERFIL.direccion}
+          </p>
+        )}
         {lines.length > 0 && <Subtitles lines={lines} showOriginal={prefs.verOriginal} otherName={destino?.corto ?? "Ejecutivo"} fotoCliente={<FotoPerfil size={28} />} />}
         {esperando && enLlamada && (
           <p className="typing" aria-live="polite">

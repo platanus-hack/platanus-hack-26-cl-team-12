@@ -1,6 +1,6 @@
 "use client";
 
-// Números de emergencia. Los de servicios públicos de Chile son reales; la clínica es un ejemplo de la demo.
+// Números de emergencia. Los de servicios públicos de Chile son reales; la clínica y su número son de ejemplo.
 // Por ahora solo la ambulancia llama con Puente (es el escenario de la demo).
 import { Icon } from "@puente/ui";
 import { URGENCIAS, type Destino } from "./Inicio";
@@ -27,23 +27,24 @@ export function Emergencias({ onLlamar }: { onLlamar: (d: Destino) => void }) {
       <h1 className="titulo-seccion">Emergencias</h1>
       <p className="lede">Puente llama por ti y te muestra todo en texto y señas.</p>
 
-      <h2 className="group-title">Tu clínica</h2>
-      <ul className="group">
-        <li className="num">
-          <span className="num-badge clinica" aria-hidden>
-            <Icon name="emergencia" size={18} />
+      <h2 className="seccion-sub">Tu clínica</h2>
+      <article className="tu-clinica">
+        <div className="tu-clinica-fila">
+          <span className={`tu-clinica-logo tono-${URGENCIAS.tono}`} aria-hidden>
+            {URGENCIAS.sigla}
           </span>
           <span className="row-txt">
-            <strong>{URGENCIAS.nombre}</strong>
-            <span>+56 2 0000 0000 · ejemplo</span>
+            <strong>{URGENCIAS.nombre.replace("Urgencias ", "")}</strong>
+            <span>Urgencias 24 h · {URGENCIAS.comuna}</span>
+            <span>+56 2 0000 0000 (ejemplo)</span>
           </span>
-          <button type="button" className="num-llamar" onClick={() => onLlamar(URGENCIAS)} aria-label={`Llamar a ${URGENCIAS.nombre} con Puente`}>
-            <Icon name="llamar" size={20} />
-          </button>
-        </li>
-      </ul>
+        </div>
+        <button type="button" className="btn-negro" onClick={() => onLlamar(URGENCIAS)}>
+          <Icon name="llamar" size={20} /> Llamar con Puente
+        </button>
+      </article>
 
-      <h2 className="group-title">Servicios de emergencia</h2>
+      <h2 className="seccion-sub">Servicios de emergencia</h2>
       <ul className="group">
         {NUMEROS.map((n) => (
           <li key={n.numero} className="num">
@@ -56,7 +57,7 @@ export function Emergencias({ onLlamar }: { onLlamar: (d: Destino) => void }) {
             </span>
             {n.destino ? (
               <button type="button" className="num-llamar" onClick={() => onLlamar(n.destino!)} aria-label={`Llamar a ${n.nombre} con Puente`}>
-                <Icon name="llamar" size={20} />
+                <Icon name="llamar" size={18} /> Llamar
               </button>
             ) : (
               <span className="chip-estado neutro">Pronto</span>

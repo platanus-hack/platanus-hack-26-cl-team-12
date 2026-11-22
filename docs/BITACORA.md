@@ -8,6 +8,10 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Rafael / Claude (v4/navegacion-tema) · perfil de Rafael, ubicación, contactos y carruseles
+- Hice: perfil **Rafael Rencoret** con su foto (`public/perfil/rafael.jpg`, con su autorización); el guion pasa a un papá ("señor"). **Ubicación** con mapa dibujado y opción de compartirla con la clínica al llamar (aviso en el chat; TODO(real-data): mandarla a la API). **10 clínicas** en carrusel con **puntitos** (y los consejos también), con colores por clínica. **Avisar a mis contactos** (mensaje con la ubicación, simulado) y **contactos de emergencia** editables en el perfil. Consejos con ilustraciones propias. "Cómo funciona" detallado en 4 pasos. "Tu clínica" en Emergencias rehecha. **Intérprete más realista**: volumen con degradados, ojos con párpados, cejas, nariz, labios, orejas y arrugas; nuevas opciones de forma de cara y edad. Arreglo: el menú aplastaba la lista del perfil.
+- Falta: avatar 3D real (VRM + three.js, requiere modelos); envío real de SMS/WhatsApp a contactos; números reales de clínicas.
+
 ## 2026-11-21 — Rafael / Claude (v4/navegacion-tema) · estilo de app de movilidad y fuente SUSE
 - Decidí (Rafael): interfaz con el lenguaje visual de las apps de movilidad (referencia: Uber), sin copiar su marca: grises neutros, negro/blanco como color de acción, títulos grandes y gruesos, tarjetas grises, carrusel y barra inferior plana. Fuente **SUSE** (Google Fonts; sin internet, la del sistema).
 - Hice: inicio con **3 clínicas** (Santa María, Alemana, Las Condes; las tres usan el mismo guion en `?mock=1`), **3 consejos de primeros auxilios** en carrusel (fractura, quemaduras, datos a mano) y "Cómo funciona" en chico. **Calificación nueva**: pantalla completa con la sigla de la clínica, estrellas grandes en el color del texto, etiquetas "¿Qué salió bien?" / "¿Qué podemos mejorar?" según la nota, comentario y botón negro; "Omitir" arriba. Paletas nuevas con contrastes revisados. Revisado con capturas a 390×844.

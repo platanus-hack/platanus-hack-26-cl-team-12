@@ -5,12 +5,23 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { APARIENCIA_POR_DEFECTO, type Apariencia } from "@puente/ui";
 
+export interface Contacto {
+  id: string;
+  nombre: string;
+  relacion: string;
+  telefono: string;
+}
+
 export interface Preferencias {
   tema: "oscuro" | "claro";
   interprete: "fotos" | "dibujado";
   velocidad: "lenta" | "normal" | "rapida";
   /** Intérprete dibujado hecho a la medida (menú > Personalizar intérprete). */
   avatar: Apariencia;
+  /** Contactos de emergencia (se definen en Perfil). Reciben el aviso por mensaje. */
+  contactos: Contacto[];
+  /** Compartir la ubicación con la clínica al llamar (así no la preguntan). */
+  compartirUbicacion: boolean;
   /** Sesión iniciada (demo: cualquier usuario y contraseña). TODO(real-data): login real. */
   sesion: { usuario: string } | null;
   textoGrande: boolean;
@@ -25,7 +36,13 @@ const POR_DEFECTO: Preferencias = {
   interprete: "fotos",
   velocidad: "normal",
   avatar: APARIENCIA_POR_DEFECTO,
-  sesion: { usuario: "patricia" },
+  sesion: { usuario: "rafael" },
+  // Contactos de ejemplo. TODO(real-data): los del usuario.
+  contactos: [
+    { id: "c1", nombre: "Ana Rencoret", relacion: "Hermana", telefono: "+56 9 0000 0001" },
+    { id: "c2", nombre: "Jorge Pérez", relacion: "Amigo", telefono: "+56 9 0000 0002" },
+  ],
+  compartirUbicacion: true,
   textoGrande: false,
   reducirMovimiento: false,
   vibrar: true,
