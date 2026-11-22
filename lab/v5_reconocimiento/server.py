@@ -1,0 +1,40 @@
+"""Servidor local de la prueba de reconocimiento de señas. Uso: python3 lab/v5_reconocimiento/server.py → http://localhost:8766
+Guarda las muestras (landmarks MediaPipe) en data/reco/ETIQUETA__k.json (gitignored)."""
+import json, re
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import urlparse, parse_qs
+
+HERE = Path(__file__).resolve().parent
+RECO = HERE.parents[1] / "data" / "reco"; RECO.mkdir(parents=True, exist_ok=True)
+OK = re.compile(r"[A-Z0-9_-]{1,40}")
+
+class H(SimpleHTTPRequestHandler):
+    def __init__(self, *a, **k): super().__init__(*a, directory=str(HERE), **k)
+    def _json(self, o, c=200):
+        b = json.dumps(o).encode(); self.send_response(c); self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
+    def do_GET(self):
+        if urlparse(self.path).path == "/api/muestras":
+            return self._json([dict(json.loads(f.read_text()), file=f.stem) for f in sorted(RECO.glob("*.json"))])
+        return super().do_GET()
+    def do_POST(self):
+        u = urlparse(self.path); q = parse_qs(u.query)
+        if u.path == "/api/muestra":
+            l = q.get("label", [""])[0].upper()
+            if not OK.fullmatch(l): return self._json({"error": "etiqueta inválida"}, 400)
+            d = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0)))); d["label"] = l
+            k = len(list(RECO.glob(f"{l}__*.json"))) + 1
+            while (RECO / f"{l}__{k}.json").exists(): k += 1
+            (RECO / f"{l}__{k}.json").write_text(json.dumps(d, separators=(",", ":")))
+            return self._json({"ok": True, "file": f"{l}__{k}"})
+        if u.path == "/api/borrar":
+            f = q.get("file", [""])[0].upper()
+            if not re.fullmatch(r"[A-Z0-9_-]{1,40}__\d+", f): return self._json({"error": "nombre"}, 400)
+            (RECO / f"{f}.json").unlink(missing_ok=True); return self._json({"ok": True})
+        return self._json({"error": "ruta"}, 404)
+    def log_message(self, *a): pass
+
+if __name__ == "__main__":
+    print("http://localhost:8766  (muestras →", RECO, ")")
+    ThreadingHTTPServer(("127.0.0.1", 8766), H).serve_forever()

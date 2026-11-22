@@ -1,0 +1,107 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Reconocimiento de señas — prueba</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{font:15px system-ui;margin:0;background:#111;color:#eee;display:flex;gap:16px;padding:16px;flex-wrap:wrap}
+.cam{position:relative;width:640px;max-width:100%}video,canvas{width:100%;display:block;transform:scaleX(-1);border-radius:8px;background:#000}
+canvas{position:absolute;inset:0}
+.panel{flex:1;min-width:300px;max-width:560px}h3{margin:14px 0 6px}
+button,input{font:inherit;padding:8px 12px;border-radius:6px;border:1px solid #444;background:#222;color:#eee;cursor:pointer}
+button.on{background:#c0392b;border-color:#c0392b}button.go{background:#2a7;border-color:#2a7}
+.chip{display:inline-block;margin:2px}.chip.sel{background:#357;border-color:#79c}
+#st{padding:8px;background:#222;border-radius:6px;min-height:20px}
+.big{font-size:28px;font-weight:700;margin:6px 0}.bar{height:8px;background:#2a7;border-radius:4px}
+small,.mut{color:#999}table{border-collapse:collapse}td{padding:2px 8px;border-bottom:1px solid #333}
+</style>
+<div class="cam"><video id="v" playsinline muted></video><canvas id="c"></canvas></div>
+<div class="panel">
+ <div id="st">Iniciando…</div>
+ <h3>1 · Grabar muestras <small>(haz la seña; sube las manos, señas, y bájalas)</small></h3>
+ <div id="chips"></div>
+ <p><input id="otra" placeholder="otra etiqueta (ej. HOLA)" size="16"> <button id="add">+</button></p>
+ <p><button id="rec">⏺ Grabar muestra (cuenta 3 s)</button> <span id="cnt" class="mut"></span></p>
+ <div id="lib" class="mut">—</div>
+ <h3>2 · Reconocer en vivo</h3>
+ <p><button id="run" class="go">▶ Reconocer</button> <button id="eval">📊 Evaluar (leave-one-out)</button></p>
+ <div class="big" id="res">—</div><div class="bar" id="bar" style="width:0"></div><div id="top" class="mut"></div>
+ <div id="evalr"></div>
+ <p class="mut">Una seña = manos arriba de la cadera. Al bajarlas (0,6 s) se compara con las muestras. Con 3+ muestras por frase y mismo encuadre funciona mejor.</p>
+</div>
+<script type="module">
+import {FilesetResolver,PoseLandmarker,HandLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+const $=id=>document.getElementById(id),st=t=>$('st').textContent=t;
+let labels=['FRASE-P1','FRASE-P2','FRASE-P3'],cur='FRASE-P1',samples=[],mode='idle',buf=[],lastAct=0,recStart=0,running=false;
+const MIN_FR=8,END_MS=600,N_RS=40; // largo mínimo, silencio para cerrar, remuestreo
+
+// ── features por frame: posición de muñecas/codos vs hombros + forma de ambas manos (normalizada) ──
+function feat(P,H){ // P: pose landmarks (33), H: {Left,Right} arrays de 21
+ const ls=P[11],rs=P[12],cx=(ls.x+rs.x)/2,cy=(ls.y+rs.y)/2,sw=Math.hypot(ls.x-rs.x,ls.y-rs.y)||0.2,f=[];
+ for(const i of [13,14,15,16]) f.push((P[i].x-cx)/sw,(P[i].y-cy)/sw);
+ for(const side of ['Left','Right']){const h=H[side];
+  if(!h){for(let i=0;i<40;i++)f.push(0);f.push(0,0);continue}
+  const w=h[0],sc=Math.hypot(h[9].x-w.x,h[9].y-w.y)||0.05;
+  for(let i=1;i<21;i++)f.push((h[i].x-w.x)/sc*0.5,(h[i].y-w.y)/sc*0.5);f.push(0,0);
+  f[f.length-2]=(w.x-cx)/sw;f[f.length-1]=(w.y-cy)/sw}
+ return f}
+const active=P=>{const hip=(P[23].y+P[24].y)/2,sh=(P[11].y+P[12].y)/2;return Math.min(P[15].y,P[16].y)<hip-(hip-sh)*0.25};
+function resample(S,n){const o=[];for(let i=0;i<n;i++){const t=i*(S.length-1)/(n-1),a=Math.floor(t),b=Math.min(a+1,S.length-1),u=t-a;
+ o.push(S[a].map((x,k)=>x*(1-u)+S[b][k]*u))}return o}
+function dtw(A,B){const n=A.length,m=B.length,w=Math.ceil(Math.max(n,m)*0.3),I=1e9;let D=Array.from({length:n+1},()=>new Float64Array(m+1).fill(I));D[0][0]=0;
+ const d=(a,b)=>{let s=0;for(let k=0;k<a.length;k++){const x=a[k]-b[k];s+=x*x}return Math.sqrt(s)};
+ for(let i=1;i<=n;i++)for(let j=Math.max(1,i-w);j<=Math.min(m,i+w);j++)D[i][j]=d(A[i-1],B[j-1])+Math.min(D[i-1][j],D[i][j-1],D[i-1][j-1]);
+ return D[n][m]/(n+m)}
+function classify(seq,pool){ // → [{label,dist}] mejor distancia por etiqueta
+ const q=resample(seq,N_RS),best={};
+ for(const s of pool){const d=dtw(q,s.rs);if(!(s.label in best)||d<best[s.label])best[s.label]=d}
+ return Object.entries(best).map(([label,dist])=>({label,dist})).sort((a,b)=>a.dist-b.dist)}
+const prep=s=>({label:s.label,file:s.file,rs:resample(s.frames,N_RS)});
+
+// ── UI ──
+function chips(){$('chips').innerHTML='';labels.forEach(l=>{const b=document.createElement('button');b.className='chip'+(l===cur?' sel':'');
+ b.textContent=l+' ('+samples.filter(s=>s.label===l).length+')';b.onclick=()=>{cur=l;chips()};$('chips').append(b)});
+ const L=$('lib');L.innerHTML=samples.length?'':'—';samples.forEach(s=>{const sp=document.createElement('span');sp.textContent=s.file+' ('+s.frames.length+'f) ';
+ const x=document.createElement('a');x.textContent='✕';x.style.cursor='pointer';x.onclick=async()=>{await fetch('/api/borrar?file='+s.file,{method:'POST'});await load()};sp.append(x,' · ');L.append(sp)})}
+async function load(){samples=(await (await fetch('/api/muestras')).json()).map(s=>({...s,...prep(s),frames:s.frames}));
+ for(const s of samples)if(!labels.includes(s.label))labels.push(s.label);chips()}
+$('add').onclick=()=>{const v=$('otra').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'-');if(v&&!labels.includes(v))labels.push(v);if(v)cur=v;$('otra').value='';chips()};
+
+$('rec').onclick=()=>{if(mode!=='idle')return;mode='count';let n=3;const t=setInterval(()=>{$('cnt').textContent=n>0?n+'…':'';if(n--<=0){clearInterval(t);mode='rec';buf=[];lastAct=performance.now();recStart=0;
+ $('rec').classList.add('on');st('Grabando '+cur+': haz la seña y baja las manos')}},1000);$('cnt').textContent='3…'};
+$('run').onclick=()=>{running=!running;$('run').textContent=running?'⏹ Parar':'▶ Reconocer';buf=[];st(running?'Reconociendo: levanta las manos y señas':'Detenido')};
+$('eval').onclick=()=>{const labs=[...new Set(samples.map(s=>s.label))];let ok=0,tot=0;const conf={};
+ for(const s of samples){const pool=samples.filter(x=>x!==s&&samples.some(y=>y!==s&&y.label===s.label));if(!samples.filter(x=>x!==s&&x.label===s.label).length)continue;
+  const r=classify(s.frames,samples.filter(x=>x!==s));tot++;if(r[0].label===s.label)ok++;else(conf[s.label+' → '+r[0].label]=(conf[s.label+' → '+r[0].label]||0)+1)}
+ $('evalr').innerHTML=tot?`<h3>Precisión: ${ok}/${tot} = ${Math.round(100*ok/tot)}%</h3>`+Object.entries(conf).map(([k,v])=>`<div class="mut">confunde ${k} ×${v}</div>`).join(''):'<p class="mut">Necesitas ≥2 muestras por etiqueta.</p>'};
+
+function finish(){ // cierra segmento
+ const seg=buf;buf=[];
+ if(mode==='rec'){$('rec').classList.remove('on');mode='idle';
+  if(seg.length<MIN_FR){st('Muy corta ('+seg.length+' frames), repite');return}
+  fetch('/api/muestra?label='+cur,{method:'POST',body:JSON.stringify({frames:seg.map(f=>f.map(x=>+x.toFixed(4)))})}).then(load).then(()=>st('Muestra guardada ✔ ('+seg.length+' frames)'));return}
+ if(running&&seg.length>=MIN_FR){const r=classify(seg,samples);if(!r.length){st('No hay muestras grabadas');return}
+  const [a,b]=r,margin=b?(b.dist-a.dist)/b.dist:1,conf=Math.max(0,Math.min(1,margin*2.5));
+  $('res').textContent=a.label;$('bar').style.width=Math.round(conf*100)+'%';
+  $('top').innerHTML='confianza '+Math.round(conf*100)+'% · '+r.slice(0,3).map(x=>x.label+' '+x.dist.toFixed(2)).join(' · ');st('Listo, otra seña cuando quieras')}}
+
+// ── cámara + modelos ──
+const video=$('v'),cv=$('c'),ctx=cv.getContext('2d');
+video.srcObject=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:false});await video.play();
+cv.width=video.videoWidth;cv.height=video.videoHeight;st('Cargando MediaPipe…');
+const fs=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+const mk=async(C,u,o)=>{try{return await C.createFromOptions(fs,{baseOptions:{modelAssetPath:u,delegate:'GPU'},runningMode:'VIDEO',...o})}catch(e){return await C.createFromOptions(fs,{baseOptions:{modelAssetPath:u,delegate:'CPU'},runningMode:'VIDEO',...o})}};
+const G='https://storage.googleapis.com/mediapipe-models/';
+const pose=await mk(PoseLandmarker,G+'pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',{numPoses:1});
+const hands=await mk(HandLandmarker,G+'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',{numHands:2});
+await load();st('Listo. Elige frase, graba 3+ muestras y prueba.');
+let last=-1;
+(function loop(){requestAnimationFrame(loop);if(video.readyState<2||video.currentTime===last)return;last=video.currentTime;const now=performance.now();
+ const pr=pose.detectForVideo(video,now),hr=hands.detectForVideo(video,now);ctx.clearRect(0,0,cv.width,cv.height);
+ const P=pr.landmarks[0];if(!P)return;
+ const H={};hr.landmarks.forEach((h,i)=>{H[hr.handednesses[i][0].categoryName]=h});
+ ctx.fillStyle='#4f8';for(const i of [11,12,13,14,15,16])ctx.fillRect(P[i].x*cv.width-3,P[i].y*cv.height-3,6,6);
+ ctx.fillStyle='#fc4';for(const h of Object.values(H))for(const p of h)ctx.fillRect(p.x*cv.width-2,p.y*cv.height-2,4,4);
+ if(![11,12,13,14,15,16,23,24].every(i=>(P[i].visibility??1)>0.3))return;
+ if(mode==='rec'||running){const act=active(P);
+  if(act){if(!buf.length)recStart=now;lastAct=now;buf.push(feat(P,H))}
+  else if(buf.length){buf.push(feat(P,H));if(now-lastAct>END_MS)finish()}}
+})();
+</script>
