@@ -94,6 +94,7 @@ def informe(filas: list[dict], resumen: dict, modelo: str) -> str:
 def main() -> None:
     import anthropic
     from dotenv import load_dotenv
+
     from store import abrir_store
     from translator import Translator, load_escenario, load_glossary
 

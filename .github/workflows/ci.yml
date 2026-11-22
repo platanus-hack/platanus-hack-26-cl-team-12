@@ -30,6 +30,8 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --frozen
         working-directory: services/${{ matrix.service }}
+      - run: uv run ruff check .
+        working-directory: services/${{ matrix.service }}
       - run: uv run pytest -q
         working-directory: services/${{ matrix.service }}
 
