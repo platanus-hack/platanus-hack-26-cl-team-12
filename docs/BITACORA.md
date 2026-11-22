@@ -8,6 +8,22 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Rafael / Claude (v4/avatar-3d-app-general) · última iteración antes del PR
+- Decidí (Rafael): sin pestaña Emergencias (se cubre en el inicio). Inicio con la ubicación en chico y **"Pedir una ambulancia" destacado en rojo**. Solo la llamada de ambulancia tiene guion completo (es la que se prueba); las demás son un ejemplo corto. **Logo nuevo** (guiones celestes que pasan a ondas de sonido amarillas). La calificación es sobre Puente (avatar, subtítulos, lectura de señas), no sobre la clínica.
+- Hice: lo anterior; íconos PNG de la PWA regenerados con el logo nuevo. **Rendimiento**: el avatar 3D dibuja solo mientras hace señas (antes 60 cuadros por segundo siempre), resolución 1,5× máx. y cámara a 480×640 y 24 fps. 45 tests OK.
+- Nota: `next dev` es pesado por diseño; para probar la app usar `pnpm --filter @puente/web preview` (versión compilada, mucho más liviana).
+- **Probado en el Samsung Galaxy A33 de Rafael** (versión instalable, `adb reverse`): instalación con el logo nuevo, llamada de ambulancia completa con el avatar 3D haciendo las señas, cámara, Enviar, subtítulos y calificación. Funciona perfecto.
+
+## 2026-11-22 — Rafael / Claude (v4/avatar-3d-app-general) · avatar 3D de Tomás, señas con Enviar y app general
+- Decidí (Rafael): Puente es comunicación para personas sordas **en general** (banco, salud, trámites, personas), no solo salud. En la videollamada no se muestran las respuestas a decir: la cámara lee las señas, se toca **Enviar** y lo enviado aparece como subtítulo; las sugerencias quedan solo en el **modo chat**. El avatar se reemplazará más adelante por el que entrena el equipo.
+- Hice: **avatar 3D de Tomás** en la videollamada (`AvatarVRM`: modelo VRM + animaciones de `data/signs/anim`, encadenadas con solape; versión simplificada de `chain.html`). `scripts/copiar_animaciones.mjs` copia las animaciones a `public/anim` en predev/prebuild (no versionado). Si el 3D no carga, queda el intérprete dibujado. El service worker guarda el modelo y las animaciones (v2). Guiones simulados por tipo: urgencia (con las glosas grabadas), banco, hora médica y general. **Inicio**: contactos frecuentes (10, carrusel), "¿Qué necesitas hacer?" (ejecutivo del banco, agendar hora, trámite, ambulancia), consejos para tus llamadas. Pestañas: **Inicio · Contactos · Historial · Emergencias**. Contactos con buscador; Emergencias recibe ubicación y "Avisar a mis contactos". 45 tests OK, build OK; capturas a 390×844 (el avatar hace DESPERTAR, RESPIRAR, BIEN).
+- Falta: reconocer señas reales (v3); transiciones aprendidas de frases (como `chain.html`); glosas reales del agente para banco/hora/general.
+
+## 2026-11-22 — Rafael / Claude (v4/sin-livekit) · sin LiveKit en la app y revisión de lo comprometido
+- Hice: la app se conecta solo por `/twilio/cliente` (sin LiveKit): fuera el camino de LiveKit de `call.ts`, `livekit-client`, sus pruebas y `NEXT_PUBLIC_TRANSPORTE` (45 tests OK). Revisión de accesibilidad pantalla por pantalla (nombres de botones y campos, alt, tamaño táctil, ids, idioma, títulos): arreglados los puntitos de los carruseles (zona de 24×24, WCAG 2.5.8) y los títulos de videollamada y calificación. `Composer` no manda con Enter mientras el teclado compone (Samsung).
+- Estado frente D: D2, D3, D6 (Android) ✅; D1 sin errores en la revisión propia (falta lector de pantalla real); D5 ⚠️ el avatar dibujado mueve las manos pero no hace las señas reales (las fotos sí); D4 ❌; D7 espera a C.
+- Falta (otros dueños): LiveKit sigue en `services/api` (`/token`, `livekit-api`) y `services/agent` (agente sobre LiveKit Agents) y en los docs/ADR-0005: decidir si se elimina (A y B).
+
 ## 2026-11-21 — Tomás / Claude (feature/v4-avatar) · avatar VRM que firma + encadenado
 - Hice: avatar VRM en el navegador con webcam (`lab/v4_avatar/live/`), grabación de tomas por glosa (video crudo), extracción de manos con WiLoR, "cocción" a animación del avatar, fusión de tomas (DTW, mediana, suavizado) y encadenado con solape adaptativo (`chain.html`). 8 señas fusionadas (HOLA, GRACIAS, SÍ, NO, PERMISO, MÉDICO, ENFERMO/A, FIEBRE) en `data/signs/anim/`. Docs: `docs/V4-AVATAR.md` y `docs/GUION-GRABACION.md`.
 - Decidí: encadenado **solapado** (Fluidez "alta", 0,45 s): medido en 56 parejas baja la aceleración del empalme de 172× a 1,7× lo normal (`ml/chain_sim.py`); Tomás lo vio y lo aprobó. WiLoR solo offline y fuera del repo (licencia no comercial + MANO).

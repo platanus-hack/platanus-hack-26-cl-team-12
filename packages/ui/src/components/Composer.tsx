@@ -67,7 +67,8 @@ export function Composer({
         maxLength={maxLength}
         onChange={(e) => set(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) send(e);
+          // isComposing: teclados que "componen" la palabra (Samsung, japonés…) no deben mandar el mensaje a medias.
+          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) send(e);
         }}
       />
       {compact ? (

@@ -4,7 +4,7 @@
 // - Archivos estáticos (/_next/static, /senas, /icons): primero la copia guardada (no cambian).
 // - Nunca guarda llamadas a la API ni a LiveKit (otros dominios): una llamada real siempre necesita internet.
 // Cambia VERSION cuando quieras que todos los celulares descarten la copia vieja.
-const VERSION = "puente-v1";
+const VERSION = "puente-v2"; // v2: guarda también el avatar 3D (modelo y animaciones)
 const BASICO = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon.svg"];
 
 async function precargar() {
@@ -15,6 +15,16 @@ async function precargar() {
     const html = await (await fetch("/", { cache: "no-store" })).text();
     const assets = [...new Set(html.match(/\/_next\/static\/[^"'\s)]+/g) || [])];
     await cache.addAll(assets);
+  } catch {}
+  // Avatar 3D: modelo (10 MB) y animaciones de las señas, para que el intérprete funcione sin internet.
+  try {
+    const r = await fetch("/anim/index.json", { cache: "no-store" });
+    if (r.ok) {
+      const ids = await r.clone().json();
+      await cache.put("/anim/index.json", r);
+      await cache.addAll(ids.map((id) => `/anim/${id}.json`));
+    }
+    await cache.add("/models/avatar.vrm");
   } catch {}
   // Fotos de señas (no se versionan; pueden no estar).
   try {
@@ -62,7 +72,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  if (/^\/(_next\/static|senas|icons)\//.test(url.pathname) || url.pathname === "/manifest.webmanifest") {
+  if (/^\/(_next\/static|senas|icons|anim|models|perfil)\//.test(url.pathname) || url.pathname === "/manifest.webmanifest") {
     e.respondWith(
       caches.match(req).then(
         (guardada) =>

@@ -9,10 +9,10 @@ body { margin: 0; font-family: var(--font-sans); font-size: 18px; line-height: 1
 /* Logo */
 .pu-logo { display: inline-flex; align-items: center; gap: 0.3em; color: var(--fg); }
 .pu-logo svg { display: block; }
-.pu-logo .arch { fill: none; stroke: var(--brand); stroke-width: 7; stroke-linecap: round; }
+.pu-logo .barra { fill: var(--brand); }
 .pu-logo .dot-c { fill: var(--cliente); }
 .pu-logo .dot-e { fill: var(--fg); }
-.pu-logo.mono .arch { stroke: currentColor; }
+.pu-logo.mono .barra { fill: currentColor; }
 .pu-logo.mono .dot-c, .pu-logo.mono .dot-e { fill: currentColor; }
 .pu-logo .word { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
 
