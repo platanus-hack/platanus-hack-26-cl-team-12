@@ -1,0 +1,59 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>Puente — Cliente</title>
+<style>
+body{font-family:system-ui;max-width:520px;margin:0 auto;padding:16px;font-size:20px}
+.m{padding:12px 14px;border-radius:14px;margin:10px 0}.ej{background:#e0e7ff}.yo{background:#dcfce7;text-align:right}.err{background:#fee2e2;font-size:14px}
+.orig{font-size:14px;color:#555;margin-top:6px}
+form{display:flex;gap:8px;position:sticky;bottom:0;background:#fff;padding:8px 0}
+input[type=text]{flex:1;font-size:20px;padding:12px;border-radius:12px;border:1px solid #aaa}
+button{font-size:20px;padding:12px 18px;border-radius:12px;border:0;background:#1d4ed8;color:#fff}
+label{font-size:15px;display:block}
+.sn{background:#fff7ed;border:1px solid #fdba74}
+.vis{text-align:center}.vis img{max-width:100%;max-height:300px;border-radius:10px;background:#fff}
+.vis .g{font-size:26px;font-weight:700;margin-top:4px}.vis .s{font-size:14px;color:#555}
+.vis .tx{font-size:56px;font-weight:700;padding:40px 0}
+.pg{display:flex;gap:4px;justify-content:center;margin:8px 0}.pg i{width:10px;height:10px;border-radius:50%;background:#ddd}.pg i.on{background:#ea580c}
+.sn button{font-size:15px;padding:8px 12px;background:#ea580c}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:14px}.chips span{background:#ffedd5;border-radius:8px;padding:3px 8px;cursor:pointer}
+</style>
+<h2>💬 Cliente</h2>
+<label><input type=checkbox id=v2 checked> v2: simplificar lo que dice el ejecutivo y "hablar normal" lo que escribo</label>
+<label><input type=checkbox id=v4 checked> v4: ver las señas de lo que dice el ejecutivo</label>
+<div id=log></div>
+<form id=f><input type=text id=t placeholder="Escribe aquí…" autocomplete=off><button>Enviar</button></form>
+<script>
+const log=document.getElementById('log'),t=document.getElementById('t'),v2=document.getElementById('v2'),v4=document.getElementById('v4');
+let ws;
+const add=(c,h)=>{const d=document.createElement('div');d.className='m '+c;d.innerHTML=h;log.append(d);d.scrollIntoView()};
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function conectar(){
+  ws=new WebSocket((location.protocol=='https:'?'wss://':'ws://')+location.host+'/ws/cliente');
+  ws.onclose=()=>setTimeout(conectar,1000);
+  ws.onmessage=e=>{const m=JSON.parse(e.data);
+    if(m.tipo=='ejecutivo_dice'){
+      const principal=(v2.checked&&m.simple)?m.simple:m.texto;
+      add('ej',esc(principal).replace(/\n/g,'<br>')+(m.simple&&v2.checked?'<div class=orig>Original: '+esc(m.texto)+'</div>':'')+'<div class=orig>'+m.ms.stt+' ms voz→texto'+(m.ms.llm?' · '+m.ms.llm+' ms IA':'')+'</div>')}
+    if(m.tipo=='ejecutivo_dice'&&v4.checked&&m.glosas&&m.glosas.length)senas(m.glosas);
+    if(m.tipo=='enviado')add('yo',esc(m.texto)+(m.natural!=m.texto?'<div class=orig>Se dijo: '+esc(m.natural)+'</div>':'')+'<div class=orig>'+(m.ms.llm?m.ms.llm+' ms IA · ':'')+m.ms.tts+' ms voz</div>');
+    if(m.tipo=='error')add('err',esc(m.texto))}}
+// ---- v4: reproductor de señas (fotos del diccionario LSCh-UMCE, vocabulario cerrado) ----
+const PASO=1300;
+function senas(gl){
+  const d=document.createElement('div');d.className='m sn';
+  d.innerHTML='<div class=vis></div><div class=pg></div><button>↻ Repetir</button><div class=chips></div>';
+  log.append(d);d.scrollIntoView();
+  const vis=d.querySelector('.vis'),pg=d.querySelector('.pg'),chips=d.querySelector('.chips');
+  pg.innerHTML=gl.map(()=>'<i></i>').join('');
+  chips.innerHTML=gl.map((g,i)=>'<span data-i='+i+'>'+esc(g.glosa||g.texto)+'</span>').join('');
+  let timer;
+  const mostrar=i=>{const g=gl[i];
+    vis.innerHTML=g.id?'<img src="/signs/'+g.id+'.png"><div class=g>'+esc(g.glosa)+'</div><div class=s>'+esc(g.significa)+'</div>':'<div class=tx>'+esc(g.texto)+'</div>';
+    pg.querySelectorAll('i').forEach((p,k)=>p.classList.toggle('on',k==i))};
+  const play=()=>{clearInterval(timer);let i=0;mostrar(0);
+    timer=setInterval(()=>{if(++i>=gl.length){clearInterval(timer);return}mostrar(i)},PASO)};
+  d.querySelector('button').onclick=play;
+  chips.onclick=e=>{if(e.target.dataset.i){clearInterval(timer);mostrar(+e.target.dataset.i)}};
+  gl.forEach(g=>{if(g.id)new Image().src='/signs/'+g.id+'.png'});play()}
+conectar();
+document.getElementById('f').onsubmit=e=>{e.preventDefault();if(!t.value.trim())return;ws.send(JSON.stringify({texto:t.value,v2:v2.checked}));t.value=''};
+</script>

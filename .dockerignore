@@ -1,0 +1,23 @@
+# Contexto de build = raíz del repo (ver services/*/Dockerfile). Dejar fuera todo lo que no entra a las imágenes.
+# Sin esto, un .venv o node_modules local se copia a la imagen (pisa el entorno de uv) y el build sube cientos de MB.
+.git
+.github
+.claude
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.next
+**/out
+**/.turbo
+# Nunca meter secretos en una imagen
+.env
+.env.*
+# Carpetas que ninguna imagen usa
+apps
+ml
+data
+docs
+packages/signs
+packages/avatar
+packages/ui

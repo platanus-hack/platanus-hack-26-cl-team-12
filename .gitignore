@@ -94,12 +94,22 @@ lightning_logs/
 data/signs/*
 !data/signs/.gitkeep
 
+# audios personales de prueba (voz): no subir
+data/eval/audio/*
+!data/eval/audio/.gitkeep
+
 # ───────── Logs y temporales ─────────
 *.log
 tmp/
 .tmp/
 
 # ───────── Herramientas de Claude ─────────
+# worktrees de git: nunca se versionan (cualquier herramienta / ruta)
 .claude/worktrees/
+.worktrees/
+worktrees/
 .claude/settings.local.json
 graphify-out/
+
+# Fotos del Diccionario LSCh (derechos UMCE): se generan con apps/web/scripts/extraer_senas.py, no se versionan.
+apps/web/public/senas/

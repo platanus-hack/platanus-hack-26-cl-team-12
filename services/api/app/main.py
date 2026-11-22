@@ -4,11 +4,16 @@
 - /token           token de LiveKit con permisos mínimos por rol.
 - /llamadas        crea la llamada telefónica saliente (LiveKit SIP + Twilio) — v1.
 - /glosses         diccionario de glosas (contrato de ADR-0001).
+- /twilio/*        v1 sin LiveKit: Twilio conversa por turnos con el ejecutivo (app/twilio_media.py, app/llamada.py).
+
+Swagger (solo en desarrollo): http://localhost:8000/docs  ·  ReDoc: /redoc  ·  esquema: /openapi.json
+Se apaga con API_ENV=production (el Dockerfile ya lo fija) o con API_DOCS=0.
 """
 
 import json
 import os
 import re
+import tomllib
 import uuid
 from datetime import timedelta
 from pathlib import Path
@@ -16,17 +21,64 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.config import es_produccion
+from app.llamada import router as llamada_router
+from app.traductor import DEFAULT_PATH
+from app.twilio_media import router as twilio_router
 
 load_dotenv()
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-GLOSSES_PATH = Path(os.getenv("GLOSSES_PATH", REPO_ROOT / "packages/glosses/data/glosses.json"))
+GLOSSES_PATH = Path(os.getenv("GLOSSES_PATH", DEFAULT_PATH))  # el mismo diccionario que usa el traductor
 
 ROL_CLIENTE = "cliente"
 E164 = re.compile(r"\+[1-9]\d{7,14}")
 
-app = FastAPI(title="Puente - llamadas accesibles")
+API_DIR = Path(__file__).resolve().parents[1]
+
+
+def docs_habilitados() -> bool:
+    """Swagger/ReDoc solo en desarrollo: en producción no se expone el mapa de la API.
+    API_DOCS (1/0) manda; si no está, se decide por API_ENV (defecto: development)."""
+    explicito = (os.getenv("API_DOCS") or "").strip().lower()
+    if explicito:  # vacío (`API_DOCS=` del .env.example) = no definido
+        return explicito in ("1", "true", "si", "sí", "yes")
+    return not es_produccion()
+
+
+def version_api() -> str:
+    try:
+        return tomllib.loads((API_DIR / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+    except (OSError, KeyError, tomllib.TOMLDecodeError):
+        return "0.0.0"
+
+
+DESCRIPCION = """
+API de **Puente**: llamadas telefónicas accesibles para personas sordas.
+
+La conversación en vivo **no** pasa por esta API: va por el data channel de LiveKit entre la PWA y el agente
+traductor (ver `docs/contrato.md`). Esta API solo entrega lo necesario para entrar a la sala y para la llamada.
+
+Flujo: `POST /token` → la PWA entra a la sala de LiveKit → `POST /llamadas` une al ejecutivo por teléfono (SIP).
+"""
+
+TAGS = [
+    {"name": "sistema", "description": "Chequeo de vida del servicio."},
+    {"name": "llamada", "description": "Entrar a la sala de LiveKit y llamar al ejecutivo por teléfono."},
+    {"name": "glosas", "description": "Diccionario de glosas LSCh compartido (ADR-0001)."},
+]
+
+_docs = docs_habilitados()
+app = FastAPI(
+    title="Puente - llamadas accesibles",
+    description=DESCRIPCION,
+    version=version_api(),
+    openapi_tags=TAGS,
+    docs_url="/docs" if _docs else None,
+    redoc_url="/redoc" if _docs else None,
+    openapi_url="/openapi.json" if _docs else None,
+)
 app.add_middleware(
     CORSMiddleware,
     # En producción: CORS_ORIGINS=https://<tu-pwa>.vercel.app (lista separada por comas).
@@ -36,24 +88,73 @@ app.add_middleware(
 )
 
 
-@app.get("/health")
-def health():
-    return {"ok": True}
+app.include_router(twilio_router)
+app.include_router(llamada_router)
 
 
-@app.get("/glosses")
-def glosses():
+class ErrorResponse(BaseModel):
+    detail: str = Field(description="Motivo del error, en español.")
+
+
+def errores(*codigos: int) -> dict:
+    """Respuestas de error documentadas en Swagger (todas con forma {"detail": "..."})."""
+    textos = {
+        403: "No permitido.",
+        422: "Datos inválidos.",
+        501: "Todavía no implementado.",
+        503: "Servicio externo no configurado.",
+    }
+    return {c: {"model": ErrorResponse, "description": textos[c]} for c in codigos}
+
+
+class HealthResponse(BaseModel):
+    ok: bool = Field(examples=[True])
+
+
+@app.get("/health", response_model=HealthResponse, tags=["sistema"], summary="Chequeo de vida")
+def health() -> HealthResponse:
+    return HealthResponse(ok=True)
+
+
+class GlossEntry(BaseModel):
+    """Una seña del diccionario. Fuente: packages/glosses/data/glosses.json (schema en gloss.schema.json)."""
+
+    model_config = ConfigDict(extra="allow")  # campos nuevos del schema pasan sin romper la API (solo aditivo)
+
+    gloss: str = Field(examples=["MÉDICO"], description="Glosa en MAYÚSCULAS.")
+    category: str = Field(examples=["salud"])
+    es: list[str] = Field(examples=[["médico", "doctor"]], description="Palabras en español.")
+    classifierLabel: int = Field(description="Clase del modelo de reconocimiento (no se reordena).")
+    clip: str | None = None
+    animationId: str | None = None
+    nonManual: str | None = Field(None, description="Rasgo no manual (ej. cejas fruncidas en preguntas).")
+    validatedBy: str | None = None
+    lexiconId: str | None = Field(None, description="Id en el glosario LSCh de origen (foto de la seña).")
+
+
+class GlossDictionary(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    version: int
+    glosses: list[GlossEntry]
+
+
+@app.get("/glosses", response_model=GlossDictionary, tags=["glosas"], summary="Diccionario de glosas LSCh")
+def glosses() -> dict:
     return json.loads(GLOSSES_PATH.read_text(encoding="utf-8"))
 
 
 class TokenResponse(BaseModel):
-    url: str
-    token: str
-    room: str
-    identity: str
+    url: str = Field(description="URL del servidor de LiveKit.", examples=["wss://puente.livekit.cloud"])
+    token: str = Field(description="JWT de LiveKit (1 h, rol cliente, solo datos).")
+    room: str = Field(description="Sala nueva y no adivinable.", examples=["puente-3f2a..."])
+    identity: str = Field(examples=["cliente-1a2b3c4d5e6f"])
 
 
-@app.post("/token", response_model=TokenResponse)
+@app.post(
+    "/token", response_model=TokenResponse, tags=["llamada"], summary="Token de LiveKit para el cliente",
+    responses=errores(503),
+)
 def token() -> TokenResponse:
     """Token para la PWA del cliente (persona sorda).
 
@@ -86,11 +187,16 @@ def token() -> TokenResponse:
 
 
 class LlamadaRequest(BaseModel):
-    room: str
-    numero: str  # formato E.164, ej. +56912345678
+    room: str = Field(description="Sala devuelta por /token.", examples=["puente-3f2a9c"])
+    numero: str = Field(
+        description="Teléfono del ejecutivo en E.164. Debe estar en ALLOWED_DESTINATIONS.", examples=["+56912345678"]
+    )
 
 
-@app.post("/llamadas")
+@app.post(
+    "/llamadas", tags=["llamada"], summary="Llamar al ejecutivo y unirlo a la sala (v1)",
+    responses=errores(403, 422, 501),
+)
 def crear_llamada(req: LlamadaRequest):
     """v1: llama al ejecutivo por teléfono y lo une a la sala como participante SIP.
 

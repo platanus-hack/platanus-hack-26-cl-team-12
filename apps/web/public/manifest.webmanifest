@@ -1,11 +1,25 @@
 {
-  "name": "Puente — llamadas accesibles",
+  "id": "/",
+  "name": "Puente: llamadas accesibles",
   "short_name": "Puente",
-  "description": "Llamadas telefónicas para personas sordas: voz a texto y señas, texto y señas a voz.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0b1220",
-  "theme_color": "#0b1220",
+  "description": "Llamadas telefónicas para personas sordas: lo que te dicen en texto y lengua de señas, y lo que escribes en voz.",
   "lang": "es-CL",
-  "icons": []
+  "dir": "ltr",
+  "start_url": "/?mock=1",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f3f6",
+  "theme_color": "#f2f3f6",
+  "categories": ["medical", "accessibility", "communication"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Pedir una ambulancia", "short_name": "Ambulancia", "url": "/?mock=1&llamar=urgencias", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
 }

@@ -5,8 +5,9 @@ const config: CapacitorConfig = {
   appId: "cl.puente.app",
   appName: "Puente",
   webDir: "../web/out",
-  // TODO: declarar permisos de cámara y micrófono en Info.plist (iOS) y AndroidManifest (Android)
-  // después de `npx cap add ios` / `npx cap add android`.
+  // Android: permisos de cámara y micrófono en android/app/src/main/AndroidManifest.xml (versionado).
+  // El WebView sirve la app desde https://localhost: ese origen está en CORS_ORIGINS (render.yaml).
+  // TODO: iOS (Info.plist) cuando se haga `cap add ios`; por ahora en iPhone se usa la PWA.
 };
 
 export default config;

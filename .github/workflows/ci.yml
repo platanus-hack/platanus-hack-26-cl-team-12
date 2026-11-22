@@ -17,6 +17,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      - run: pnpm test
       - run: pnpm build
 
   python:
@@ -28,6 +29,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --frozen
+        working-directory: services/${{ matrix.service }}
+      - run: uv run ruff check .
         working-directory: services/${{ matrix.service }}
       - run: uv run pytest -q
         working-directory: services/${{ matrix.service }}
