@@ -64,7 +64,7 @@ function Lista({ items, onLlamar, vacio }: { items: Destino[]; onLlamar: (d: Des
             <strong>{c.nombre}</strong>
             <span>{c.motivo}</span>
           </span>
-          <button type="button" className="num-llamar" onClick={() => onLlamar(c)} aria-label={`Llamar a ${c.nombre} con Puente`}>
+          <button type="button" className="num-llamar" onClick={() => onLlamar(c)} aria-label={`Llamar a ${c.nombre} con Bridge`}>
             <Icon name="llamar" size={18} /> Llamar
           </button>
         </li>

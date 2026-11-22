@@ -1,29 +1,20 @@
 import { cx } from "./cx";
 
-// Logo de Puente (diseño de Rafael, 22-11-2026): dos guiones celestes (lo que escribes o haces en señas) que se
-// convierten en ondas de sonido amarillas (la voz que escucha la otra persona).
-const BARRAS: [number, number][] = [
-  [210, 46],
-  [238, 100],
-  [266, 148],
-  [294, 84],
-  [322, 120],
-  [350, 36],
-];
+// Logo de Bridge (22-11-2026, en iteración con Rafael): 10 barras cuyas alturas dibujan la silueta de un puente
+// colgante (altas en las torres, bajas donde cae el cable), sin piso. Variantes en apps/web/public/logo/.
+const ALTURAS = [18, 30, 56, 32, 16, 16, 32, 56, 30, 18];
 
 export function Logo({ variant = "wordmark", size = 40, tone = "color" }: { variant?: "wordmark" | "mark"; size?: number; tone?: "color" | "mono" }) {
   return (
-    <span className={cx("pu-logo", tone === "mono" && "mono")} role="img" aria-label="Puente">
-      <svg width={size * 1.75} height={size} viewBox="92 140 276 158" aria-hidden>
-        <rect className="dot-c" x={100} y={215} width={42} height={9} rx={4.5} />
-        <rect className="dot-c" x={162} y={215} width={23} height={9} rx={4.5} />
-        {BARRAS.map(([cx_, h]) => (
-          <rect key={cx_} className="barra" x={cx_ - 9} y={219 - h / 2} width={18} height={h} rx={9} />
+    <span className={cx("pu-logo", tone === "mono" && "mono")} role="img" aria-label="Bridge">
+      <svg width={size * 1.375} height={size} viewBox="0 8 110 66" aria-hidden className="barras">
+        {ALTURAS.map((h, i) => (
+          <rect key={i} x={5 + i * 11 - 3} y={70 - h} width={6} height={h} rx={3} />
         ))}
       </svg>
       {variant === "wordmark" && (
         <span className="word" style={{ fontSize: Math.round(size * 0.72) }}>
-          Puente
+          Bridge
         </span>
       )}
     </span>

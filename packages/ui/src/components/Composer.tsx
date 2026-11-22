@@ -31,7 +31,7 @@ export function Composer({
   sending = false,
   label = "Lo que quieres decir",
   placeholder = "Ej: Quiero una hora para el lunes",
-  hint = "Puente lo dice por teléfono con voz.",
+  hint = "Bridge lo dice por teléfono con voz.",
   sendLabel = "Decir",
   compact = false,
   maxLength,
