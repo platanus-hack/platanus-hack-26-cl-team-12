@@ -414,7 +414,7 @@ def test_voz_chilena_en_el_saludo_y_twilio_baja_el_audio(voz_falsa):
     assert url, r.text
     audio = client.get(url.group(1).replace("https://abc.ngrok-free.app", ""))
     assert audio.status_code == 200 and audio.headers["content-type"] == "audio/mpeg"
-    assert audio.content.startswith(b"MP3:Hola. Le habla Brich")
+    assert audio.content.startswith(b"MP3:Hola. Le habla la Brich")
 
 
 def test_respuesta_del_cliente_con_voz_chilena_y_se_borra_en_otra_llamada(voz_falsa):
@@ -439,7 +439,7 @@ def test_si_elevenlabs_falla_se_usa_la_voz_de_twilio(voz_falsa, monkeypatch):
 
     monkeypatch.setattr(voz_falsa, "_generar", falla)
     r = client.post("/twilio/voz")
-    assert '<Say language="es-MX">Hola. Le habla Brich' in r.text and "<Play>" not in r.text
+    assert '<Say language="es-MX">Hola. Le habla la Brich' in r.text and "<Play>" not in r.text
 
 
 def test_audio_inexistente_da_404():
