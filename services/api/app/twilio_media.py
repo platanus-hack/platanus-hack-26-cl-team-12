@@ -31,7 +31,7 @@ IDIOMA = 'language="es-MX"'
 # La llamada parte con la persona sorda: tras el saludo se espera su primer mensaje (/twilio/espera) y recién después se
 # escucha al ejecutivo. Desde ahí los turnos alternan: cliente → ejecutivo → cliente…
 SALUDO = (
-    "Hola. Le habla Puente, un servicio de interpretación para una persona sorda. "
+    "Hola. Le habla Bridge, un servicio de interpretación para una persona sorda. "
     "La persona le hablará en unos segundos; escuche el mensaje y, cuando termine, responda y espere la respuesta."
 )
 # Pistas para el reconocimiento de voz de Twilio (sin esto, "RUT" se transcribe como "fútbol"): los términos del
