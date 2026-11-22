@@ -392,3 +392,38 @@ main.vl { position: relative; max-width: 560px; height: 100dvh; margin: 0 auto; 
 .vl-ctrl:disabled { opacity: 0.45; cursor: default; }
 .vl-ctrl:focus-visible { outline: 3px solid #fff; outline-offset: 2px; border-radius: 12px; }
 main.vl .pu-alert { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 5; }
+
+/* ---------- v4: app general, acciones, contactos, avatar 3D, enviar señas ---------- */
+.clinica-tile.tono-5, .tu-clinica-logo.tono-5, .accion.tono-5 .accion-ico { background: var(--danger); color: var(--on-danger); }
+.acciones { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.accion { font: inherit; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; border: 0; border-radius: 16px; background: var(--surface); color: var(--fg); text-align: left; cursor: pointer; }
+.accion:active { transform: scale(0.98); }
+.accion:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.accion-ico { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--fg); }
+.accion.tono-0 .accion-ico { background: color-mix(in srgb, #3b82f6 30%, var(--surface)); }
+.accion.tono-1 .accion-ico { background: color-mix(in srgb, #22c55e 30%, var(--surface)); }
+.accion.tono-3 .accion-ico { background: color-mix(in srgb, #f97316 30%, var(--surface)); }
+.accion-txt { display: flex; flex-direction: column; gap: 2px; }
+.accion-txt strong { font-size: 0.98rem; font-weight: 700; line-height: 1.25; }
+.accion-txt span { font-size: 0.8rem; color: var(--muted); }
+.num-badge.tono-0 { background: color-mix(in srgb, #3b82f6 28%, var(--surface)); }
+.num-badge.tono-1 { background: color-mix(in srgb, #22c55e 26%, var(--surface)); }
+.num-badge.tono-2 { background: color-mix(in srgb, #a855f7 26%, var(--surface)); }
+.num-badge.tono-3 { background: color-mix(in srgb, #f97316 26%, var(--surface)); }
+.num-badge.tono-4 { background: color-mix(in srgb, #14b8a6 26%, var(--surface)); }
+.buscador { display: flex; align-items: center; gap: 8px; padding: 0 14px; min-height: 46px; border-radius: 999px; background: var(--surface); color: var(--muted); }
+.buscador input { font: inherit; flex: 1; min-width: 0; border: 0; background: none; color: var(--fg); outline: none; }
+.buscador:focus-within { outline: var(--focus-width) solid var(--focus); outline-offset: 2px; }
+.tu-clinica.urgente { background: color-mix(in srgb, var(--danger) 16%, var(--surface)); }
+.btn-rojo { font: inherit; width: 100%; min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 10px; background: var(--danger); color: var(--on-danger); font-weight: 700; font-size: 1.02rem; cursor: pointer; }
+.btn-rojo:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: 3px; }
+
+/* Avatar 3D (lienzo espejado, como el laboratorio de Tomás) */
+.avatar-vrm { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transform: scaleX(-1); }
+
+/* Enviar lo que la cámara leyó */
+.vl-ctrl.enviar > svg { background: rgba(255, 255, 255, 0.16); }
+.vl-ctrl.enviar.listo > svg { background: #34c759; color: #000; box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.35); }
+.vl-yo.listo { box-shadow: inset 0 0 0 3px #34c759; }
+.vl-sub.listo { display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(21, 128, 61, 0.88); font-size: 1.05rem; }
+.vl-chat { max-height: 38dvh; overflow-y: auto; margin-bottom: 10px; }
