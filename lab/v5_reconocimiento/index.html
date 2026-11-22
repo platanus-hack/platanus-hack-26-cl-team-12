@@ -12,7 +12,7 @@ button.on{background:#c0392b;border-color:#c0392b}button.go{background:#2a7;bord
 #st{padding:8px;background:#222;border-radius:6px;min-height:20px;margin:8px 0}
 .big{font-size:30px;font-weight:700;margin:8px 0;min-height:40px;line-height:1.2}
 .box{background:#1b1b1b;border-radius:8px;padding:10px;margin-top:8px}
-small,.mut{color:#999}details{margin-top:12px;background:#1b1b1b;border-radius:8px;padding:8px 12px}summary{cursor:pointer;font-weight:600}
+small,.mut{color:#999}.ok{color:#5d8}.bad{color:#f66}.ins{color:#fb4}.fb.sel{background:#357;border-color:#79c}details{margin-top:12px;background:#1b1b1b;border-radius:8px;padding:8px 12px}summary{cursor:pointer;font-weight:600}
 </style>
 <div class="left">
  <div class="cam"><video id="v" playsinline muted></video><canvas id="c"></canvas></div>
@@ -26,6 +26,11 @@ small,.mut{color:#999}details{margin-top:12px;background:#1b1b1b;border-radius:8
  <p><button id="run" class="go">▶ Reconocer</button> <button id="clr">limpiar</button></p>
  <p>Sensibilidad <input id="sens" type="range" min="0.2" max="1" step="0.05" value="0.55"> <span id="sv">0.55</span><br>
  <small>Si no detecta nada, súbela. Si inventa palabras, bájala. (0 = idéntico, 1 = como una palabra cualquiera)</small></p>
+ <h3>Prueba guiada <small>(las frases exactas de la demo)</small></h3>
+ <p><label><input type="checkbox" id="demo" checked> reconocer solo el vocabulario de la demo (P1–P3)</label></p>
+ <p id="fbtn"></p><div class="box"><small>Seña esto, en orden:</small><div id="guion" style="font-size:20px;font-weight:700;margin-top:4px"></div></div>
+ <p><button id="tgo" class="go">▶ Iniciar prueba (cuenta 3 s)</button> <button id="tend">■ Terminar</button> <span id="tcnt" class="mut"></span></p>
+ <div id="tres"></div><div id="hist" class="mut"></div>
  <h3>Enviar a la llamada <small>(v2 → v1 → audio)</small></h3>
  <p><button id="send" class="go">📞 Enviar ahora</button> <label><input type="checkbox" id="auto" checked> enviar solo tras 2,5 s sin señar</label></p>
  <p class="mut">Necesita <code>uvicorn main:app --port 8000</code> en <code>lab/sim_llamada</code> y la pestaña <a href="http://localhost:8000/ejecutivo" target="_blank" style="color:#79c">localhost:8000/ejecutivo</a> abierta (ahí suena el audio).</p>
@@ -45,6 +50,9 @@ const P1='HOLA AMBULANCIA NECESITAR HIJO-A CAER-PERSONA CODO HUESO ROMPER'.split
 let labels=[...P1],cur=labels[0],samples=[],mode='idle',buf=[],lastAct=0,running=false,sens=0.55;
 const MIN_FR=6,END_MS=600,N_T=24,WIN=100,EVAL_EVERY=3,thr={};
 const isW=l=>!l.startsWith('FRASE');
+const FRASES={P1:'HOLA AMBULANCIA NECESITAR HIJO-A CAER-PERSONA CODO HUESO ROMPER',P2:'SI HIJO-A DESPERTAR-SE PERO BRAZO APOYAR NO-PODER CODO HINCHADO-A',P3:'SANGRE POCO-A PERO MANO BIEN URGENTE NECESITAR HOSPITAL IR'};
+const DEMO=new Set(Object.values(FRASES).join(' ').split(' '));let soloDemo=true;
+const pool=()=>soloDemo?samples.filter(s=>DEMO.has(s.label)):samples;
 
 // ── features por frame (muñecas/codos vs hombros + forma de ambas manos) ──
 function feat(P,H){const ls=P[11],rs=P[12],cx=(ls.x+rs.x)/2,cy=(ls.y+rs.y)/2,sw=Math.hypot(ls.x-rs.x,ls.y-rs.y)||0.2,f=[];
@@ -75,7 +83,7 @@ const hasHand=f=>{for(let i=8;i<48;i++)if(f[i]!==0)return true;for(let i=50;i<90
 const prep=s=>{const fr=s.frames.filter(hasHand);return fr.length<MIN_FR?null:{label:s.label,file:s.file,src:s.src,frames:fr,T:resample(fr,N_T)}};
 
 // ── umbrales por palabra: costo típico entre muestras de la misma palabra ──
-function calib(){for(const k in thr)delete thr[k];const W=samples;
+function calib(){for(const k in thr)delete thr[k];const W=pool();
  for(const l of new Set(W.map(s=>s.label))){const S=W.filter(s=>s.label===l),O=W.filter(s=>s.label!==l);
   // "impostor": costo típico de las plantillas de l contra tomas de OTRAS palabras (una plantilla imán tiene impostor bajo)
   const step=Math.max(1,Math.floor(O.length/25)),picks=O.filter((_,i)=>i%step===0).slice(0,25);let c=0,n=0;
@@ -97,7 +105,7 @@ $('rec').onclick=()=>{if(mode!=='idle')return;mode='count';let n=3;const t=setIn
  $('rec').classList.add('on');st('Grabando '+cur+': haz la seña y baja las manos')}},1000);$('cnt').textContent='3…'};
 $('run').onclick=()=>{running=!running;$('run').textContent=running?'⏹ Parar':'▶ Reconocer';buf=[];st(running?'Reconociendo: levanta las manos y señas de corrido':'Detenido')};
 $('eval').onclick=()=>{let ok=0,tot=0;const conf={};
- for(const s of samples){const others=samples.filter(x=>x!==s);if(!others.some(x=>x.label===s.label))continue;
+ const PL=pool();for(const s of PL){const others=PL.filter(x=>x!==s);if(!others.some(x=>x.label===s.label))continue;
   const best={};for(const o of others){const d=dtw(resample(s.frames,N_T),o.T);if(!(o.label in best)||d<best[o.label])best[o.label]=d}
   const r=Object.entries(best).sort((a,b)=>a[1]-b[1]);tot++;if(r[0][0]===s.label)ok++;else{const k=s.label+' → '+r[0][0];conf[k]=(conf[k]||0)+1}}
  $('evalr').innerHTML=tot?`<h3>${ok} de ${tot} tomas bien identificadas (${Math.round(100*ok/tot)}%)</h3><div class="mut">Se esconde cada toma y se adivina con las demás.</div>`+Object.entries(conf).map(([k,v])=>`<div class="mut">confunde ${k} ×${v}</div>`).join(''):'<p class="mut">Necesitas ≥2 muestras por palabra.</p>'};
@@ -110,9 +118,9 @@ function finishRec(){const seg=buf;buf=[];$('rec').classList.remove('on');mode='
 let nf=0,cand=null,lockUntil=0,hist=[],lastEmit='',moved=true;
 const MOV=0.006; // movimiento medio de muñecas por frame (en anchos de hombro) para considerar que se está señando
 function motion(B){const n=Math.min(8,B.length-1);if(n<3)return 0;let t=0;for(let k=B.length-n;k<B.length;k++)for(const i of [4,5,6,7])t+=Math.abs(B[k][i]-B[k-1][i]);return t/(n*4)}
-function evalStream(now){if(!samples.length)return;const B=buf.slice(-WIN);if(B.length<MIN_FR)return;
+function evalStream(now){const PL=pool();if(!PL.length)return;const B=buf.slice(-WIN);if(B.length<MIN_FR)return;
  if(motion(B)<MOV){cand=null;lastEmit='';$('top').textContent='quieto (mueve las manos para señar)';return}
- const best={};for(const s of samples){const c=subDtw(s.T,B);if(!(s.label in best)||c<best[s.label])best[s.label]=c}
+ const best={};for(const s of PL){const c=subDtw(s.T,B);if(!(s.label in best)||c<best[s.label])best[s.label]=c}
  const r=Object.entries(best).map(([l,c])=>({l,c,r:c/(thr[l].imp||1)})).sort((a,b)=>a.r-b.r);
  $('top').textContent=r.slice(0,3).map(x=>x.l+' '+x.r.toFixed(2)).join(' · ')+'  (≤'+sens+' = acepta)';
  const a=r[0],b=r[1],ok=a.r<=sens&&(!b||a.r<b.r*0.85)&&now>lockUntil&&a.l!==lastEmit;
@@ -131,7 +139,7 @@ function enviar(){if(!pending.length)return;if(!ws||ws.readyState!==1){st('No ha
  ws.send(JSON.stringify({texto:pending.join(' '),v2:true}));pending=[];showPend()}
 $('send').onclick=enviar;
 setInterval(()=>{if($('auto').checked&&pending.length&&performance.now()-lastWord>2500&&!buf.length)enviar()},300);
-function emit(l,r){pending.push(l);lastWord=performance.now();showPend();out.push(l);$('res').textContent=out.slice(-12).join(' ');st('Detectado: '+l+' (ratio '+r.toFixed(2)+')')}
+function emit(l,r){if(test&&test.st==='run')test.det.push(l);else{pending.push(l);lastWord=performance.now();showPend()}out.push(l);$('res').textContent=out.slice(-12).join(' ');st('Detectado: '+l+' (ratio '+r.toFixed(2)+')')}
 
 // ── cámara + modelos ──
 const video=$('v'),cv=$('c'),ctx=cv.getContext('2d');
@@ -143,6 +151,38 @@ const G='https://storage.googleapis.com/mediapipe-models/';
 const pose=await mk(PoseLandmarker,G+'pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',{numPoses:1});
 const hands=await mk(HandLandmarker,G+'hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',{numHands:2});
 await load();st('Listo. Graba 3+ muestras por palabra y prueba.');
+// ── prueba guiada: se seña una frase exacta y se compara palabra por palabra con lo esperado ──
+let test=null,selF='P1';
+function frasesUI(){$('fbtn').innerHTML='';for(const k in FRASES){const b=document.createElement('button');b.className='fb'+(k===selF?' sel':'');b.textContent=k;b.style.marginRight='6px';b.onclick=()=>{if(test)return;selF=k;frasesUI()};$('fbtn').append(b)}
+ $('guion').textContent=FRASES[selF].split(' ').join(' · ')}
+frasesUI();
+$('demo').onchange=e=>{soloDemo=e.target.checked;calib();st('Vocabulario: '+(soloDemo?'solo demo (P1–P3)':'todas las palabras'))};
+function align(E,D){const n=E.length,m=D.length,C=Array.from({length:n+1},()=>new Array(m+1).fill(0));
+ for(let i=0;i<=n;i++)C[i][0]=i;for(let j=0;j<=m;j++)C[0][j]=j;
+ for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)C[i][j]=Math.min(C[i-1][j]+1,C[i][j-1]+1,C[i-1][j-1]+(E[i-1]===D[j-1]?0:1));
+ const ops=[];let i=n,j=m;while(i>0||j>0){
+  if(i>0&&j>0&&C[i][j]===C[i-1][j-1]+(E[i-1]===D[j-1]?0:1)){ops.push(E[i-1]===D[j-1]?{t:'ok',e:E[i-1]}:{t:'sub',e:E[i-1],d:D[j-1]});i--;j--}
+  else if(i>0&&C[i][j]===C[i-1][j]+1){ops.push({t:'del',e:E[i-1]});i--}
+  else{ops.push({t:'ins',d:D[j-1]});j--}}
+ return ops.reverse()}
+$('tgo').onclick=()=>{if(test||importing)return;test={st:'count'};let n=3;$('tcnt').textContent='3…';$('tres').innerHTML='';
+ const t=setInterval(()=>{$('tcnt').textContent=n>0?n+'…':'';if(n--<=0){clearInterval(t);const now=performance.now();
+  test={st:'run',frase:selF,exp:FRASES[selF].split(' '),det:[],frames:[],t0:now};running=true;buf=[];cand=null;lastEmit='';lastAct=now;out.length=0;$('res').textContent='—';
+  $('run').textContent='⏹ Parar';st('¡Seña la frase '+selF+' ahora! Al terminar baja las manos (o aprieta Terminar)')}},1000)};
+$('tend').onclick=()=>{if(test&&test.st==='run')terminar()};
+setInterval(()=>{if(test&&test.st==='run'){const now=performance.now();if((test.det.length&&now-lastAct>4000)||now-test.t0>60000)terminar()}},300);
+function terminar(){const T=test;test=null;running=false;$('run').textContent='▶ Reconocer';
+ const ops=align(T.exp,T.det),c=t=>ops.filter(o=>o.t===t).length,H=c('ok'),S=c('sub'),D=c('del'),I=c('ins'),N=T.exp.length;
+ $('tres').innerHTML=`<div class="box"><b>${selF}: ${H} de ${N} palabras bien (${Math.round(100*H/N)}%)</b> <span class="mut">· ${S} cambiadas · ${D} faltaron · ${I} sobraron</span><br>`+
+  ops.map(o=>o.t==='ok'?`<span class="ok">✔ ${o.e}</span>`:o.t==='sub'?`<span class="bad">✗ ${o.e} → dijo ${o.d}</span>`:o.t==='del'?`<span class="bad">✗ ${o.e} (no se detectó)</span>`:`<span class="ins">+ ${o.d} (sobra)</span>`).join(' · ')+'</div>';
+ st('Prueba lista. Puedes repetirla.');
+ fetch('/api/corrida',{method:'POST',body:JSON.stringify({frase:T.frase,exp:T.exp,det:T.det,H,S,D,I,ts:Date.now(),sens,soloDemo,
+  frames:T.frames.map(f=>f.map((x,i)=>i<2?x:+x.toFixed(3)))})}).then(loadHist)}
+async function loadHist(){const r=await (await fetch('/api/corridas')).json(),g={};
+ for(const x of r){(g[x.frase]=g[x.frase]||[]).push(x)}
+ $('hist').innerHTML=Object.keys(g).length?'<b>Historial</b><br>'+Object.entries(g).map(([f,a])=>{const acc=a.map(x=>x.H/x.exp.length),m=acc.reduce((p,q)=>p+q,0)/a.length;
+  return `${f}: ${a.length} pruebas, acierto medio ${Math.round(100*m)}% · últimas: ${acc.slice(-5).map(v=>Math.round(100*v)+'%').join(' ')}`}).join('<br>'):'';}
+loadHist();
 // importar videos ya grabados: se procesan con los mismos modelos y se guardan como muestras
 let importing=false;
 $('imp').onclick=async()=>{if(importing)return;importing=true;running=false;
@@ -169,6 +209,7 @@ let last=-1;
  ctx.fillStyle='#fc4';for(const h of Object.values(H))for(const p of h)ctx.fillRect(p.x*cv.width-2,p.y*cv.height-2,4,4);
  if(![11,12].every(i=>(P[i].visibility??1)>0.3))return;
  const act=active(P)&&Object.keys(H).length>0;   // sin manos detectadas no hay seña
+ if(test&&test.st==='run')test.frames.push([act?1:0,Object.keys(H).length,...feat(P,H)]);
  if(mode==='rec'){if(act){lastAct=now;buf.push(feat(P,H))}else if(buf.length){buf.push(feat(P,H));if(now-lastAct>END_MS)finishRec()}}
  else if(running){
   if(act){lastAct=now;buf.push(feat(P,H));if(buf.length>WIN*2)buf=buf.slice(-WIN);if(++nf%EVAL_EVERY===0)evalStream(now)}
