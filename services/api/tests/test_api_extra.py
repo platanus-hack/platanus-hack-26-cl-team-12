@@ -65,6 +65,18 @@ def test_cors_rejects_unknown_origin():
     assert "access-control-allow-origin" not in r.headers
 
 
+@pytest.mark.parametrize("origin", ["https://puente-web.onrender.com", "https://puente-web-ab12.onrender.com"])
+def test_cors_siempre_permite_la_pwa_de_render(origin):
+    r = client.options("/llamadas", headers={"Origin": origin, "Access-Control-Request-Method": "POST"})
+    assert r.headers.get("access-control-allow-origin") == origin
+
+
+@pytest.mark.parametrize("origin", ["https://puente-web.onrender.com.evil.example", "https://evil-puente-web.onrender.com"])
+def test_cors_no_acepta_imitaciones_de_la_pwa(origin):
+    r = client.options("/llamadas", headers={"Origin": origin, "Access-Control-Request-Method": "POST"})
+    assert r.headers.get("access-control-allow-origin") != origin
+
+
 @pytest.mark.parametrize("numero", ["+0123456789", "56912345678", "+56 9 1234 5678", "+561", "+5691234567890123"])
 def test_llamada_rejects_non_e164(numero):
     assert client.post("/llamadas", json={"room": "x", "numero": numero}).status_code == 422
