@@ -1,14 +1,16 @@
 import { cx } from "./cx";
 
-// Logo de Bridge (22-11-2026): un puente colgante simple. Solo el puente, sin lo que conecta.
-// Otras versiones (arco, arco con tirantes, viaducto) en apps/web/public/logo/.
+// Logo de Bridge (22-11-2026, en iteración con Rafael): 10 barras cuyas alturas dibujan la silueta de un puente
+// colgante (altas en las torres, bajas donde cae el cable), sin piso. Variantes en apps/web/public/logo/.
+const ALTURAS = [18, 30, 56, 32, 16, 16, 32, 56, 30, 18];
+
 export function Logo({ variant = "wordmark", size = 40, tone = "color" }: { variant?: "wordmark" | "mark"; size?: number; tone?: "color" | "mono" }) {
   return (
     <span className={cx("pu-logo", tone === "mono" && "mono")} role="img" aria-label="Bridge">
-      <svg width={size} height={size} viewBox="4 22 112 72" aria-hidden className="puente">
-        <path d="M34 30 V86 M86 30 V86" strokeWidth={9} />
-        <path d="M8 76 Q34 30 34 30 Q60 70 86 30 Q86 30 112 76" strokeWidth={6} fill="none" />
-        <path d="M8 76 H112" strokeWidth={9} />
+      <svg width={size * 1.375} height={size} viewBox="0 8 110 66" aria-hidden className="barras">
+        {ALTURAS.map((h, i) => (
+          <rect key={i} x={5 + i * 11 - 3} y={70 - h} width={6} height={h} rx={3} />
+        ))}
       </svg>
       {variant === "wordmark" && (
         <span className="word" style={{ fontSize: Math.round(size * 0.72) }}>
