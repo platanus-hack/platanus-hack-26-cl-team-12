@@ -48,6 +48,7 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
   const token = process.env.NEXT_PUBLIC_CLIENTE_WS_TOKEN?.trim();
   const ws = new WebSocket(apiUrl().replace(/^http/, "ws") + "/twilio/cliente" + (token ? `?token=${encodeURIComponent(token)}` : ""));
   let colgo = false;
+  let sid: string | null = null; // CallSid de POST /llamadas: lo exige /twilio/colgar
   let abierto = false; // si nunca abrió, el error lo informa reject (no hay llamada que "se cortó")
 
   return new Promise((resolve, reject) => {
@@ -68,6 +69,7 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
             body: JSON.stringify({ destino }),
           });
           if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { detail?: string }).detail ?? `error ${r.status}`);
+          sid = ((await r.json().catch(() => ({}))) as { sid?: string }).sid ?? null;
         } catch (e) {
           colgo = true;
           ws.close();
@@ -84,8 +86,9 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
           colgo = true;
           // Corta también el teléfono (antes seguía hasta que el ejecutivo cortaba y sus frases se colaban en la
           // llamada siguiente). keepalive: el pedido sale aunque se cierre la pantalla.
-          if (destino) {
-            void fetch(apiUrl() + "/twilio/colgar" + (token ? `?token=${encodeURIComponent(token)}` : ""), {
+          if (sid) {
+            const q = new URLSearchParams({ sid, ...(token ? { token } : {}) });
+            void fetch(apiUrl() + "/twilio/colgar?" + q.toString(), {
               method: "POST",
               keepalive: true,
             }).catch(() => {});

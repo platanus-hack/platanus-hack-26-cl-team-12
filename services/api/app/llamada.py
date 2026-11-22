@@ -230,11 +230,16 @@ async def cliente(ws: WebSocket) -> None:
 
 
 @router.post("/colgar", status_code=204)
-async def colgar(token: str | None = None) -> None:
-    """La app colgó: se corta la llamada en Twilio. Exige el mismo `?token=` que el WebSocket."""
+async def colgar(sid: str, token: str | None = None) -> None:
+    """La app colgó: se corta la llamada en Twilio.
+
+    Exige el `?token=` del WebSocket y el `sid` que devolvió POST /llamadas a quien la creó: el token va en el bundle
+    público, el CallSid (34 caracteres aleatorios) no. Solo se corta esa llamada, y solo si es la de esta sala.
+    """
     if not token_valido(token):
         raise HTTPException(403, "Token inválido")
-    sid = sala.call_sid or sala.ultima_creada
+    if not sid or sid not in {sala.call_sid, sala.ultima_creada}:
+        raise HTTPException(403, "No es la llamada en curso")
     sala.reiniciar()
     await asyncio.to_thread(colgar_twilio, sid)
 

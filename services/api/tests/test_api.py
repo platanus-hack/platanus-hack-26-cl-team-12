@@ -614,6 +614,8 @@ def test_colgar_corta_en_twilio_y_exige_token(sala_falsa, monkeypatch):
     monkeypatch.setattr(llamada, "colgar_twilio", lambda sid: cortadas.append(sid) or True)
     monkeypatch.setenv("CLIENTE_WS_TOKEN", "abc123")
     sala_falsa.ultima_creada = "CA_demo"
-    assert client.post("/twilio/colgar").status_code == 403
-    assert client.post("/twilio/colgar?token=abc123").status_code == 204
+    assert client.post("/twilio/colgar?sid=CA_demo").status_code == 403  # sin token
+    assert client.post("/twilio/colgar?token=abc123&sid=CA_otra").status_code == 403  # no es la llamada en curso
+    assert cortadas == []
+    assert client.post("/twilio/colgar?token=abc123&sid=CA_demo").status_code == 204
     assert cortadas == ["CA_demo"]
