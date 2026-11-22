@@ -1,6 +1,7 @@
 # Despliegue paso a paso
 
-> Quién despliega: **Raimundo**, desde su espejo personal `rlabbev/puente`.
+> Quién despliega: **Raimundo**, desde su espejo personal `rlabbev/puente`. Otro repo también puede desplegar
+> (el de la org u otro espejo): ver [Desplegar desde otro repo](#desplegar-desde-otro-repo-org-u-otro-espejo).
 > **Camino principal (desde 2026-11-21): Render + CD de GitHub Actions + APK Android.** La infra vive en este repo:
 > [`render.yaml`](../render.yaml), [`.github/workflows/cd.yml`](../.github/workflows/cd.yml) y `apps/mobile/android/`.
 > Lo de Vercel + Fly.io (más abajo) queda como alternativa.
@@ -34,6 +35,26 @@ con el commit exacto (`ref=<sha>`), espera `/health` y publica la APK como Relea
    `gh variable set PUBLIC_API_URL --repo rlabbev/puente --body https://<tu-api>.onrender.com`.
 5. Lanzar a mano la primera vez: `gh workflow run CD --repo rlabbev/puente` y seguir con `gh run watch --repo rlabbev/puente`.
 
+### Desplegar desde otro repo (org u otro espejo)
+El CD corre en `rlabbev/puente` y en **cualquier repo con la variable `CD_DEPLOY=true`**. Para activarlo en `<repo>`:
+1. **Render tiene que ver el repo.** Los Deploy Hooks construyen desde el repo conectado en Render. Render no se
+   puede conectar a repos de la organización salvo que un admin de `platanus-hack` instale su GitHub App ahí. Si no se
+   puede, usa un espejo propio con doble push (§1) y conecta ese.
+2. En Render: New → **Blueprint** → ese repo (rama `main`) → carga los secretos, incluidos `TWILIO_AUTH_TOKEN` y
+   `CLIENTE_WS_TOKEN` (sin ellos la API en producción rechaza `/twilio/*`).
+3. En GitHub, en el repo donde corre el CD:
+   ```bash
+   gh variable set CD_DEPLOY --body true --repo <repo>
+   gh secret set RENDER_DEPLOY_HOOK_API   --repo <repo>
+   gh secret set RENDER_DEPLOY_HOOK_AGENT --repo <repo>
+   gh secret set RENDER_DEPLOY_HOOK_WEB   --repo <repo>
+   gh variable set PUBLIC_API_URL --repo <repo> --body https://<tu-api>.onrender.com   # si no es puente-api
+   ```
+4. Primera vez a mano: `gh workflow run CD --repo <repo>`. Después despliega solo con cada CI verde en `main`.
+
+Si el CD corre en un repo distinto del que ve Render, el commit (`ref=<sha>`) tiene que existir también en el repo de
+Render (doble push), o el deploy falla.
+
 ### APK Android
 - Descargar: `gh release download --repo rlabbev/puente --pattern '*.apk'` (o desde Releases en el celular, con sesión de GitHub).
 - Instalar: abrir el `.apk` en el Android y permitir "instalar apps desconocidas". La app pide cámara y micrófono.
@@ -41,7 +62,8 @@ con el commit exacto (`ref=<sha>`), espera `/health` y publica la APK como Relea
 - El WebView sirve la app desde `https://localhost`; por eso ese origen está en `CORS_ORIGINS`.
 
 ### Cuidado
-- **A4:** `/token` y `/twilio/*` siguen sin auth ni límite de tasa. No compartas las URLs fuera del equipo.
+- **A4:** `/twilio/*` valida la firma de Twilio y `/twilio/cliente` exige `?token=CLIENTE_WS_TOKEN`; en producción
+  sin esos secretos falla cerrado (503 / 1008). `/token` sigue sin sesión ni límite de tasa: no compartas las URLs.
 - La API en plan free **se duerme** (~1 min en despertar): ábrela antes de la demo o súbela a *starter* en `render.yaml`.
   Los webhooks de Twilio (plan C) fallan si la API está dormida.
 - Las fotos de señas (`apps/web/public/senas/`) no se versionan (derechos UMCE): la web desplegada muestra el intérprete dibujado.
