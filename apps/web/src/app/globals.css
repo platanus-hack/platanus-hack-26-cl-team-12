@@ -339,3 +339,53 @@ main.login { min-height: 100dvh; justify-content: center; gap: var(--space-8); p
 
 /* Que las secciones del menú no se aplasten (se cortaba la lista de datos del perfil). */
 .drawer-cuerpo > * { flex-shrink: 0; }
+
+/* ---------- Videollamada (estilo FaceTime): ejecutivo arriba, tú abajo ---------- */
+main.vl { position: relative; max-width: 560px; height: 100dvh; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px); display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 8px; background: #000; }
+.vl-tile { position: relative; min-height: 0; border-radius: 22px; overflow: hidden; }
+.vl-ejecutivo { background: linear-gradient(180deg, #e8ecf2 0%, #c9d0da 100%); }
+.vl-avatar { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; }
+.vl-avatar > svg { height: 112%; width: auto; margin-top: -4%; }
+.vl-cabeza { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; }
+.vl-cabeza .row-txt { padding: 6px 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(8px); color: #fff; width: fit-content; }
+.vl-cabeza .row-txt strong { font-size: 0.92rem; font-weight: 700; }
+.vl-cabeza .row-txt span { color: rgba(255, 255, 255, 0.82); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+
+/* Subtítulos grandes y fáciles de leer */
+.vl-sub { position: absolute; left: 10px; right: 10px; bottom: 10px; margin: 0; padding: 10px 14px; border-radius: 14px; background: rgba(0, 0, 0, 0.78); color: #fff; font-size: 1.22rem; line-height: 1.32; font-weight: 700; text-align: center; text-wrap: balance; white-space: pre-line; }
+.vl-sub-yo { background: rgba(29, 78, 216, 0.82); }
+.vl-sub.esperando, .vl-sub.leyendo { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; font-weight: 600; }
+.vl-sub .dots { display: inline-flex; gap: 4px; }
+.vl-sub .dots i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+@media (prefers-reduced-motion: no-preference) {
+  .vl-sub .dots i { animation: typing 1.2s infinite ease-in-out; }
+  .vl-sub .dots i:nth-child(2) { animation-delay: 0.15s; }
+  .vl-sub .dots i:nth-child(3) { animation-delay: 0.3s; }
+  .vl-sub.leyendo { animation: pu-pulse 1.2s ease-in-out infinite; }
+}
+
+/* Tu cámara */
+.vl-yo { background: #1a1a1a; }
+.vl-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.vl-video.oculto { visibility: hidden; }
+.vl-sin-camara { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0 24px; color: #bdbdbd; text-align: center; font-size: 0.92rem; }
+.vl-etiqueta { position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 0.78rem; font-weight: 600; }
+.vl-punto { width: 8px; height: 8px; border-radius: 50%; background: #9a9a9a; }
+.vl-punto.vivo { background: #34c759; }
+
+/* Respuestas sugeridas, teclado y conversación */
+/* Fila propia entre tu cámara y los controles: no tapa tus subtítulos. */
+.vl-respuestas { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.vl-respuestas-titulo { align-self: flex-start; padding: 0 4px; color: #bdbdbd; font-size: 0.72rem; font-weight: 600; }
+.vl-respuestas .pu-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.vl-respuestas .pu-chip { flex: none; max-width: 88%; background: #fff; color: #000; border-color: #fff; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
+.vl-hoja { position: absolute; left: 8px; right: 8px; bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); max-height: 44dvh; overflow-y: auto; padding: 12px; border-radius: 20px; background: var(--bg); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.vl-hoja-alta { max-height: 60dvh; }
+.vl-controles { display: flex; justify-content: space-around; align-items: center; padding: 6px 4px 2px; }
+.vl-ctrl { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: none; color: #fff; font-size: 0.68rem; font-weight: 600; cursor: pointer; }
+.vl-ctrl > svg { box-sizing: content-box; padding: 13px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); }
+.vl-ctrl.on > svg { background: #fff; color: #000; }
+.vl-ctrl.colgar > svg { background: #ff3b30; color: #fff; }
+.vl-ctrl:disabled { opacity: 0.45; cursor: default; }
+.vl-ctrl:focus-visible { outline: 3px solid #fff; outline-offset: 2px; border-radius: 12px; }
+main.vl .pu-alert { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 5; }

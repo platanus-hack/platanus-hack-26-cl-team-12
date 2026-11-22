@@ -44,7 +44,7 @@ export function MenuPerfil({ abierto, onCerrar, vistaInicial = "menu" }: { abier
   const titulos: Record<Vista, string> = {
     menu: "Menú",
     perfil: "Mi perfil",
-    interprete: "Intérprete de señas",
+    interprete: "Avatar del intérprete",
     accesibilidad: "Accesibilidad",
     salir: "Cerrar sesión",
   };
@@ -82,7 +82,7 @@ export function MenuPerfil({ abierto, onCerrar, vistaInicial = "menu" }: { abier
                 <Icon name="derecha" size={20} />
               </button>
               <ul className="group">
-                <Opcion icon="senas" texto="Personalizar intérprete de señas" onClick={() => setVista("interprete")} />
+                <Opcion icon="senas" texto="Elegir avatar del intérprete" onClick={() => setVista("interprete")} />
                 <Opcion icon="accesibilidad" texto="Opciones de accesibilidad" onClick={() => setVista("accesibilidad")} />
                 <Opcion icon="salir" texto="Cerrar sesión" peligro onClick={() => setVista("salir")} />
               </ul>
@@ -203,15 +203,7 @@ function EditorInterprete() {
         <Interprete apariencia={a} signing={!p.reducirMovimiento} />
       </div>
 
-      <Grupo<Preferencias["interprete"]>
-        titulo="Cómo ver las señas en la llamada"
-        valor={p.interprete}
-        onCambio={(interprete) => cambiarPreferencias({ interprete })}
-        opciones={[
-          { v: "dibujado", texto: "Este intérprete" },
-          { v: "fotos", texto: "Fotos reales" },
-        ]}
-      />
+      <p className="nota">Este avatar aparece en la videollamada y te hace señas con lo que dice la persona que te habla. Elige cómo quieres verlo.</p>
       <Grupo<Preferencias["velocidad"]>
         titulo="Velocidad de las señas"
         valor={p.velocidad}
@@ -327,7 +319,7 @@ function EditorInterprete() {
         nombres={{ negro: "Negro", marino: "Azul marino", grafito: "Grafito", burdeo: "Burdeo" }}
         onCambio={(ropa) => cambiar({ ropa })}
       />
-      <p className="nota">Los intérpretes usan ropa oscura y lisa para que las manos se vean mejor. Las fotos reales son del Diccionario de Lengua de Señas Chilena (UMCE).</p>
+      <p className="nota">Los intérpretes usan ropa oscura y lisa para que las manos se vean mejor.</p>
     </div>
   );
 }

@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Rafael / Claude (v4/navegacion-tema) · llamada como videollamada (FaceTime)
+- Decidí (Rafael): la llamada es una **videollamada**: arriba el **avatar del ejecutivo** haciendo señas (reemplaza las fotos del diccionario) con subtítulos grandes; abajo **la cámara del usuario**, que leerá sus señas, con sus subtítulos. En el menú, el editor pasa a "Elegir avatar del intérprete" (es el avatar que muestra la llamada, no el del usuario).
+- Hice: `CamaraPropia` (cámara frontal espejada con `getUserMedia`, aviso si no hay permiso; no graba ni sale del celular). Las respuestas sugeridas simulan responder con señas ("Leyendo tus señas…" y luego el texto). Controles abajo: Conversación (historial del chat en una hoja), Escribir (teclado de respaldo), Cámara y Colgar. Probado en Edge con cámara de prueba a 390×844.
+- Falta: **v3 (Tomás):** reconocer las señas de la cámara con `@puente/signs` y mandar `glosas_cliente` (hoy simulado). `SenasFotos` queda sin uso en la llamada.
+
 ## 2026-11-22 — Rafael / Claude (v4/navegacion-tema) · perfil de Rafael, ubicación, contactos y carruseles
 - Hice: perfil **Rafael Rencoret** con su foto (`public/perfil/rafael.jpg`, con su autorización); el guion pasa a un papá ("señor"). **Ubicación** con mapa dibujado y opción de compartirla con la clínica al llamar (aviso en el chat; TODO(real-data): mandarla a la API). **10 clínicas** en carrusel con **puntitos** (y los consejos también), con colores por clínica. **Avisar a mis contactos** (mensaje con la ubicación, simulado) y **contactos de emergencia** editables en el perfil. Consejos con ilustraciones propias. "Cómo funciona" detallado en 4 pasos. "Tu clínica" en Emergencias rehecha. **Intérprete más realista**: volumen con degradados, ojos con párpados, cejas, nariz, labios, orejas y arrugas; nuevas opciones de forma de cara y edad. Arreglo: el menú aplastaba la lista del perfil.
 - Falta: avatar 3D real (VRM + three.js, requiere modelos); envío real de SMS/WhatsApp a contactos; números reales de clínicas.
