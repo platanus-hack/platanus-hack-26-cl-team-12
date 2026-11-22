@@ -513,3 +513,17 @@ def test_responder_durante_la_pausa_larga_la_interrumpe(sala_falsa, monkeypatch)
         pwa.send_json({"tipo": "ping"})
     assert interrumpidas == ["CA_en_curso"] and not sala_falsa.en_pausa_larga
     assert "formal(martes bueno)" in client.post("/twilio/espera?n=0").text
+
+
+@pytest.mark.parametrize(
+    "valor, esperado",
+    [(None, 240 * 60), ("30", 30 * 60), ("0", 60), ("99999", 24 * 3600), ("no-numero", 240 * 60)],
+)
+def test_duracion_maxima_de_la_llamada(monkeypatch, valor, esperado):
+    from app.main import duracion_maxima_s
+
+    if valor is None:
+        monkeypatch.delenv("LLAMADA_MAX_MIN", raising=False)
+    else:
+        monkeypatch.setenv("LLAMADA_MAX_MIN", valor)
+    assert duracion_maxima_s() == esperado

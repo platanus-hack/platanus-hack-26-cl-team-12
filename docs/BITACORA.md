@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — Martín / Claude (v1/twilio-pagado)
+- Decidí: **pagar el upgrade de Twilio** (cierra el TODO de evaluar el upgrade). Con el trial: llamadas de máx. 10 min, solo 5 números verificados y aviso "trial account".
+- Hice: `LLAMADA_MAX_MIN` (por defecto 240 = 4 h, máx. 24 h) se pasa como `time_limit` al crear la llamada. Solo rige con cuenta pagada.
+- Falta: probar con la cuenta pagada (debería desaparecer el corte de TwilioProxy a ~10 s y el tope de ~10 consultas por llamada); evaluar conversación fluida (audio en vivo, sin turnos) ahora que Media Streams queda disponible.
+
 ## 2026-11-22 — Tomás / Claude (v1/turnos-cliente-primero) · la llamada parte con la persona sorda y los turnos alternan
 - Hice: `/twilio/voz` ya no escucha al ejecutivo tras el saludo: saluda y va a `/twilio/espera` hasta que la persona sorda envíe su primer mensaje. Antes (ejecutivo primero) el primer mensaje del cliente quedaba en cola sin que nadie lo dijera y solo salía cuando el ejecutivo hablaba, desordenando los turnos. Saludo ajustado ("La persona le hablará en unos segundos…"). Test actualizado; pytest api 57 OK.
 - Decidí: orden estricto cliente → ejecutivo → cliente… (espera → dice → escucha → turno → espera).
