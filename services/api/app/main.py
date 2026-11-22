@@ -20,20 +20,15 @@ from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-# Antes de importar app.*: twilio_media calcula PISTAS con el ESCENARIO al importarse (en local viene del .env).
-load_dotenv()
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
+from app import voz as voz_mod
 from app.config import es_produccion
 from app.llamada import router as llamada_router
-from app.llamada import sala
+from app.llamada import sala, token_valido
 from app.traductor import DEFAULT_PATH
-from app import voz as voz_mod
 from app.twilio_media import FRASES_FIJAS
 from app.twilio_media import router as twilio_router
 
@@ -254,11 +249,13 @@ def llamar_con_twilio(numero: str, base: str) -> tuple[str, str]:
     "/llamadas", tags=["llamada"], summary="Llamar al ejecutivo por teléfono (v1)",
     response_model=LlamadaResponse, responses=errores(403, 422, 503),
 )
-async def crear_llamada(req: LlamadaRequest) -> LlamadaResponse:
+async def crear_llamada(req: LlamadaRequest, token: str | None = None) -> LlamadaResponse:
     """v1 (plan C): Twilio llama al ejecutivo y la conversación sigue por /twilio/* y el WebSocket /twilio/cliente.
 
-    TODO(auth): exigir el token del cliente y limitar la tasa antes de desplegar (A4).
+    Exige el mismo `?token=` que el WebSocket (A4). TODO(auth): limitar la tasa y token por sesión.
     """
+    if not token_valido(token):
+        raise HTTPException(403, "Token inválido")
     # Demo: los contactos de la app no tienen teléfono; todos llaman al teléfono de la demo (NUMERO_DEMO).
     # TODO(real-data): cada contacto con su número real.
     numero = (req.numero or os.getenv("NUMERO_DEMO", "")).strip()

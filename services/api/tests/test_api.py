@@ -595,16 +595,16 @@ def test_estado_de_otra_llamada_no_corta_la_actual(sala_falsa, monkeypatch):
     assert enviados == [{"tipo": "estado", "valor": "llamada_terminada"}]
 
 
-def test_una_pantalla_nueva_reemplaza_a_la_anterior(sala_falsa):
+def test_una_segunda_pantalla_no_expulsa_a_la_primera(sala_falsa):
     from starlette.websockets import WebSocketDisconnect
 
-    with client.websocket_connect("/twilio/cliente") as vieja:
-        with client.websocket_connect("/twilio/cliente") as nueva:
-            with pytest.raises(WebSocketDisconnect) as e:
-                vieja.receive_json()
-            assert e.value.code == 4000
-            client.post("/twilio/estado", data={"CallStatus": "completed"})
-            assert nueva.receive_json() == {"tipo": "estado", "valor": "llamada_terminada"}
+    with client.websocket_connect("/twilio/cliente") as primera:
+        with pytest.raises(WebSocketDisconnect) as e:
+            with client.websocket_connect("/twilio/cliente") as segunda:
+                segunda.receive_json()
+        assert e.value.code == 4001
+        client.post("/twilio/estado", data={"CallStatus": "completed"})
+        assert primera.receive_json() == {"tipo": "estado", "valor": "llamada_terminada"}
 
 
 def test_colgar_corta_en_twilio_y_exige_token(sala_falsa, monkeypatch):

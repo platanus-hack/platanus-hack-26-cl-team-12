@@ -63,7 +63,7 @@ export function joinCall({ onMessage, onDesconectado, destino }: CallOpts): Prom
       // Con el canal abierto (para no perder el `estado` inicial), la API hace sonar el teléfono del ejecutivo.
       if (destino) {
         try {
-          const r = await fetch(apiUrl() + "/llamadas", {
+          const r = await fetch(apiUrl() + "/llamadas" + (token ? `?token=${encodeURIComponent(token)}` : ""), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ destino }),

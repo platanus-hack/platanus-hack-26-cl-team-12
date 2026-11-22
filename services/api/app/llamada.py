@@ -203,13 +203,11 @@ async def cliente(ws: WebSocket) -> None:
         return
     await ws.accept()
     # Un solo cliente a la vez (demo): con dos pestañas abiertas, ambas veían todo y una respuesta de la otra se
-    # colaba fuera de turno. La conexión nueva reemplaza a la anterior.
-    for viejo in list(sala.clientes):
-        sala.clientes.discard(viejo)
-        try:
-            await viejo.close(code=4000, reason="Otra pantalla tomó la llamada")
-        except Exception:
-            pass
+    # colaba fuera de turno. Gana la primera: una segunda pantalla no puede expulsar a la persona en la llamada
+    # (el token va en el bundle público). TODO(real-data): unir el WS a un secreto por llamada.
+    if sala.clientes:
+        await ws.close(code=4001, reason="Otra pantalla ya tiene la llamada")
+        return
     sala.clientes.add(ws)
     try:
         while True:
@@ -238,7 +236,9 @@ async def colgar(sid: str, token: str | None = None) -> None:
     """
     if not token_valido(token):
         raise HTTPException(403, "Token inválido")
-    if not sid or sid not in {sala.call_sid, sala.ultima_creada}:
+    # La llamada contestada (call_sid); o, si aún no contestan, la que se acaba de crear.
+    en_curso = sala.call_sid or sala.ultima_creada
+    if not sid or sid != en_curso:
         raise HTTPException(403, "No es la llamada en curso")
     sala.reiniciar()
     await asyncio.to_thread(colgar_twilio, sid)
