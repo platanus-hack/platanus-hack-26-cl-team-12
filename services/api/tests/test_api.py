@@ -459,7 +459,9 @@ def test_frase_fija_lenta_no_bloquea_el_webhook(voz_falsa, monkeypatch):
     t0 = time.monotonic()
     r = client.post("/twilio/voz")
     assert time.monotonic() - t0 < 0.4
-    assert '<Say language="es-MX">Hola. Le habla Brich' in r.text
+    from app.twilio_media import SALUDO
+
+    assert f'<Say language="es-MX">{SALUDO[:20]}' in r.text  # sin texto fijo: el saludo cambia seguido
 
 
 def test_audio_inexistente_da_404():
