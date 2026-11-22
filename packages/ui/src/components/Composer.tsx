@@ -17,6 +17,8 @@ export interface ComposerProps {
   sendLabel?: string;
   /** Versión de una línea para dejar fija abajo durante la llamada (sin etiqueta visible ni ayuda). */
   compact?: boolean;
+  /** Tope de caracteres (el del contrato, `LIMITES.max_texto`): sobre eso el mensaje se descartaría en el agente. */
+  maxLength?: number;
   children?: ReactNode;
 }
 
@@ -32,6 +34,7 @@ export function Composer({
   hint = "Puente lo dice por teléfono con voz.",
   sendLabel = "Decir",
   compact = false,
+  maxLength,
   children,
 }: ComposerProps) {
   const id = useId();
@@ -61,6 +64,7 @@ export function Composer({
         id={id}
         value={text}
         placeholder={placeholder}
+        maxLength={maxLength}
         onChange={(e) => set(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) send(e);

@@ -69,7 +69,7 @@ export default function Design() {
         confidence={0.86}
         actions={<div className="pu-chips"><Button icon="enviar">Decir</Button><Button variant="secondary">Borrar</Button></div>}
       />
-      <SignAvatar glosses={["LUNES", "HORA", "DIEZ", "SERVIR"]} current={1} subtitle="Tengo hora el lunes a las 10. ¿Le sirve?" />
+      <SignAvatar signing subtitle="Tengo hora el lunes a las 10. ¿Le sirve?" />
     </main>
   );
 }

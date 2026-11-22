@@ -32,21 +32,17 @@ export function useManifestSenas(): ManifestSenas | null {
 
 interface Props {
   manifest: ManifestSenas;
+  /** Para reiniciar la secuencia con una frase nueva, quien lo usa cambia la `key` del componente. */
   glosas: string[];
-  /** Cambia con cada frase nueva (aunque las glosas se repitan) para reiniciar la secuencia. */
-  frase: number;
   onSenando?: (senando: boolean) => void;
 }
 
-export function SenasFotos({ manifest, glosas, frase, onSenando }: Props) {
+export function SenasFotos({ manifest, glosas, onSenando }: Props) {
   const [paso, setPaso] = useState({ i: 0, foto: 0, pausa: false });
-
-  useEffect(() => {
-    setPaso({ i: 0, foto: 0, pausa: false });
-  }, [frase]);
+  const fotosDe = (g?: string) => (g && !isLiteralGloss(g) ? manifest[g] ?? [] : []);
 
   const glosa = glosas[paso.i];
-  const fotos = glosa && !isLiteralGloss(glosa) ? manifest[glosa] ?? [] : [];
+  const fotos = fotosDe(glosa);
   const terminado = paso.i >= glosas.length;
 
   useEffect(() => {
@@ -69,7 +65,7 @@ export function SenasFotos({ manifest, glosas, frase, onSenando }: Props) {
 
   // Al terminar se queda en la última foto de la última seña.
   const visible = terminado ? glosas[glosas.length - 1] : glosa;
-  const fotosVisibles = visible && !isLiteralGloss(visible) ? manifest[visible] ?? [] : [];
+  const fotosVisibles = fotosDe(visible);
   const archivo = terminado ? fotosVisibles[fotosVisibles.length - 1] : fotosVisibles[paso.foto];
 
   if (!visible) {

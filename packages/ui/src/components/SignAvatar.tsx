@@ -2,10 +2,6 @@ import type { ReactNode } from "react";
 import { Interprete } from "./Interprete";
 
 export interface SignAvatarProps {
-  /** De `glosas_para_senar.glosas`. Las usa el reproductor real; no se muestran como texto. */
-  glosses: string[];
-  /** Índice de la glosa que se está reproduciendo. */
-  current?: number;
   /** De `glosas_para_senar.subtitulo`. Siempre visible, encima del video: el avatar complementa el texto. */
   subtitle?: string;
   /** Si está haciendo señas ahora (mueve las manos del intérprete de ejemplo). */
