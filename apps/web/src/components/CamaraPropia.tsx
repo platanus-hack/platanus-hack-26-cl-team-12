@@ -6,9 +6,8 @@
 // (MediaPipe) y mandar `glosas_cliente`. La cámara no graba ni sale del celular (ADR-0010).
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@puente/ui";
+import { tiemposPalabras } from "@/lib/voz";
 
-/** Lectura real: cada palabra de la frase convertida aparece a este ritmo. La frase queda a la vista hasta que empiezas a señar la siguiente respuesta. */
-export const MS_REVELA_PALABRA = 260;
 
 /** Lo que señaste y la frase en que se convirtió (null cuando empiezas a señar la siguiente respuesta). */
 export interface Conversion {
@@ -135,24 +134,31 @@ export function CamaraPropia({
   );
 }
 
-/** La frase va apareciendo palabra por palabra; las que faltan ocupan su lugar sin verse para que el texto no se mueva. */
+/** La frase aparece a la par del audio que le llega al otro lado (ritmo estimado en lib/voz.ts); las que faltan ocupan su lugar sin verse. */
 function FraseRevelada({ texto }: { texto: string }) {
-  const [visibles, setVisibles] = useState(0);
+  const [ms, setMs] = useState(0);
   const partes = texto.split(/(\s+)/);
-  const palabras = partes.filter((p) => p.trim()).length;
+  const tiempos = tiemposPalabras(texto);
   useEffect(() => {
-    setVisibles(0);
-    const id = setInterval(() => setVisibles((v) => (v >= palabras ? v : v + 1)), MS_REVELA_PALABRA);
-    return () => clearInterval(id);
-  }, [texto, palabras]);
+    const t0 = performance.now();
+    setMs(0);
+    const id = setInterval(() => setMs(performance.now() - t0), 40);
+    const fin = setTimeout(() => clearInterval(id), (tiempos.at(-1) ?? 0) + 400);
+    return () => {
+      clearInterval(id);
+      clearTimeout(fin);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [texto]);
   let n = 0;
   return (
     <span style={{ display: "block" }}>
       {partes.map((p, i) => {
         if (!p.trim()) return p;
+        const visible = ms >= (tiempos[n] ?? 0);
         n += 1;
         return (
-          <span key={i} style={n <= visibles ? undefined : { opacity: 0 }}>
+          <span key={i} style={visible ? undefined : { opacity: 0 }}>
             {p}
           </span>
         );

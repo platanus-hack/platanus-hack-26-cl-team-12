@@ -6,6 +6,7 @@
 // TODO(real-data): las glosas las genera el agente (espanol_a_glosas) en la llamada real.
 import type { MensajePuente } from "@puente/glosses";
 import type { CallHandle } from "./call";
+import { msVoz } from "./voz";
 
 export type TipoGuion = "urgencia" | "general";
 
@@ -74,6 +75,15 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
 
   const later = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
 
+  /** Simula el audio que oye el hospital con la voz del navegador (en la llamada real lo dice Twilio). */
+  function hablar(texto: string) {
+    if (typeof speechSynthesis === "undefined") return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = "es-CL";
+    speechSynthesis.speak(u);
+  }
+
   function decirTurno(t: Turno) {
     opts.onMessage({ tipo: "ejecutivo_dice", texto: t.texto, simple: t.simple, ...(t.opciones && { opciones: t.opciones }) });
     opts.onMessage({ tipo: "glosas_para_senar", glosas: t.glosas, subtitulo: t.simple });
@@ -113,13 +123,18 @@ export async function joinMockCall(opts: { onMessage: (m: MensajePuente) => void
         const aciertos = esperadas.filter((g) => msg.glosas.includes(g)).length;
         const completa = esperadas.length > 0 && aciertos / esperadas.length >= 0.7;
         const texto = completa && frase ? frase : msg.glosas.join(" ").toLowerCase();
-        later(700, () => opts.onMessage({ tipo: "cliente_dijo", texto }));
-        later(ESPERA_RESPUESTA_MS, siguiente);
+        // Como en la llamada real: la frase llega a la app justo cuando empieza a sonar. Aquí suena con la voz del navegador.
+        later(700, () => {
+          opts.onMessage({ tipo: "cliente_dijo", texto });
+          hablar(texto);
+        });
+        later(700 + msVoz(texto) + ESPERA_RESPUESTA_MS, siguiente); // el hospital contesta cuando terminó de oír
       }
     },
     leave() {
       terminada = true;
       timers.forEach(clearTimeout);
+      if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
     },
   };
 }

@@ -23,7 +23,8 @@ export interface ClienteDice {
 
 /**
  * La frase en español en que el backend convirtió lo que firmó o escribió el cliente (la misma que se dice por voz).
- * Sirve para que la app muestre "qué entendió el otro lado". Lo emite el backend tras `cliente_dice` o `glosas_cliente`.
+ * Sirve para que la app muestre "qué entendió el otro lado". Lo emite el backend justo cuando empieza a sonar esa frase (tras `cliente_dice` o `glosas_cliente`),
+ * así el texto se puede ir mostrando a la par del audio.
  */
 export interface ClienteDijo {
   tipo: "cliente_dijo";

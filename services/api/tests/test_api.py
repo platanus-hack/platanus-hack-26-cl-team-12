@@ -292,30 +292,43 @@ def test_logs_no_guardan_lo_que_se_dice(sala_falsa, caplog):
     assert "11.111.111-1" not in caplog.text
 
 
-def _voz_pendiente(texto_esperado):
+def _decir_pendiente():
+    """Twilio vuelve a preguntar si hay respuesta: ahí empieza a sonar y la app recibe `cliente_dijo`."""
     for _ in range(50):
         r = client.post("/twilio/espera?n=1")
-        if texto_esperado in r.text:
+        if "<Say" in r.text:
             return r.text
     return r.text
 
 
-def test_glosas_cliente_se_convierten_en_frase_y_se_muestran_y_se_dicen(sala_falsa):
-    """v3: lo que firma el cliente (glosas) se convierte, se le muestra en la app (`cliente_dijo`) y se dice por voz."""
+def test_glosas_cliente_se_convierten_en_frase_se_dicen_y_se_muestran_al_sonar(sala_falsa):
+    """v3: lo que firma el cliente (glosas) se convierte y se dice por voz; la app recibe la frase recién cuando suena."""
     with client.websocket_connect("/twilio/cliente") as pwa:
         client.post("/twilio/voz")
         assert pwa.receive_json() == {"tipo": "estado", "valor": "llamada_iniciada"}
         pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "INVENTADA", "AMBULANCIA"], "confianza": 1})
+        assert "formal(HOLA AMBULANCIA)" in _decir_pendiente()
         assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(HOLA AMBULANCIA)"}
-        assert "formal(HOLA AMBULANCIA)" in _voz_pendiente("formal(HOLA AMBULANCIA)")
 
 
-def test_cliente_dice_tambien_muestra_la_frase_convertida(sala_falsa):
+def test_cliente_dice_tambien_muestra_la_frase_convertida_al_sonar(sala_falsa):
     with client.websocket_connect("/twilio/cliente") as pwa:
         client.post("/twilio/voz")
         pwa.receive_json()
         pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        assert "formal(martes bueno)" in _decir_pendiente()
         assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(martes bueno)"}
+
+
+def test_cliente_dijo_no_se_manda_antes_de_que_suene(sala_falsa):
+    with client.websocket_connect("/twilio/cliente") as pwa:
+        client.post("/twilio/voz")
+        pwa.receive_json()
+        pwa.send_json({"tipo": "cliente_dice", "texto": "martes bueno"})
+        pwa.send_json({"tipo": "ping"})
+        assert sala_falsa.respuestas.qsize() in (0, 1)  # aún en cola (o recién convertida): la app no recibe nada todavía
+        _decir_pendiente()
+        assert pwa.receive_json()["tipo"] == "cliente_dijo"
 
 
 def test_glosas_cliente_sin_glosas_validas_no_hace_nada(sala_falsa):
@@ -325,7 +338,8 @@ def test_glosas_cliente_sin_glosas_validas_no_hace_nada(sala_falsa):
         pwa.send_json({"tipo": "glosas_cliente", "glosas": ["INVENTADA"], "confianza": 1})
         pwa.send_json({"tipo": "glosas_cliente", "glosas": "no-es-lista", "confianza": 1})
         pwa.send_json({"tipo": "cliente_dice", "texto": "hola"})
-        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(hola)"}  # lo primero que llega es lo último válido
+        assert "formal(hola)" in _decir_pendiente()  # lo único que se dice es lo válido
+        assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "formal(hola)"}
 
 
 def test_glosas_cliente_si_claude_falla_se_dicen_tal_cual(sala_falsa, monkeypatch):
@@ -337,4 +351,5 @@ def test_glosas_cliente_si_claude_falla_se_dicen_tal_cual(sala_falsa, monkeypatc
         client.post("/twilio/voz")
         pwa.receive_json()
         pwa.send_json({"tipo": "glosas_cliente", "glosas": ["HOLA", "AMBULANCIA"], "confianza": 1})
+        assert "hola ambulancia" in _decir_pendiente()
         assert pwa.receive_json() == {"tipo": "cliente_dijo", "texto": "hola ambulancia"}

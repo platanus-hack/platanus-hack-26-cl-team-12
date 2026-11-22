@@ -28,7 +28,8 @@ class Sala:
 
     def __init__(self):
         self.clientes: set[WebSocket] = set()
-        self.respuestas: asyncio.Queue[str] = asyncio.Queue()
+        # (texto para la voz, frase para mostrar en la app). Se avisa a la app recién cuando empieza a sonar (respuesta_pendiente).
+        self.respuestas: asyncio.Queue[tuple[str, str]] = asyncio.Queue()
         self.traductor = Traductor()
 
     async def enviar(self, msg: dict) -> None:
@@ -48,10 +49,9 @@ class Sala:
         await self.enviar({"tipo": "ejecutivo_dice", "texto": recortar(texto), "simple": simple, "opciones": opciones})
 
     async def _cliente_dice_frase(self, frase: str) -> None:
-        """Lo que el cliente dijo ya convertido: se le muestra en la app (`cliente_dijo`) y queda listo para decirse por voz."""
+        """Lo que el cliente dijo ya convertido: queda listo para decirse por voz. La app lo ve cuando empieza a sonar."""
         frase = recortar(frase)
-        await self.enviar({"tipo": "cliente_dijo", "texto": frase})
-        await self.respuestas.put(self.traductor.para_voz(frase))
+        await self.respuestas.put((self.traductor.para_voz(frase), frase))
 
     async def cliente_dijo(self, texto: str) -> None:
         texto = texto.strip()[:MAX_TEXTO]
@@ -76,11 +76,15 @@ class Sala:
             frase = " ".join(g.lower() for g in validas)
         await self._cliente_dice_frase(frase or " ".join(g.lower() for g in validas))
 
-    def respuesta_pendiente(self) -> str | None:
+    async def respuesta_pendiente(self) -> str | None:
+        """La siguiente respuesta del cliente para decir por voz. Al sacarla empieza a sonar: ahí se le manda a la app
+        la frase (`cliente_dijo`) para que se vea escrita a la par del audio."""
         try:
-            return self.respuestas.get_nowait()
+            voz, pantalla = self.respuestas.get_nowait()
         except asyncio.QueueEmpty:
             return None
+        await self.enviar({"tipo": "cliente_dijo", "texto": pantalla})
+        return voz
 
     def reiniciar(self) -> None:
         """Nueva llamada: se descartan respuestas viejas."""
