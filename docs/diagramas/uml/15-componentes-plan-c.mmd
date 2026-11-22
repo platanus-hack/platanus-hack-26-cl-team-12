@@ -1,0 +1,70 @@
+---
+title: "Puente · Diagrama de componentes UML (plan C, en producción)"
+config:
+  theme: base
+  themeVariables:
+    fontSize: 18px
+    fontFamily: "Inter, Helvetica, Arial, sans-serif"
+    primaryColor: "#eef2ff"
+    primaryBorderColor: "#4f46e5"
+    primaryTextColor: "#111827"
+    lineColor: "#4b5563"
+    clusterBkg: "#f9fafb"
+    clusterBorder: "#9ca3af"
+  flowchart:
+    nodeSpacing: 40
+    rankSpacing: 70
+    padding: 18
+---
+flowchart LR
+    actorS(["«actor»<br/><b>Persona sorda</b>"])
+
+    subgraph CEL["«dispositivo» Celular — PWA Next.js + Capacitor (apps/web)"]
+        direction TB
+        Reco["«componente»<br/><b>Lectura de señas</b><br/>reconocimiento.ts + @puente/signs<br/><i>MediaPipe · DTW · el video no sale</i>"]
+        CallPanel["«componente»<br/><b>Pantalla de llamada</b><br/>CallPanel · AvatarVRM · @puente/ui<br/><i>subtítulos · botones · avatar</i>"]
+        CallTs["«componente»<br/><b>Conexión</b><br/>lib/call.ts<br/><i>joinCall · ErrorServidor</i>"]
+        Glosses["«librería»<br/><b>@puente/glosses</b><br/><i>diccionario LSCh + contrato</i>"]
+    end
+
+    subgraph RENDER["«nodo» Render — contenedor Docker (services/api, FastAPI)"]
+        direction TB
+        Main["«componente»<br/><b>main.py</b><br/><i>POST /llamadas · /diagnostico</i>"]
+        Sala["«componente»<br/><b>llamada.py · Sala</b><br/><i>WS /twilio/cliente · /colgar</i>"]
+        Media["«componente»<br/><b>twilio_media.py</b><br/><i>webhooks /twilio/* · TwiML</i>"]
+        Trad["«componente»<br/><b>translator/</b><br/><i>simplificar · complejizar · glosas</i>"]
+        Voz["«componente»<br/><b>voz.py</b><br/><i>mp3 de voz chilena</i>"]
+    end
+
+    Agent["«componente» services/agent<br/><i>LiveKit · en pausa (requiere SIP)</i>"]
+
+    Claude[["«sistema externo»<br/><b>Anthropic</b><br/>Claude Haiku 5.5"]]
+    Eleven[["«sistema externo»<br/><b>ElevenLabs</b><br/>texto a voz"]]
+    Twilio[["«sistema externo»<br/><b>Twilio Voice</b><br/>llamada · voz a texto"]]
+    actorE(["«actor»<br/><b>Ejecutivo</b> (teléfono)"])
+
+    actorS --> CallPanel
+    Reco --> CallPanel
+    CallPanel --> CallTs
+    CallTs --> Glosses
+
+    CallTs == "WebSocket · mensajes del contrato" ==> Sala
+    CallTs == "HTTPS · crear llamada" ==> Main
+
+    Media --> Sala
+    Sala --> Trad
+    Sala --> Voz
+    Agent -.-> |reutiliza| Trad
+
+    Trad -- "Messages API" --> Claude
+    Voz -- "TTS" --> Eleven
+    Main -- "API REST" --> Twilio
+    Twilio == "webhooks firmados" ==> Media
+    Twilio <-- "voz" --> actorE
+
+    classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111827
+    classDef pausa fill:#ffffff,stroke:#9ca3af,stroke-dasharray:6 4,color:#6b7280
+    classDef actor fill:#fef3c7,stroke:#b45309,color:#111827
+    class Claude,Eleven,Twilio ext
+    class Agent pausa
+    class actorS,actorE actor
