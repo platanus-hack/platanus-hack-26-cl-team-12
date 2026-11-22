@@ -18,7 +18,7 @@ import { usePreferencias } from "@/lib/preferencias";
 import { AppShell } from "./AppShell";
 import { AvatarVRM } from "./AvatarVRM";
 import { Calificacion } from "./Calificacion";
-import { RECONOCER_SENAS, iniciarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
+import { RECONOCER_SENAS, iniciarReconocedor, precargarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
 import { mensajeCliente } from "@/lib/respuesta";
 import { CamaraPropia, type Conversion, type Lectura, type Voz } from "./CamaraPropia";
 import { Login } from "./Login";
@@ -121,6 +121,11 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // MediaPipe se empieza a bajar al marcar (no al contestar): habla primero la persona sorda.
+  useEffect(() => {
+    if (RECONOCER_SENAS && state === "connecting") precargarReconocedor().catch(() => {});
+  }, [state]);
+
   // Lectura real: MediaPipe + @puente/signs reconocen cada seña (con pausa entre señas) y se acumulan como glosas del turno.
   useEffect(() => {
     if (!RECONOCER_SENAS || state !== "live" || !camara || !video) return;
@@ -131,6 +136,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       onDuda: (a, b) => setAlert({ message: `No se distingue: ${a} o ${b}. Repite la seña.`, tone: "info" }),
       onError: (e) => console.error("reconocimiento de señas", e),
       onRanking: (r) => debugActivo.current && setDebug(r.map((x) => `${x.gloss} ${x.dist.toFixed(2)}`).join(" · ")),
+      pausado: () => esperandoRef.current,
     })
       .then((r) => (cancelado ? r.detener() : (rec = r)))
       .catch(() => setAlert({ message: "No se pudo iniciar la lectura de señas. Puedes responder en el chat.", tone: "error" }));

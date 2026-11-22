@@ -22,6 +22,8 @@ export interface OpcionesReconocedor {
   onError?: (e: unknown) => void;
   /** Depuración (?debug): las glosas candidatas de cada seña clasificada, de mejor a peor, con su distancia. */
   onRanking?: (ranking: { gloss: string; dist: number }[]) => void;
+  /** Mientras devuelva true no se corre MediaPipe (habla el otro lado): deja la CPU/GPU libre para el avatar. */
+  pausado?: () => boolean;
 }
 
 export interface Reconocedor {
@@ -31,10 +33,24 @@ export interface Reconocedor {
 // Tipos mínimos de MediaPipe (se carga por URL, sin dependencia en el lockfile).
 type Landmarker = { detectForVideo(v: HTMLVideoElement, t: number): Record<string, unknown> };
 
-export async function iniciarReconocedor(video: HTMLVideoElement, o: OpcionesReconocedor): Promise<Reconocedor> {
-  const set = (await (await fetch("/reco/templates.json")).json()) as TemplateSet;
-  const rec = createPauseRecognizer(set);
+type Modelos = { set: TemplateSet; pose: Landmarker; manos: Landmarker };
+let modelos: Promise<Modelos> | null = null;
 
+/**
+ * Baja plantillas, wasm y los dos modelos UNA vez por sesión de la app y los deja vivos entre llamadas (antes se
+ * creaban en cada llamada, recién al contestar, y nunca se liberaban). Se llama al empezar a conectar para que la
+ * lectura esté lista cuando le toca a la persona sorda, que habla primero.
+ */
+export function precargarReconocedor(): Promise<Modelos> {
+  if (!modelos) {
+    modelos = cargarModelos();
+    modelos.catch(() => (modelos = null)); // si falló (sin red), se reintenta en la próxima llamada
+  }
+  return modelos;
+}
+
+async function cargarModelos(): Promise<Modelos> {
+  const plantillas = fetch("/reco/templates.json").then((r) => r.json() as Promise<TemplateSet>);
   const mp = (await import(/* webpackIgnore: true */ BUNDLE)) as {
     FilesetResolver: { forVisionTasks(url: string): Promise<unknown> };
     PoseLandmarker: { createFromOptions(fs: unknown, opts: unknown): Promise<Landmarker> };
@@ -49,8 +65,18 @@ export async function iniciarReconocedor(video: HTMLVideoElement, o: OpcionesRec
       return await C.createFromOptions(fs, { baseOptions: { modelAssetPath: MODELOS + modelo, delegate: "CPU" }, ...base });
     }
   };
-  const pose = await crear(mp.PoseLandmarker, "pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task", { numPoses: 1 });
-  const manos = await crear(mp.HandLandmarker, "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", { numHands: 2 });
+  // Las plantillas se calibraron con pose_full: no cambiar a lite sin regenerarlas.
+  const [set, pose, manos] = await Promise.all([
+    plantillas,
+    crear(mp.PoseLandmarker, "pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task", { numPoses: 1 }),
+    crear(mp.HandLandmarker, "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", { numHands: 2 }),
+  ]);
+  return { set, pose, manos };
+}
+
+export async function iniciarReconocedor(video: HTMLVideoElement, o: OpcionesReconocedor): Promise<Reconocedor> {
+  const { set, pose, manos } = await precargarReconocedor();
+  const rec = createPauseRecognizer(set);
 
   let vivo = true;
   let ultimoTiempo = -1;
@@ -59,6 +85,7 @@ export async function iniciarReconocedor(video: HTMLVideoElement, o: OpcionesRec
   const paso = () => {
     if (!vivo) return;
     requestAnimationFrame(paso);
+    if (o.pausado?.()) return;
     if (video.readyState < 2 || video.currentTime === ultimoTiempo || !video.videoWidth) return;
     ultimoTiempo = video.currentTime;
     try {

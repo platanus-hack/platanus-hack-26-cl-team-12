@@ -83,7 +83,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  if (/^\/(_next\/static|icons|anim|models|perfil)\//.test(url.pathname) || url.pathname === "/manifest.webmanifest") {
+  if (/^\/(_next\/static|icons|anim|models|perfil|reco)\//.test(url.pathname) || url.pathname === "/manifest.webmanifest") {
     e.respondWith(primeroGuardada(req));
   }
 });
