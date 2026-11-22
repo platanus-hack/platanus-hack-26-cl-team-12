@@ -27,7 +27,6 @@ import { FotoPerfil, PERFIL } from "./MenuPerfil";
 const AVATAR_MS_POR_SENA = 1300; // intérprete dibujado (respaldo): una seña cada 1,3 s
 // La frase convertida se queda a la vista hasta que empiezas a señar la siguiente respuesta (o pasa este tiempo).
 const CONVERSION_MAX_MS = 90_000;
-const SUBTITULO_SIN_AVATAR_MS = 3500; // si el avatar no llega a firmar, el subtítulo se muestra completo pasado este tiempo
 const LECTURA_SIMULADA_MS = 2600; // TODO(v3): lo que "tarda" la cámara en reconocer una frase
 
 const hora = () => new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
@@ -49,9 +48,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   const [senas, setSenas] = useState<{ glosas: string[]; subtitulo: string; actual: number } | null>(null);
   const [frase, setFrase] = useState(0); // sube con cada glosas_para_senar: reinicia el avatar 3D
   const [senando3d, setSenando3d] = useState(false);
-  // Subtítulo del ejecutivo: va apareciendo a medida que el avatar firma (0 a 1). 1 = completo.
+  // Subtítulo del ejecutivo: siempre visible completo; el avatar resalta lo que va firmando (0 a 1). 1 = todo resaltado.
   const [progSub, setProgSub] = useState(1);
-  const timerSub = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Texto simple del turno actual (de ejecutivo_dice): glosas_para_senar no lo pisa, llegue antes o después.
+  const simpleTurno = useRef<string | null>(null);
   const [sin3d, setSin3d] = useState(false); // el modelo 3D no cargó: se usa el intérprete dibujado
   const [destino, setDestino] = useState<Destino | null>(null);
   const prefs = usePreferencias();
@@ -159,7 +159,6 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   // Cortar la conexión si el usuario cierra la pantalla en medio de una llamada.
   useEffect(() => () => {
     callRef.current?.leave();
-    if (timerSub.current) clearTimeout(timerSub.current);
     if (timerConv.current) clearTimeout(timerConv.current);
   }, []);
 
@@ -171,11 +170,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         setEsperando(false);
         setLectura({ estado: "leyendo" });
         glosasRef.current = [];
-        // El subtítulo espera al avatar; si no firma (sin v4 o sin modelo 3D), se muestra completo.
-        setProgSub(0);
-        if (timerSub.current) clearTimeout(timerSub.current);
-        timerSub.current = setTimeout(() => setProgSub((p) => (p === 0 ? 1 : p)), SUBTITULO_SIN_AVATAR_MS);
-        // Sin v4 activa no llega glosas_para_senar: el subtítulo igual muestra lo último que dijeron.
+        // El subtítulo es el canal principal: se muestra completo al tiro, sin esperar al avatar (antes quedaba oculto
+        // hasta 3,5 s). Sin v4 activa no llega glosas_para_senar: el subtítulo igual muestra lo último que dijeron.
+        simpleTurno.current = msg.simple ?? msg.texto;
+        setProgSub(1);
         setSenas((s) => ({ glosas: s?.glosas ?? [], actual: s?.actual ?? 0, subtitulo: msg.simple ?? msg.texto }));
         break;
       case "estado":
@@ -195,9 +193,10 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         }
         break;
       case "glosas_para_senar":
-        setSenas({ glosas: msg.glosas, subtitulo: msg.subtitulo, actual: 0 });
+        // Una sola fuente de texto por turno: si ya llegó ejecutivo_dice, se mantiene su texto simple.
+        setSenas({ glosas: msg.glosas, subtitulo: simpleTurno.current ?? msg.subtitulo, actual: 0 });
         setFrase((f) => f + 1);
-        setProgSub(0);
+        setProgSub(0); // empieza el resaltado; el texto sigue visible (SubtituloProgresivo)
         break;
       case "cliente_dijo":
         // La frase en español en que se convirtió lo que señaste (o escribiste): se ve en tu cámara y en el chat.
@@ -236,6 +235,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     destinoRef.current = d;
     setLines([]);
     setSenas(null);
+    simpleTurno.current = null;
     setOpciones(DEFAULT_REPLIES);
     setEsperando(false);
     setSeconds(0);
@@ -273,6 +273,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
   // `deSenas`: solo el botón Enviar de la cámara. El chat y las sugerencias siempre mandan su texto (ver lib/respuesta).
   async function decir(texto: string, deSenas = false) {
     if (!callRef.current) return;
+    simpleTurno.current = null; // el próximo turno del ejecutivo trae su propio texto
     setLectura({ estado: "enviado", texto });
     setLines((l) => [...l, { id: nuevoId(), who: "cliente", time: hora(), text: texto }]);
     setOpciones([]);
@@ -425,7 +426,7 @@ function SubtituloProgresivo({ texto, fraccion }: { texto: string; fraccion: num
         if (!p.trim()) return p;
         n += 1;
         return (
-          <span key={i} style={n <= visibles ? undefined : { opacity: 0 }}>
+          <span key={i} style={n <= visibles ? undefined : { opacity: 0.45 }}>
             {p}
           </span>
         );
