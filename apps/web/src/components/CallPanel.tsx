@@ -11,7 +11,7 @@ import {
   Composer, Icon, Interprete, QuickReplies, Subtitles, VisualAlert, DEFAULT_REPLIES, formatDuration,
   type AlertTone, type CallState, type SubtitleLine,
 } from "@puente/ui";
-import { LIMITES, type MensajePuente } from "@puente/glosses";
+import { FINGERSPELL_PREFIX, LIMITES, isLiteralGloss, literalText, type MensajePuente } from "@puente/glosses";
 import { despertarServidor, joinCall, type CallHandle } from "@/lib/call";
 import { joinMockCall, type EventoVoz } from "@/lib/mockCall";
 import { URGENCIAS, type Destino } from "@/lib/contactos";
@@ -340,6 +340,14 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
             <AvatarVRM glosas={senas?.glosas ?? []} frase={frase} velocidad={prefs.velocidad} onSenando={setSenando3d} onProgreso={setProgSub} onFalla={() => setSin3d(true)} />
           )}
         </div>
+        {/* Horas, cifras, RUT, nombres (TEXTO:) y deletreos no tienen seña: van en grande sobre el avatar (docs/contrato.md). */}
+        {enLlamada && !esperando && datosSinSena(senas?.glosas ?? []).length > 0 && (
+          <ul className="vl-datos" aria-label="Datos de la frase">
+            {datosSinSena(senas?.glosas ?? []).map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
+          </ul>
+        )}
         <header className="vl-cabeza">
           <span className="row-txt">
             <strong>{destino?.nombre}</strong>
@@ -432,6 +440,13 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
 }
 
 /** Muestra el texto palabra por palabra según `fraccion` (0 a 1). Las palabras que faltan ocupan su lugar sin verse: el texto no se mueve. */
+/** Glosas que se muestran escritas en vez de firmarse: `TEXTO:10:30` → "10:30", `DACTILOLOGÍA:A-N-A` → "ANA". */
+function datosSinSena(glosas: string[]): string[] {
+  return glosas.flatMap((g) =>
+    isLiteralGloss(g) ? [literalText(g)] : g.startsWith(FINGERSPELL_PREFIX) ? [g.slice(FINGERSPELL_PREFIX.length).replace(/-/g, "")] : [],
+  );
+}
+
 function SubtituloProgresivo({ texto, fraccion }: { texto: string; fraccion: number }) {
   const partes = texto.split(/(\s+)/);
   const palabras = partes.filter((p) => p.trim()).length;
