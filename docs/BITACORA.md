@@ -8,6 +8,11 @@ Las entradas nuevas van **arriba**. Formato:
 - Falta / bloqueado: ...
 ```
 
+## 2026-11-22 — r.labbevidal / Claude (fix/agente-hilos) · el agente se reiniciaba en Render
+- Hice: medí la memoria real (PSS) del agente en modo producción: ~780 MB. `livekit-agents` 1.8 precarga por defecto el modelo de fin de turno (~450 MB, "EOT weights") en cada ejecutor de llamadas aunque no lo usemos. En Render Starter (512 MB) el sistema lo mataba antes de conectarse a LiveKit (por eso no había error y Render lo reintentaba cada ~5 min). Ahora `agent.py` fija `LIVEKIT_AGENTS_PRELOAD_LOCAL_INFERENCE=0` y corre las llamadas en hilos (`AGENT_EXECUTOR=thread`): **221 MB** (379 MB si se vuelve a procesos).
+- Verificado: pytest 63 y ruff OK; corrido contra el LiveKit real: `registered worker` (Brazil) y `job runner initialized` en 0,6 s. No probado: una llamada completa en Render.
+- Falta: desplegar (`dev` → `main`) y revisar en Render que aparezca `registered worker` sin reinicios.
+
 ## 2026-11-22 — r.labbevidal / Claude (v4/senas-s3) · fotos de señas desde S3
 - Hice: la web lee las fotos del Diccionario LSCh desde `NEXT_PUBLIC_SENAS_URL` (bucket S3); si falta, usa `/senas` local como antes (`apps/web/src/lib/senas.ts`). El service worker recibe esa URL al registrarse (`/sw.js?senas=…`) y sigue guardando las fotos para usarlas sin internet (VERSION `puente-v3`). `make senas-push` las sube y `make senas-pull` las baja (combinado con chore/senas-s3).
 - Decidí: fotos con caché larga e inmutable; `manifest.json` sin caché. El bucket necesita lectura pública de `senas/*` y CORS con GET para el origen de la web.
