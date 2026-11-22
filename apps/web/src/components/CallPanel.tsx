@@ -19,11 +19,13 @@ import { AppShell } from "./AppShell";
 import { AvatarVRM } from "./AvatarVRM";
 import { Calificacion } from "./Calificacion";
 import { RECONOCER_SENAS, iniciarReconocedor, type Reconocedor } from "@/lib/reconocimiento";
-import { CamaraPropia, msConversionVisible, type Conversion, type Lectura } from "./CamaraPropia";
+import { CamaraPropia, type Conversion, type Lectura } from "./CamaraPropia";
 import { Login } from "./Login";
 import { FotoPerfil, PERFIL } from "./MenuPerfil";
 
 const AVATAR_MS_POR_SENA = 1300; // intérprete dibujado (respaldo): una seña cada 1,3 s
+// La frase convertida se queda a la vista hasta que empiezas a señar la siguiente respuesta (o pasa este tiempo).
+const CONVERSION_MAX_MS = 90_000;
 const SUBTITULO_SIN_AVATAR_MS = 3500; // si el avatar no llega a firmar, el subtítulo se muestra completo pasado este tiempo
 const LECTURA_SIMULADA_MS = 2600; // TODO(v3): lo que "tarda" la cámara en reconocer una frase
 
@@ -105,6 +107,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
     iniciarReconocedor(video, {
       onGlosa: (g) => {
         if (esperandoRef.current) return;
+        if (glosasRef.current.length === 0) setConversion(null); // empezó una respuesta nueva: la conversión anterior ya se leyó
         glosasRef.current = [...glosasRef.current, g];
         setLectura({ estado: "listo", texto: glosasRef.current.join(" ") });
         setAlert(null);
@@ -185,7 +188,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
         setLectura((l) => (l.estado === "enviado" ? { ...l, convertido: msg.texto } : l));
         setConversion((c) => (c ? { ...c, frase: msg.texto } : c));
         if (timerConv.current) clearTimeout(timerConv.current);
-        timerConv.current = setTimeout(() => setConversion(null), msConversionVisible(msg.texto));
+        timerConv.current = setTimeout(() => setConversion(null), CONVERSION_MAX_MS);
         setLines((ls) => {
           const i = ls.map((x) => x.who).lastIndexOf("cliente");
           const previa = i >= 0 ? ls[i] : undefined;
@@ -253,7 +256,7 @@ export function CallPanel({ mock, autoLlamar = false }: { mock: boolean; autoLla
       if (glosas.length) {
         setConversion({ glosas: texto });
         if (timerConv.current) clearTimeout(timerConv.current);
-        timerConv.current = setTimeout(() => setConversion(null), 20000); // respaldo si la frase convertida nunca llega
+        timerConv.current = setTimeout(() => setConversion(null), CONVERSION_MAX_MS); // respaldo si la frase convertida nunca llega
       }
       await callRef.current.send(glosas.length ? { tipo: "glosas_cliente", glosas, confianza: 1 } : { tipo: "cliente_dice", texto });
       glosasRef.current = [];

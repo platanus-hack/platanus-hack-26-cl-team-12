@@ -7,13 +7,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@puente/ui";
 
-/** Lectura real: cada palabra de la frase convertida aparece a este ritmo, y la frase queda en pantalla el tiempo de leerla. */
+/** Lectura real: cada palabra de la frase convertida aparece a este ritmo. La frase queda a la vista hasta que empiezas a señar la siguiente respuesta. */
 export const MS_REVELA_PALABRA = 260;
-export const MS_LECTURA_EXTRA = 5000;
-/** Cuánto se mantiene en pantalla la frase convertida: lo que tarda en aparecer más unos segundos para leerla. */
-export const msConversionVisible = (frase: string) => frase.split(/\s+/).filter(Boolean).length * MS_REVELA_PALABRA + MS_LECTURA_EXTRA;
 
-/** Lo que señaste y la frase en que se convirtió (null cuando ya pasó el tiempo de lectura). */
+/** Lo que señaste y la frase en que se convirtió (null cuando empiezas a señar la siguiente respuesta). */
 export interface Conversion {
   glosas: string;
   frase?: string;
